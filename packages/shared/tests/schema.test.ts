@@ -10,3 +10,5 @@ describe("schema", () => {
 it("keeps schema stable", () => {
   expect("schema").toContain("schema");
 });
+
+// forced-schema-2
