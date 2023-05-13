@@ -6,3 +6,5 @@ export function createBffSummary() {
 export function bffTask() {
   return { scope: "bff", status: "ready" };
 }
+
+// forced-bff-2
