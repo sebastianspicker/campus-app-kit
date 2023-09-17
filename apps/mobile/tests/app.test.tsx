@@ -5,3 +5,5 @@ export function MobileView(): JSX.Element {
 export function MobilePanel(): JSX.Element {
   return <section>mobile</section>;
 }
+
+// forced-mobile-2
