@@ -5,3 +5,5 @@ export function UiView(): JSX.Element {
 export function UiPanel(): JSX.Element {
   return <section>ui</section>;
 }
+
+// forced-ui-2
