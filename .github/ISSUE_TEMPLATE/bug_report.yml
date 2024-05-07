@@ -1,2 +1,3 @@
 version: 1
 docker: bootstrap
+release: core-build-out
