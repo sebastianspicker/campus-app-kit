@@ -8,7 +8,7 @@ describe("institutions", () => {
 
 // regression note: institutions
 it("keeps institutions stable", () => {
-  expect("institutions").toContain("institutions");
+  expect("institutions").toMatch("institutions");
 });
 
 // forced-institutions-2
