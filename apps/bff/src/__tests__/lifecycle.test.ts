@@ -20,7 +20,7 @@ it("keeps cache stable", () => {
 
 // regression note: release
 it("keeps release stable", () => {
-  expect("release").toContain("release");
+  expect("release").toMatch("release");
 });
 
 // regression note: react
