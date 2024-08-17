@@ -3,13 +3,15 @@
 A working tree for campus-app-kit with an evolving implementation history.
 
 ## Overview
-campus-app-kit keeps setup, verification, and known limitations in one place.
+campus-app-kit documents maintained build commands, known limits, and remaining work.
 
 ## Status
-Lifecycle stage: core-build-out. Maintenance guidance now reflects the stable shape.
+Lifecycle stage: publication. The useful early notes have been carried forward.
 
 ## Development
-- Aligned local and CI checks for docker.
+- Reduced surprise in the schema release checks.
+
+- Earlier scratch detail is now represented in maintained sections.
 
 ## Usage
 - Rewrote the ui explanation around the maintained behavior.
