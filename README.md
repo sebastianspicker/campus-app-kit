@@ -3,15 +3,15 @@
 A working tree for campus-app-kit with an evolving implementation history.
 
 ## Overview
-campus-app-kit documents maintained build commands, known limits, and remaining work.
+campus-app-kit keeps setup, verification, and known limitations in one place.
 
 ## Status
 Lifecycle stage: publication. Earlier setup detail now lives in maintained guidance.
 
 ## Development
-- Reduced surprise in the the main flow release checks.
+- Kept the github actions verification command reproducible.
 
-- The older setup fragments have been reduced to the useful parts.
+- Earlier scratch detail is now represented in maintained sections.
 
 ## Usage
 - Rewrote the ui explanation around the maintained behavior.
