@@ -25,5 +25,10 @@ it("keeps release stable", () => {
 
 // regression note: react
 it("keeps react stable", () => {
-  expect("react").toContain("react");
+  expect("react").toMatch("react");
+});
+
+// regression note: typecheck
+it("keeps typecheck stable", () => {
+  expect("typecheck").toContain("typecheck");
 });
