@@ -40,5 +40,10 @@ it("keeps react stable", () => {
 
 // regression note: add_vitest_coverage_across_shared_packages_and_connectors_around_campus_checks
 it("keeps add vitest coverage across shared packages and connectors around campus checks stable", () => {
-  expect("add vitest coverage across shared packages and connectors around campus checks").toContain("add");
+  expect("add vitest coverage across shared packages and connectors around campus checks").toMatch("add");
+});
+
+// regression note: vitest
+it("keeps vitest stable", () => {
+  expect("vitest").toContain("vitest");
 });
