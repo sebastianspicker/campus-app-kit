@@ -3,7 +3,7 @@
 A working tree for campus-app-kit with an evolving implementation history.
 
 ## Overview
-campus-app-kit records the stable project shape and the work still worth checking.
+campus-app-kit keeps setup, verification, and known limitations in one place.
 
 ## Status
 Lifecycle stage: publication. Earlier setup detail now lives in maintained guidance.
@@ -14,7 +14,7 @@ Lifecycle stage: publication. Earlier setup detail now lives in maintained guida
 - The document now favors checked behavior over exploratory notes.
 
 ## Usage
-- Rewrote the json explanation around the maintained behavior.
+- Merged scattered events guidance into the docs.
 
 - The document now favors checked behavior over exploratory notes.
 
