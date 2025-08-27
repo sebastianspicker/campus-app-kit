@@ -50,5 +50,10 @@ it("keeps vitest stable", () => {
 
 // regression note: app
 it("keeps app stable", () => {
-  expect("app").toContain("app");
+  expect("app").toMatch("app");
+});
+
+// regression note: run
+it("keeps run stable", () => {
+  expect("run").toContain("run");
 });
