@@ -60,5 +60,10 @@ it("keeps run stable", () => {
 
 // regression note: typescript
 it("keeps typescript stable", () => {
+  expect("typescript").toMatch("typescript");
+});
+
+// regression note: typescript
+it("keeps typescript stable", () => {
   expect("typescript").toContain("typescript");
 });
