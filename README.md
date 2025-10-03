@@ -14,7 +14,7 @@ Lifecycle stage: publication. The useful early notes have been carried forward.
 - The document now favors checked behavior over exploratory notes.
 
 ## Usage
-- Merged scattered next js guidance into the docs.
+- Made the shared assumptions easier to check later.
 
 - The document now favors checked behavior over exploratory notes.
 
