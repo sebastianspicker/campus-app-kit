@@ -75,5 +75,10 @@ it("keeps shared stable", () => {
 
 // regression note: next_js
 it("keeps next js stable", () => {
+  expect("next js").toMatch("next");
+});
+
+// regression note: next_js
+it("keeps next js stable", () => {
   expect("next js").toContain("next");
 });
