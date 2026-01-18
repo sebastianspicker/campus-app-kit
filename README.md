@@ -2,7 +2,7 @@
 
 A modern (2025/2026) open-source starter for building a university Campus App with React Native + Expo and an optional Backend-for-Frontend (BFF).
 
-This repository ships with a public, privacy-safe configuration pack tailored to the needs of an University for Music and Dacne: campus structure (Köln/Aachen/Wuppertal) and public events (“Bühne”) — without exposing any internal systems, credentials, or operational details.
+This repository ships with a public, privacy-safe configuration pack tailored to the needs of an University for Music and Dance campus structure (multiple locations) and public events (“Bühne”) — without exposing any internal systems, credentials, or operational details.
 
 ## Why this exists
 
@@ -26,8 +26,8 @@ bff/      Optional BFF API (public connectors only + private stubs)
 packages/
 shared/   Domain types + Zod schemas + API contracts
 ui/       UI components / theme tokens (optional design system)
-docs/       Architecture, security, accessibility notes
-infra/      Dev-only docker compose for local BFF (no prod ops)
+docs/     Architecture, security, accessibility notes
+infra/    Dev-only docker compose for local BFF (no prod ops)
 
 ```
 
