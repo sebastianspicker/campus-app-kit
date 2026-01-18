@@ -1,0 +1,25 @@
+{
+  "name": "@campus/mobile",
+  "private": true,
+  "version": "0.1.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "echo 'use expo dev'",
+    "start": "echo 'use expo start'",
+    "lint": "eslint app src --ext .ts,.tsx",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@campus/shared": "workspace:*",
+    "expo": "~51.0.0",
+    "expo-router": "~3.5.0",
+    "react": "18.2.0",
+    "react-native": "0.74.0"
+  },
+  "devDependencies": {
+    "@types/react-test-renderer": "^18.0.7",
+    "react-test-renderer": "^18.2.0",
+    "vitest": "^2.1.8"
+  }
+}
