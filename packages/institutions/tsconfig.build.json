@@ -1,0 +1,15 @@
+{
+  // Placeholder: build tsconfig for @campus/institutions emit
+  // TODO:
+  // - Emit `dist/` and ensure exports are configured in package.json
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"]
+}
+

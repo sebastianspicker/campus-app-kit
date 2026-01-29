@@ -1,5 +1,8 @@
 node_modules
 .DS_Store
+.vscode/
+.idea/
+.expo/
 .env
 .env.*
 !/.env.example

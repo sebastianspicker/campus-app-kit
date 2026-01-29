@@ -21,3 +21,5 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # TODO: enable once workspace build scripts + lockfile exist
+      # - run: pnpm build
