@@ -1,3 +1,5 @@
+> Note: The project is in early alpha stage; some functions might be skeletons only!
+
 # Campus App Kit (Expo + RN)
 
 A public, privacy-safe starter for building a university Campus App with React Native + Expo and an optional Backend-for-Frontend (BFF).
