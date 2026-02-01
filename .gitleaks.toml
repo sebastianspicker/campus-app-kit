@@ -1,12 +1,6 @@
-# Placeholder: gitleaks configuration
-# TODO:
-# - Add allowlist rules for known false positives (non-secret test data)
-# - Add rules specific to this repo (e.g. disallow private endpoints)
-# - Wire this config into `.github/workflows/gitleaks.yml` if desired
-
 [allowlist]
-description = "Campus App Kit allowlist (TODO)"
+description = "Campus App Kit allowlist"
 paths = [
-  '''docs/''',
+  '''pnpm-lock.yaml''',
+  '''apps/bff/src/__fixtures__/''',
 ]
-

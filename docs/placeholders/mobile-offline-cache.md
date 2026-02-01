@@ -1,9 +1,7 @@
-# Placeholder: Offline cache & resilience
+# Offline cache and resilience
 
-**Why this is missing**
-- Hooks and `publicApi` use only in-memory cache; there is no persisted offline cache or stale-while-revalidate behavior.
+The mobile app ships:
 
-**TODO**
-- Implement a persisted cache layer (AsyncStorage/SQLite) (`apps/mobile/src/data/persistedCache.ts`).
-- Consolidate resource hooks on `usePublicResource()` (abort, refresh, offline).
-- Add clear offline/retry UI states to screens.
+- In-memory cache for short-lived data (`apps/mobile/src/data/cache.ts`)
+- Optional persisted cache layer using AsyncStorage (`apps/mobile/src/data/persistedCache.ts`)
+- Shared resource hook with cancellation + refresh (`apps/mobile/src/hooks/usePublicResource.ts`)

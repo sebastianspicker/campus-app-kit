@@ -1,9 +1,3 @@
-// Placeholder: accessibility helpers for Campus App Kit UI
-// TODO:
-// - Standardize accessibility labels/roles for common components
-// - Provide helpers for minimum touch target sizes (>= 44px)
-// - Add guidance for dynamic type / font scaling
-
 export type A11yProps = {
   accessibilityLabel?: string;
   accessibilityHint?: string;
@@ -14,3 +8,13 @@ export function a11yLabel(label: string): Pick<A11yProps, "accessibilityLabel"> 
   return { accessibilityLabel: label };
 }
 
+export function a11yButton(
+  label: string,
+  hint?: string
+): Pick<A11yProps, "accessibilityLabel" | "accessibilityHint" | "accessibilityRole"> {
+  return {
+    accessibilityRole: "button",
+    accessibilityLabel: label,
+    ...(hint ? { accessibilityHint: hint } : {})
+  };
+}

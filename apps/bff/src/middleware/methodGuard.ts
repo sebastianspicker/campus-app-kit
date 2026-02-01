@@ -2,15 +2,20 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { sendError } from "../utils/errors";
 
 // Placeholder: Allow only GET/OPTIONS for public endpoints
-// TODO:
-// - Enforce allowed methods per route
-// - Return 405 with Allow header
 
 export function guardMethods(
-  _req: IncomingMessage,
-  _res: ServerResponse,
-  _allowed: string[] = ["GET", "OPTIONS"]
+  req: IncomingMessage,
+  res: ServerResponse,
+  allowed: string[] = ["GET", "OPTIONS"]
 ): boolean {
   // return true if allowed, false if responded with error
-  return true;
+  const method = req.method ?? "GET";
+
+  if (allowed.includes(method)) {
+    return true;
+  }
+
+  res.setHeader("Allow", allowed.join(", "));
+  sendError(res, 405, "method_not_allowed", "Method not allowed");
+  return false;
 }

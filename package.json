@@ -8,7 +8,8 @@
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "verify": "./scripts/verify-production-ready.sh"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.18.0",

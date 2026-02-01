@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { fetchPublicEvents } from "../hfmtWebEvents";
-import { clearCache } from "../../utils/cache";
+import { clearCache } from "../../../utils/cache";
 
 const institution = {
   id: "hfmt",
@@ -25,7 +25,7 @@ describe("fetchPublicEvents", () => {
     process.env.PUBLIC_EVENTS_DATE = "2020-01-01T00:00:00.000Z";
 
     const html = readFileSync(
-      new URL("../../__fixtures__/hfmt-events.html", import.meta.url),
+      new URL("../../../__fixtures__/hfmt-events.html", import.meta.url),
       "utf8"
     );
 
@@ -52,7 +52,7 @@ describe("fetchPublicEvents", () => {
 
   it("falls back to tile attributes and anchor parsing", async () => {
     const html = readFileSync(
-      new URL("../../__fixtures__/hfmt-events-fallback.html", import.meta.url),
+      new URL("../../../__fixtures__/hfmt-events-fallback.html", import.meta.url),
       "utf8"
     );
 

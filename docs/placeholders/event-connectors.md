@@ -1,10 +1,17 @@
-# Placeholder: Connector-Quality (Events + Schedule)
+# Connector quality (events and schedule)
 
-**Why this is missing**
-- `fetchPublicEvents` generates position-based IDs and `/schedule` parsing is intentionally minimal.
+Public connectors aim to be deterministic and safe:
 
-**TODO**
-- Generate stable IDs per source (hash title+date+url), add dedupe + sorting.
-- Add explicit limits/timeouts and deterministic ordering.
-- Harden ICS parsing for `TZID`, `DTSTART;VALUE=DATE`, etc.
-- Expand fixtures and update tests.
+## Events
+
+- IDs are stable hashes of `{sourceUrl, title, date}`.
+- Results are deduplicated and sorted for deterministic output.
+
+Implementation: `apps/bff/src/connectors/public/hfmtWebEvents.ts` and `apps/bff/src/connectors/public/eventId.ts`.
+
+## Schedule
+
+- ICS parsing supports unfolded lines and basic VEVENT fields.
+- Date-only values are interpreted as midnight UTC for deterministic output.
+
+Implementation: `apps/bff/src/connectors/public/publicSchedule.ts` and `apps/bff/src/connectors/public/icsParser.ts`.

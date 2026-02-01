@@ -85,7 +85,8 @@ export const InstitutionPackSchema = z.object({
         )
         .optional()
     })
-    .optional()
+    .optional(),
+  publicRooms: z.array(RoomSchema).optional()
 });
 
 export type InstitutionPack = z.infer<typeof InstitutionPackSchema>;

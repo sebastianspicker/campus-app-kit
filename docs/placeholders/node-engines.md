@@ -1,8 +1,6 @@
-# Placeholder: Node/pnpm versions & `engines`
+# Node and pnpm versions
 
-**Why this is missing**
-- `packageManager` is set, but without `engines` (and optionally `.nvmrc`) installs can drift across environments.
+This repo standardizes on:
 
-**TODO**
-- Add `engines.node` and `engines.pnpm` to the root (and packages if needed).
-- Document the expected Node/pnpm versions (README + `.nvmrc`).
+- Node `20` (see `.nvmrc` and CI)
+- pnpm `9` (see root `package.json#packageManager`)

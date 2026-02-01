@@ -1,8 +1,8 @@
-# Placeholder: `pnpm-lock.yaml`
+# `pnpm-lock.yaml`
 
-**Why this is missing**
-- Without a lockfile, `pnpm install` is not deterministic on CI or locally.
+This repo commits `pnpm-lock.yaml` for deterministic installs.
 
-**TODO**
-- Run `pnpm install` with the intended Node/pnpm versions, commit the generated `pnpm-lock.yaml`, and use `--frozen-lockfile` in CI.
-- Optionally add `engines` in `package.json` to reduce drift.
+Use:
+
+- Local: `pnpm install`
+- CI and verification: `pnpm install --frozen-lockfile`

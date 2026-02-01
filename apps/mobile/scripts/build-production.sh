@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Placeholder: EAS production build
-# TODO:
-# - Ensure `apps/mobile/eas.json` has a `production` profile
-# - Ensure BFF base URL is set for release builds
-# - Run: `eas build --profile production`
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$repo_root/apps/mobile"
 
-echo "TODO: eas build --profile production"
-
+npx eas build --profile production

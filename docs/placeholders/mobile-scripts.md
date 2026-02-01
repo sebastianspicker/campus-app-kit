@@ -1,9 +1,8 @@
-# Placeholder: `apps/mobile` Scripts/Commands
+# Mobile scripts and commands
 
-**Why this is missing**
-- `start`/`dev` in `apps/mobile/package.json` were placeholders and did not describe a real dev workflow.
+From the repo root:
 
-**TODO**
-- `start` should run `expo start`, `dev` can run `expo start --dev-client` when needed.
-- Add scripts for `lint`, `typecheck`, `test`, and EAS `build`.
-- Document the commands in README/runbook.
+- `pnpm --filter @campus/mobile start`
+- `pnpm --filter @campus/mobile dev`
+- `pnpm --filter @campus/mobile build:preview`
+- `pnpm --filter @campus/mobile build:production`

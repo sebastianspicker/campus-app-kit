@@ -1,8 +1,6 @@
-# Placeholder: `gitleaks` workflow
+# `gitleaks` workflow
 
-**Why this is missing**
-- `.github/workflows/gitleaks.yml` depends on a `GITLEAKS_LICENSE` secret, which can break forks/PRs.
+Secret scanning is implemented via `.github/workflows/gitleaks.yml`.
 
-**TODO**
-- Make the workflow fork-safe (guarded execution when the secret is absent).
-- Document how to provide the license token securely (GitHub Secrets).
+If you have a `GITLEAKS_LICENSE`, set it as a GitHub Actions secret to enable full scanning features.
+The workflow references `.gitleaks.toml` for repo-specific allowlists.

@@ -1,13 +1,26 @@
-// Placeholder: CORS headers for public API responses
-// TODO:
-// - Define allowed origins based on env
-// - Add OPTIONS handler for preflight
-// - Attach headers to all responses
+export function getCorsHeaders(
+  requestOrigin: string | undefined,
+  allowedOrigins: string[]
+): Record<string, string> {
+  if (allowedOrigins.length === 0) {
+    return {};
+  }
 
-export function getCorsHeaders(): Record<string, string> {
+  const origin =
+    allowedOrigins.includes("*")
+      ? "*"
+      : requestOrigin && allowedOrigins.includes(requestOrigin)
+        ? requestOrigin
+        : null;
+
+  if (!origin) {
+    return {};
+  }
+
   return {
-    // "Access-Control-Allow-Origin": "*",
-    // "Access-Control-Allow-Methods": "GET, OPTIONS",
-    // "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    "access-control-allow-origin": origin,
+    "access-control-allow-methods": "GET, OPTIONS",
+    "access-control-allow-headers": "content-type, authorization",
+    ...(origin === "*" ? {} : { vary: "origin" })
   };
 }

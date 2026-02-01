@@ -10,6 +10,9 @@ export async function handleToday(
   institution: InstitutionPack
 ): Promise<void> {
   const events = await fetchPublicEvents(institution);
-  const response = TodayResponseSchema.parse({ events, rooms: [] });
+  const response = TodayResponseSchema.parse({
+    events,
+    rooms: institution.publicRooms ?? []
+  });
   sendJsonWithCache(req, res, response, { maxAgeSeconds: 300 });
 }

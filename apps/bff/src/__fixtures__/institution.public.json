@@ -24,5 +24,17 @@
         "url": "https://example.org/schedule.ics"
       }
     ]
-  }
+  },
+  "publicRooms": [
+    {
+      "id": "cologne-101",
+      "name": "Room 101",
+      "campusId": "cologne"
+    },
+    {
+      "id": "cologne-auditorium",
+      "name": "Auditorium",
+      "campusId": "cologne"
+    }
+  ]
 }

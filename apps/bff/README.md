@@ -6,9 +6,9 @@ Public backend-for-frontend for the Campus App Kit. It exposes only public data 
 
 - `GET /health` - liveness check
 - `GET /events` - public events from the institution pack
-- `GET /rooms` - stub response (private connector required)
+- `GET /rooms` - public rooms from the institution pack
 - `GET /schedule` - public schedule (ICS) if configured
-- `GET /today` - combined events + rooms (rooms stubbed)
+- `GET /today` - combined events + rooms
 
 ## Running locally
 
@@ -18,8 +18,9 @@ pnpm --filter @campus/bff dev
 
 Environment variables:
 
-- `BFF_PORT` (default 4000)
-- `INSTITUTION_ID` (default hfmt)
+- `INSTITUTION_ID` (required, e.g. `hfmt`)
+- `BFF_PORT` (optional, default `4000`)
+- `CORS_ORIGINS` (optional, comma-separated; use `*` for development)
 
 ## Connector model
 

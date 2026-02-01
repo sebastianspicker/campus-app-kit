@@ -1,9 +1,14 @@
-# Placeholder: BFF Dockerfile / Deployment
+# BFF containers
 
-**Why this is missing**
-- `apps/bff/Dockerfile` currently runs `tsx src/server.ts` without a build step, which is a dev runner, not a production image.
+This repo ships:
 
-**TODO**
-- Add a multi-stage Docker build (install + `tsc` → `dist/`).
-- Final image should run `node dist/server.js` (no global `tsx` install).
-- Document required env vars and deployment steps.
+- `apps/bff/Dockerfile` for a simple dev container
+- `apps/bff/Dockerfile.prod` for a production build (TypeScript → `dist/` → `node`)
+
+Required environment variables:
+
+- `INSTITUTION_ID`
+- `BFF_PORT` (optional, default `4000`)
+- `CORS_ORIGINS` (optional)
+
+For commands, see `docs/deploy/bff.md`.

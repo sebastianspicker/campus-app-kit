@@ -6,8 +6,10 @@ import { sendJsonWithCache } from "../utils/httpCache";
 export async function handleRooms(
   req: IncomingMessage,
   res: ServerResponse,
-  _institution: InstitutionPack
+  institution: InstitutionPack
 ): Promise<void> {
-  const response = RoomsResponseSchema.parse({ rooms: [] });
+  const response = RoomsResponseSchema.parse({
+    rooms: institution.publicRooms ?? []
+  });
   sendJsonWithCache(req, res, response, { maxAgeSeconds: 300 });
 }

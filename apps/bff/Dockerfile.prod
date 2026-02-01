@@ -1,23 +1,39 @@
-# Placeholder: production Dockerfile (build then run)
-# TODO:
-# - Install deps with pnpm workspace-aware flow
-# - Build TypeScript to dist using `tsconfig.build.json`
-# - Run `node dist/server.js` (not tsx)
+FROM node:20-alpine AS builder
 
-FROM node:20-alpine AS base
-WORKDIR /app
+WORKDIR /repo
+RUN corepack enable
 
-# TODO: copy only the necessary workspace files for @campus/bff build
-COPY . .
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json turbo.json ./
+COPY apps/bff/package.json apps/bff/tsconfig*.json ./apps/bff/
+COPY apps/bff/src ./apps/bff/src
+COPY packages/shared/package.json packages/shared/tsconfig*.json ./packages/shared/
+COPY packages/shared/src ./packages/shared/src
+COPY packages/institutions/package.json packages/institutions/tsconfig*.json ./packages/institutions/
+COPY packages/institutions/src ./packages/institutions/src
 
-# TODO: install using pnpm with lockfile, then build
-# RUN corepack enable
-# RUN pnpm install --frozen-lockfile
-# RUN pnpm --filter @campus/bff build
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @campus/shared build
+RUN pnpm --filter @campus/institutions build
+RUN pnpm --filter @campus/bff build
+RUN pnpm prune --prod
+
+FROM node:20-alpine AS runner
+
+WORKDIR /repo
+ENV NODE_ENV=production
+
+COPY --from=builder /repo/package.json /repo/pnpm-workspace.yaml /repo/pnpm-lock.yaml /repo/
+COPY --from=builder /repo/node_modules /repo/node_modules
+
+COPY --from=builder /repo/apps/bff/package.json /repo/apps/bff/package.json
+COPY --from=builder /repo/apps/bff/dist /repo/apps/bff/dist
+
+COPY --from=builder /repo/packages/shared/package.json /repo/packages/shared/package.json
+COPY --from=builder /repo/packages/shared/dist /repo/packages/shared/dist
+
+COPY --from=builder /repo/packages/institutions/package.json /repo/packages/institutions/package.json
+COPY --from=builder /repo/packages/institutions/dist /repo/packages/institutions/dist
 
 EXPOSE 4000
-
-# TODO: run compiled output
-# CMD ["node", "dist/server.js"]
-CMD ["node", "-e", "console.error('TODO: implement Dockerfile.prod build+run'); process.exit(1)"]
+CMD ["node", "apps/bff/dist/server.js"]
 

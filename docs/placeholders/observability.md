@@ -1,9 +1,14 @@
-# Placeholder: BFF Observability & Tracing
+# Observability (BFF)
 
-**Why this is missing**
-- Production needs structured logs and a request id to diagnose connector failures. `server.ts` currently only logs via `console.log`.
+The BFF emits structured JSON logs and supports request id propagation.
 
-**TODO**
-- Implement `apps/bff/src/utils/logger.ts` (JSON logs, levels, requestId).
-- Derive/propagate request id (`x-request-id`) and include it in response headers.
-- Do not log sensitive data; document how to integrate with monitoring.
+## Request id
+
+- Incoming: `x-request-id` (if present)
+- Outgoing: always sets `x-request-id` on the response
+
+## Logging
+
+Implementation: `apps/bff/src/utils/logger.ts`
+
+Avoid logging secrets; authorization and cookie-like keys are filtered.

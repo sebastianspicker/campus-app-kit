@@ -1,5 +1,3 @@
-> Note: The project is in early alpha stage; some functions might be skeletons only!
-
 # Campus App Kit (Expo + RN)
 
 A public, privacy-safe starter for building a university Campus App with React Native + Expo and an optional Backend-for-Frontend (BFF).
@@ -20,8 +18,7 @@ apps/
   bff/            Optional BFF API (public connectors only + private stubs)
 packages/
   shared/         Domain types + Zod schemas
-  ui/             UI components / theme tokens
-  institutions/   Types for public institution packs
+  institutions/   Public institution packs (bundleable)
 docs/             Architecture and security notes
 infra/            Dev-only docker compose for local BFF
 ```
@@ -30,20 +27,26 @@ infra/            Dev-only docker compose for local BFF
 
 ### Prerequisites
 
-- Node.js (LTS recommended)
-- pnpm
+- Node.js 20 (see `.nvmrc`)
+- pnpm 9 (see `package.json#packageManager`)
 - Expo Go app (for quick device testing)
 
 ### Install
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
+```
+
+### Verify (recommended)
+
+```bash
+pnpm verify
 ```
 
 ### Run the BFF (optional, recommended)
 
 ```bash
-pnpm --filter @campus/bff dev
+INSTITUTION_ID=hfmt pnpm --filter @campus/bff dev
 ```
 
 ### Run the mobile app
@@ -52,12 +55,16 @@ pnpm --filter @campus/bff dev
 pnpm --filter @campus/mobile start
 ```
 
+If you want the mobile app to call a running BFF, set:
+
+- `EXPO_PUBLIC_BFF_BASE_URL`
+
 ## Institution packs
 
 This repo includes public institution packs:
 
-- `apps/bff/src/config/institutions/example.public.json`
-- `apps/bff/src/config/institutions/hfmt.public.json`
+- `packages/institutions/src/packs/example.public.ts`
+- `packages/institutions/src/packs/hfmt.public.ts`
 
 The BFF loads the institution pack via environment variable:
 
@@ -65,7 +72,7 @@ The BFF loads the institution pack via environment variable:
 INSTITUTION_ID=hfmt
 ```
 
-To adapt to another university, copy `example.public.json` and adjust campuses and public sources.
+To adapt to another university, copy `example.public.ts` and adjust campuses, public rooms, and public sources.
 
 ## Connector pattern and private extensions
 
@@ -86,13 +93,7 @@ This keeps the public project safe while enabling full institution integration.
 
 ## Contributing
 
-PRs are welcome for:
-
-- UI polish and UX improvements for Today / Rooms / Stage.
-- Better test coverage and CI hardening.
-- Improvements to the connector interface pattern.
-
-Please keep sample data anonymized and synthetic.
+See `CONTRIBUTING.md`. Please keep sample data anonymized and synthetic.
 
 ## License
 

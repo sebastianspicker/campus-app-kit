@@ -1,16 +1,15 @@
 {
-  // Placeholder: build tsconfig for @campus/shared emit
-  // TODO:
-  // - Emit to `dist/` and publish/consume via `exports` in package.json
-  // - Ensure Node + Metro resolve the compiled entry correctly
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/__tests__/**"]
 }
-

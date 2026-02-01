@@ -1,6 +1,1 @@
-# Placeholder: pin Node.js version for reproducible installs/builds
-# TODO:
-# - Set to the Node LTS version used in CI (e.g. 20.x)
-# - Keep in sync with GitHub Actions `setup-node` in `.github/workflows/ci.yml`
 20
-

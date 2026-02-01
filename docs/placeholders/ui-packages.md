@@ -1,8 +1,5 @@
-# Placeholder: `@campus/ui` & `@campus/institutions`
+# `@campus/institutions`
 
-**Why this is missing**
-- These packages are effectively empty and unused, which makes the template look unfinished.
+This repo keeps a small runtime package for public institution packs:
 
-**TODO**
-- Either implement meaningful content and use it in the app/BFF, or remove the packages from the workspace.
-- If kept, ensure they build (`tsc`) and do not break `pnpm build`.
+- `@campus/institutions`: bundleable public institution packs for the BFF and other runtime contexts

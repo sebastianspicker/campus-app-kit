@@ -1,7 +1,9 @@
 export type {
   EventsResponse,
   RoomsResponse,
+  ScheduleResponse,
   TodayResponse,
   PublicEvent,
-  Room
+  Room,
+  ScheduleItem
 } from "@campus/shared";

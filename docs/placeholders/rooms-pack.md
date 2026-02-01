@@ -1,9 +1,12 @@
-# Placeholder: Public room data
+# Public room data
 
-**Why this is missing**
-- `/rooms` and `today.rooms` currently return `[]`. A public template should include a basic public room list (availability can remain private).
+Public rooms are part of the institution pack (`publicRooms`).
 
-**TODO**
-- Extend the institution pack schema with optional `publicRooms` (name, campusId, labels).
-- Serve `/rooms` and `/today` rooms from the pack (availability stays private).
-- Update fixtures/tests so the UI shows real content.
+## Schema
+
+- `publicRooms?: Array<{ id, name, campusId }>`
+
+## Where it is used
+
+- BFF: `/rooms` and `/today` derive rooms from `institution.publicRooms`
+- Mobile: rooms list renders data returned by the BFF

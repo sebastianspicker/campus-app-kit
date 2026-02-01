@@ -1,10 +1,13 @@
-# Placeholder: Institution packs as a package
+# Institution packs
 
-**Why this is missing**
-- Public packs currently live in `apps/bff/src/config/institutions/*.public.json`.
-- Mobile / Expo API routes on EAS Hosting cannot rely on `fs`, so packs should be bundleable values.
+Public packs are bundled as code in `@campus/institutions`.
 
-**TODO**
-- Move (or mirror) public packs into `packages/institutions` and implement `getInstitutionPack()`.
-- Validate via `InstitutionPackSchema`.
-- Document how to add a new institution (ids, files, tests).
+## Where they live
+
+- `packages/institutions/src/packs/*.public.ts`
+
+## How to add a pack
+
+1. Add a new `*.public.ts` file exporting a pack object.
+2. Register it in `packages/institutions/src/packs.ts`.
+3. Validate locally via `pnpm -r test`.

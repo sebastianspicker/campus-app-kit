@@ -3,12 +3,16 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "predev": "pnpm --filter @campus/shared build && pnpm --filter @campus/institutions build",
     "dev": "tsx src/server.ts",
+    "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
   "dependencies": {
+    "@campus/institutions": "workspace:*",
     "@campus/shared": "workspace:*"
   },
   "devDependencies": {

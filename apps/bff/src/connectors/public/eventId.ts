@@ -1,13 +1,18 @@
-// Placeholder: Stable event id generation
-// TODO:
-// - Hash {sourceUrl, title, date} deterministically
-// - Avoid collisions, keep IDs stable across runs
-// - Use WebCrypto in case of future API routes port
+import { createHash } from "node:crypto";
 
-export function buildEventId(_input: {
+type EventIdInput = {
   sourceUrl: string;
   title: string;
   date: string;
-}): string {
-  throw new Error("TODO: buildEventId implementieren");
+};
+
+export function buildEventId(input: EventIdInput): string {
+  const normalized = JSON.stringify({
+    sourceUrl: input.sourceUrl.trim(),
+    title: input.title.trim(),
+    date: input.date.trim()
+  });
+
+  const hash = createHash("sha256").update(normalized).digest("hex").slice(0, 24);
+  return `evt_${hash}`;
 }

@@ -4,20 +4,26 @@
   "version": "0.1.0",
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "echo 'use expo dev'",
-    "start": "echo 'use expo start'",
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "npx expo start --dev-client",
+    "start": "npx expo start",
+    "build:preview": "npx eas build --profile preview",
+    "build:production": "npx eas build --profile production",
     "lint": "eslint app src --ext .ts,.tsx",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
   "dependencies": {
     "@campus/shared": "workspace:*",
+    "@campus/institutions": "workspace:*",
     "expo": "~51.0.0",
     "expo-router": "~3.5.0",
     "react": "18.2.0",
-    "react-native": "0.74.0"
+    "react-native": "0.74.0",
+    "@react-native-async-storage/async-storage": "^1.23.1"
   },
   "devDependencies": {
+    "@types/react": "^18.2.0",
     "@types/react-test-renderer": "^18.0.7",
     "react-test-renderer": "^18.2.0",
     "vitest": "^2.1.8"

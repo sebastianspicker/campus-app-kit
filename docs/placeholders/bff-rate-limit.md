@@ -1,9 +1,17 @@
-# Placeholder: BFF Rate-Limit & Proxy-Awareness
+# BFF rate limiting and proxy awareness
 
-**Why this is missing**
-- `apps/bff/src/utils/rateLimit.ts` relies on `req.socket.remoteAddress`, which is unreliable behind proxies/load balancers.
+The BFF applies a basic in-memory rate limit keyed by a proxy-aware client key.
 
-**TODO**
-- Derive a proxy-aware client key using `X-Forwarded-For`/`Forwarded`.
-- Optionally move rate limit state to an external store (Redis) or make it configurable.
-- Document proxy expectations for production deployments.
+## Client key
+
+- Primary: `X-Forwarded-For` (first entry)
+- Fallback: `Forwarded` (`for=...`)
+- Final fallback: `req.socket.remoteAddress`
+
+Implementation: `apps/bff/src/utils/clientKey.ts`
+
+## Rate limit behavior
+
+Implementation: `apps/bff/src/utils/rateLimit.ts`
+
+This is per-process and resets on restart. For multi-instance deployments, use a shared store in your private ops repo.

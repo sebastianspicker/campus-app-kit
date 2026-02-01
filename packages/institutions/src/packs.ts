@@ -1,26 +1,18 @@
-// Placeholder: institution packs packaged for runtime usage (mobile + API routes)
-// TODO:
-// - Move `apps/bff/src/config/institutions/*.public.json` into this package
-// - Export them as typed values
-// - Keep this package free of secrets/private endpoints
+import { InstitutionPackSchema, type InstitutionPack } from "@campus/shared";
+import { examplePublicPack } from "./packs/example.public";
+import { hfmtPublicPack } from "./packs/hfmt.public";
 
-import type { InstitutionPack } from "@campus/shared";
+const packs = {
+  example: examplePublicPack,
+  hfmt: hfmtPublicPack
+} as const;
+
+export type KnownInstitutionId = keyof typeof packs;
 
 export function getInstitutionPack(institutionId: string): InstitutionPack {
-  // TODO: implement real lookup; example stub only
-  if (institutionId === "hfmt") {
-    return {
-      id: "hfmt",
-      name: "University for Music and Dance (HfMT Cologne)",
-      type: "music-and-dance",
-      campuses: [],
-      publicSources: {
-        events: [],
-        schedules: []
-      }
-    };
+  const candidate = (packs as Record<string, unknown>)[institutionId];
+  if (!candidate) {
+    throw new Error(`Unknown institutionId: ${institutionId}`);
   }
-
-  throw new Error(`Unknown institutionId: ${institutionId}`);
+  return InstitutionPackSchema.parse(candidate);
 }
-

@@ -2,16 +2,38 @@
 
 This is the public Expo app for the Campus App Kit.
 
-## TODO (production readiness)
+## Local development
 
-- Replace placeholder scripts in `apps/mobile/package.json` with real Expo commands.
-- Configure production-ready Expo settings in `apps/mobile/app.config.ts`:
-  - `ios.bundleIdentifier`, `android.package`
-  - icons/splash
-  - version/build numbers
-  - `extra.BFF_BASE_URL` (no `localhost` default in release builds)
-- Expand `apps/mobile/eas.json` with `preview` + `production` profiles (and document Dev Client usage if needed).
-- Decide whether to use:
-  - a separate BFF (`apps/bff`), or
-  - Expo API Routes (`apps/mobile/app/api/*+api.ts`) on EAS Hosting.
+Install from the repo root:
 
+```bash
+pnpm install
+```
+
+Start the app:
+
+```bash
+pnpm --filter @campus/mobile start
+```
+
+If you use a dev client:
+
+```bash
+pnpm --filter @campus/mobile dev
+```
+
+## Configuration
+
+This app expects a BFF base URL:
+
+- Local/dev builds: defaults to `http://localhost:4000`.
+- Production builds: set `EXPO_PUBLIC_BFF_BASE_URL` (for example via EAS environment variables).
+
+## Releases (EAS)
+
+From `apps/mobile/`:
+
+```bash
+pnpm build:preview
+pnpm build:production
+```

@@ -1,9 +1,9 @@
-# Placeholder: `.gitignore` + Repo Hygiene
+# `.gitignore` and repo hygiene
 
-**Why this is missing**
-- The repo must not track local IDE artifacts and should ignore common transient files.
+This repo ignores common local artifacts and build outputs, including:
 
-**TODO**
-- Ensure `.gitignore` covers `.vscode/`, `.idea/`, `.expo/`, `.DS_Store`, `node_modules/`, logs, build outputs.
-- Keep the worktree clean (`git status` has no untracked local artifacts).
-- Document what should be committed (e.g. lockfile) vs ignored.
+- `node_modules/`, `dist/`, `build/`, `coverage/`
+- `.expo/`, `.turbo/`
+- local env files (`.env*` except `.env.example`)
+
+The lockfile (`pnpm-lock.yaml`) is committed for deterministic installs.

@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Placeholder: start Expo (public Campus App Kit)
-# TODO:
-# - Replace with `npx expo start`
-# - Ensure env injection works (BFF base URL via app.config.ts/extra)
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$repo_root/apps/mobile"
 
-echo "TODO: npx expo start"
-
+npx expo start

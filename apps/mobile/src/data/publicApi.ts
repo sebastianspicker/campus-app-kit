@@ -15,41 +15,61 @@ import { getCached } from "./cache";
 
 const DEFAULT_TTL_MS = 60_000;
 
-export function fetchEvents(options?: { force?: boolean }): Promise<EventsResponse> {
+export function fetchEvents(options?: {
+  force?: boolean;
+  signal?: AbortSignal;
+}): Promise<EventsResponse> {
   return getCached(
     "events",
-    () => getJson<EventsResponse>("/events", (data) => EventsResponseSchema.parse(data)),
+    () =>
+      getJson<EventsResponse>(
+        "/events",
+        (data) => EventsResponseSchema.parse(data),
+        { signal: options?.signal }
+      ),
     DEFAULT_TTL_MS,
     options?.force
   );
 }
 
-export function fetchRooms(options?: { force?: boolean }): Promise<RoomsResponse> {
+export function fetchRooms(options?: { force?: boolean; signal?: AbortSignal }): Promise<RoomsResponse> {
   return getCached(
     "rooms",
-    () => getJson<RoomsResponse>("/rooms", (data) => RoomsResponseSchema.parse(data)),
+    () =>
+      getJson<RoomsResponse>(
+        "/rooms",
+        (data) => RoomsResponseSchema.parse(data),
+        { signal: options?.signal }
+      ),
     DEFAULT_TTL_MS,
     options?.force
   );
 }
 
-export function fetchToday(options?: { force?: boolean }): Promise<TodayResponse> {
+export function fetchToday(options?: { force?: boolean; signal?: AbortSignal }): Promise<TodayResponse> {
   return getCached(
     "today",
-    () => getJson<TodayResponse>("/today", (data) => TodayResponseSchema.parse(data)),
+    () =>
+      getJson<TodayResponse>(
+        "/today",
+        (data) => TodayResponseSchema.parse(data),
+        { signal: options?.signal }
+      ),
     DEFAULT_TTL_MS,
     options?.force
   );
 }
 
 export function fetchSchedule(
-  options?: { force?: boolean }
+  options?: { force?: boolean; signal?: AbortSignal }
 ): Promise<ScheduleResponse> {
   return getCached(
     "schedule",
     () =>
-      getJson<ScheduleResponse>("/schedule", (data) =>
-        ScheduleResponseSchema.parse(data)
+      getJson<ScheduleResponse>(
+        "/schedule",
+        (data) => ScheduleResponseSchema.parse(data),
+        { signal: options?.signal }
       ),
     DEFAULT_TTL_MS,
     options?.force

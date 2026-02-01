@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { fetchPublicSchedule } from "../publicSchedule";
-import { clearCache } from "../../utils/cache";
+import { clearCache } from "../../../utils/cache";
 
 const institution = {
   id: "hfmt",
@@ -23,7 +23,7 @@ describe("fetchPublicSchedule", () => {
     clearCache();
 
     const ics = readFileSync(
-      new URL("../../__fixtures__/schedule.ics", import.meta.url),
+      new URL("../../../__fixtures__/schedule.ics", import.meta.url),
       "utf8"
     );
 

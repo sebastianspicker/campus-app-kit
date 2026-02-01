@@ -1,6 +1,7 @@
 import type { InstitutionPack } from "../../config/loader";
 import { getCached } from "../../utils/cache";
 import { fetchWithTimeout } from "../../utils/fetch";
+import { buildEventId } from "./eventId";
 
 export type PublicEvent = {
   id: string;
@@ -23,12 +24,17 @@ export async function fetchPublicEvents(
     cacheKey,
     async () => {
       if (mode === "mock") {
-        return sources.map((source, index) => ({
-          id: `${institution.id}-event-${index + 1}`,
-          title: source.label,
-          date: now.toISOString(),
-          sourceUrl: source.url
-        }));
+        const mockEvents = sources.map((source) => {
+          const date = now.toISOString();
+          return {
+            id: buildEventId({ sourceUrl: source.url, title: source.label, date }),
+            title: source.label,
+            date,
+            sourceUrl: source.url
+          };
+        });
+
+        return mockEvents;
       }
 
       const parsedEvents: PublicEvent[] = [];
@@ -43,23 +49,29 @@ export async function fetchPublicEvents(
 
           const html = await response.text();
           parsedEvents.push(
-            ...extractEventsFromHtml(html, source.url, institution.id)
+            ...extractEventsFromHtml(html, source.url)
           );
         } catch {
           // Ignore failed sources and return partial results.
         }
       }
 
-      if (parsedEvents.length > 0) {
-        return parsedEvents;
+      const deduped = dedupeAndSortEvents(parsedEvents);
+      if (deduped.length > 0) {
+        return deduped.slice(0, 8);
       }
 
-      return sources.map((source, index) => ({
-        id: `${institution.id}-event-${index + 1}`,
-        title: source.label,
-        date: now.toISOString(),
-        sourceUrl: source.url
-      }));
+      const fallbackEvents = sources.map((source) => {
+        const date = now.toISOString();
+        return {
+          id: buildEventId({ sourceUrl: source.url, title: source.label, date }),
+          title: source.label,
+          date,
+          sourceUrl: source.url
+        };
+      });
+
+      return fallbackEvents;
     },
     ttlMs
   );
@@ -68,19 +80,17 @@ export async function fetchPublicEvents(
 function extractEventsFromHtml(
   html: string,
   sourceUrl: string,
-  institutionId: string
 ): PublicEvent[] {
   if (sourceUrl.includes("hfmt-koeln.de")) {
-    return extractHfmtEvents(html, sourceUrl, institutionId);
+    return extractHfmtEvents(html, sourceUrl);
   }
 
-  return extractGenericEvents(html, sourceUrl, institutionId);
+  return extractGenericEvents(html, sourceUrl);
 }
 
 function extractHfmtEvents(
   html: string,
   sourceUrl: string,
-  institutionId: string
 ): PublicEvent[] {
   const events: PublicEvent[] = [];
   const blocks = html.match(/<article[\s\S]*?<\/article>/gi) ?? [];
@@ -99,7 +109,7 @@ function extractHfmtEvents(
     }
 
     events.push({
-      id: `${institutionId}-event-${events.length + 1}`,
+      id: buildEventId({ sourceUrl: url, title, date }),
       title,
       date,
       sourceUrl: url
@@ -126,7 +136,7 @@ function extractHfmtEvents(
     }
 
     events.push({
-      id: `${institutionId}-event-${events.length + 1}`,
+      id: buildEventId({ sourceUrl: url, title, date }),
       title,
       date,
       sourceUrl: url
@@ -141,13 +151,12 @@ function extractHfmtEvents(
     return events;
   }
 
-  return extractGenericEvents(html, sourceUrl, institutionId);
+  return extractGenericEvents(html, sourceUrl);
 }
 
 function extractGenericEvents(
   html: string,
-  sourceUrl: string,
-  institutionId: string
+  sourceUrl: string
 ): PublicEvent[] {
   const events: PublicEvent[] = [];
   const anchorRegex = /<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
@@ -172,7 +181,7 @@ function extractGenericEvents(
     }
 
     events.push({
-      id: `${institutionId}-event-${events.length + 1}`,
+      id: buildEventId({ sourceUrl: resolvedUrl, title: rawTitle, date }),
       title: rawTitle,
       date,
       sourceUrl: resolvedUrl
@@ -184,6 +193,19 @@ function extractGenericEvents(
   }
 
   return events;
+}
+
+function dedupeAndSortEvents(events: PublicEvent[]): PublicEvent[] {
+  const byId = new Map<string, PublicEvent>();
+  for (const e of events) {
+    byId.set(e.id, e);
+  }
+
+  return [...byId.values()].sort((a, b) => {
+    if (a.date < b.date) return -1;
+    if (a.date > b.date) return 1;
+    return a.id.localeCompare(b.id);
+  });
 }
 
 function extractTitle(block: string): string | null {

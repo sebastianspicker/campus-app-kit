@@ -1,5 +1,3 @@
-/** Placeholder: Produktionsfähige BFF-Konfiguration / Env-Validation */
-
 export type BffEnv = {
   port: number;
   institutionId: string;
@@ -7,9 +5,34 @@ export type BffEnv = {
 };
 
 export function getBffEnv(): BffEnv {
-  // TODO:
-  // - Port, Institution, evtl. CORS-Origins aus process.env lesen.
-  // - Validieren (z. B. `inArray`, `Number`?) und klare Fehler werfen.
-  // - Sensible Defaults vermeiden (keine hardgecodeten „hfmt“-Fallbacks).
-  throw new Error("TODO: getBffEnv implementieren");
+  return {
+    port: parsePort(process.env.BFF_PORT),
+    institutionId: requireNonEmpty(process.env.INSTITUTION_ID, "INSTITUTION_ID"),
+    corsOrigins: parseCsv(process.env.CORS_ORIGINS)
+  };
+}
+
+function parsePort(raw: string | undefined): number {
+  if (!raw) return 4000;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1 || value > 65535) {
+    throw new Error(`Invalid BFF_PORT: ${raw}`);
+  }
+  return value;
+}
+
+function parseCsv(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function requireNonEmpty(value: string | undefined, name: string): string {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    throw new Error(`${name} is required`);
+  }
+  return trimmed;
 }

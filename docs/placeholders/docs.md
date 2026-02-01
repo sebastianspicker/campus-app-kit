@@ -1,9 +1,8 @@
-# Placeholder: Documentation & runbook
+# Documentation
 
-**Why this is missing**
-- The README is currently brief and does not contain full run/deploy instructions for mobile/BFF/env.
+High-level entry points:
 
-**TODO**
-- Add concrete commands for `@campus/mobile` (start/dev/build) and `@campus/bff` (dev/docker).
-- Add a configuration matrix (BFF URL, `INSTITUTION_ID`, dev vs production).
-- Add deployment notes for BFF containers and EAS builds.
+- `README.md` for project overview
+- `docs/runbook.md` for local commands and configuration
+- `docs/deploy/*` for deployment guidance
+- `docs/architecture.md` and `docs/connectors.md` for design notes

@@ -1,14 +1,14 @@
 {
-  // Placeholder: build tsconfig that actually emits JS
-  // TODO:
-  // - Keep `extends` aligned with `tsconfig.json`
-  // - Ensure `outDir` matches Docker/production entrypoints
-  // - Consider generating `.d.ts` for packages if exported
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
     "declaration": false,
-    "sourceMap": true
-  }
+    "sourceMap": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/__tests__/**", "src/**/__fixtures__/**"]
 }
-

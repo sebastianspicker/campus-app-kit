@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Placeholder: generate and commit `pnpm-lock.yaml`
-# TODO:
-# - Ensure Node/pnpm versions match CI (`.nvmrc`, root `package.json#packageManager`)
-# - Run `pnpm install` to generate lockfile
-# - Commit the resulting `pnpm-lock.yaml`
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
 
-echo "TODO: run pnpm install to generate pnpm-lock.yaml"
+pnpm install
 
+if [[ ! -f pnpm-lock.yaml ]]; then
+  echo "pnpm-lock.yaml was not generated."
+  exit 1
+fi
+
+echo "Generated pnpm-lock.yaml. Commit it to keep installs deterministic."

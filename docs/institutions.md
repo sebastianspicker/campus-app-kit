@@ -14,13 +14,13 @@ without exposing private systems.
 
 Packs live in:
 
-- `apps/bff/src/config/institutions/*.public.json`
+- `packages/institutions/src/packs/*.public.ts`
 
 ## Example
 
-See `apps/bff/src/config/institutions/hfmt.public.json`.
+See `packages/institutions/src/packs/hfmt.public.ts`.
 
 ## Private extensions
 
-Private repos may add a `*.private.json` file containing internal endpoints
-(but still no secrets). Secrets belong in a secret store.
+Private repos may add additional configuration files containing internal endpoints (but still no secrets).
+Secrets belong in a secret store.

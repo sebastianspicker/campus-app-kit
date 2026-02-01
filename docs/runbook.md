@@ -1,16 +1,37 @@
 # Runbook (Campus App Kit)
 
-## TODO
+## Local setup
 
-- Document exact local commands:
-  - `pnpm install`
-  - `pnpm --filter @campus/bff dev`
-  - `pnpm --filter @campus/mobile start`
-- Document production configuration:
-  - `INSTITUTION_ID`
-  - BFF base URL injection for mobile (no `localhost` fallback in release)
-- Document deployments:
-  - BFF container deployment (`Dockerfile.prod`)
-  - Mobile EAS build (`preview`/`production`)
-  - Optional: Expo API Routes deployment (`eas deploy`)
+Install dependencies:
 
+```bash
+pnpm install --frozen-lockfile
+```
+
+Run the BFF:
+
+```bash
+INSTITUTION_ID=hfmt pnpm --filter @campus/bff dev
+```
+
+Run the mobile app:
+
+```bash
+pnpm --filter @campus/mobile start
+```
+
+## Local verification
+
+```bash
+./scripts/verify-production-ready.sh
+```
+
+## Configuration
+
+BFF:
+- `INSTITUTION_ID` (required; available ids live in `packages/institutions/src/packs/`)
+- `BFF_PORT` (default `4000`)
+- `CORS_ORIGINS` (optional; comma-separated; use `*` for development)
+
+Mobile:
+- `EXPO_PUBLIC_BFF_BASE_URL` (required for production builds; defaults to `http://localhost:4000` in development)

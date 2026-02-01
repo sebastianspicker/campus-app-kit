@@ -1,9 +1,8 @@
-# Placeholder: Expo env config for BFF URL
+# Mobile environment configuration
 
-**Why this is missing**
-- `apps/mobile/src/utils/env.ts` reads `process.env.MOBILE_PUBLIC_BFF_URL` and falls back to `http://localhost:4000`, which is unreliable/incorrect for release builds.
+The mobile app resolves the BFF base URL via:
 
-**TODO**
-- Use `app.config.ts` + `extra` (or `EXPO_PUBLIC_*`) to inject a production-safe BFF base URL.
-- Ensure `getBffBaseUrl()` resolves correctly in release builds (no localhost).
-- Document env variables and expected values.
+- `EXPO_PUBLIC_BFF_BASE_URL` (preferred)
+- Development fallback: `http://localhost:4000`
+
+Implementation: `apps/mobile/src/utils/bffConfig.ts`

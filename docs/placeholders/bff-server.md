@@ -1,10 +1,12 @@
-# Placeholder: BFF Server Hardening
+# BFF server hardening
 
-**Why this is missing**
-- `apps/bff/src/server.ts` is minimal (no method guards, inline defaults, limited structured error handling).
+The public BFF provides:
 
-**TODO**
-- Use `getBffEnv()` (no hardcoded production defaults).
-- Allow only `GET` (and `OPTIONS` if needed), return `405` with `Allow` header.
-- Use `sendError` consistently across all error paths.
-- Make rate limiting proxy-aware and document expected proxy headers.
+- Env validation
+- Method guards (`GET` and `OPTIONS`)
+- CORS support
+- Request id propagation
+- Structured JSON logs
+- Simple in-memory rate limiting
+
+Implementation: `apps/bff/src/server.ts`

@@ -1,18 +1,19 @@
 # Deploy: Mobile (EAS)
 
-## TODO
+## Profiles
 
-- Create EAS profiles in `apps/mobile/eas.json`:
-  - `development` (dev client if needed)
-  - `preview`
-  - `production`
-- Configure `apps/mobile/app.config.ts`:
-  - iOS/Android identifiers
-  - versions/build numbers
-  - `extra.BFF_BASE_URL`
-- Document commands:
-  - `npx expo start`
-  - `npx expo start --dev-client` (if dev client)
-  - `eas build -p ios --profile production`
-  - `eas build -p android --profile production`
+Profiles are defined in `apps/mobile/eas.json`.
 
+## Required configuration
+
+- Set app identifiers via `MOBILE_BUNDLE_IDENTIFIER` (iOS) and `MOBILE_ANDROID_PACKAGE` (Android).
+- Set `EXPO_PUBLIC_BFF_BASE_URL` for preview/production builds.
+
+## Commands
+
+```bash
+pnpm --filter @campus/mobile start
+pnpm --filter @campus/mobile dev
+pnpm --filter @campus/mobile build:preview
+pnpm --filter @campus/mobile build:production
+```

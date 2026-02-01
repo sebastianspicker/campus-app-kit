@@ -17,9 +17,8 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      # TODO: enable once workspace build scripts + lockfile exist
-      # - run: pnpm build
+      - run: pnpm build

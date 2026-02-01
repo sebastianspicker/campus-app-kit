@@ -3,6 +3,7 @@ node_modules
 .vscode/
 .idea/
 .expo/
+.turbo/
 .env
 .env.*
 !/.env.example

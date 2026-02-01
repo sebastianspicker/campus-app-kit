@@ -1,18 +1,28 @@
-// Placeholder: Production-ready Expo config
-// TODO:
-// - Set ios.bundleIdentifier / android.package
-// - Configure icons/splash, version/build numbers
-// - Inject BFF base URL via `extra` for release builds
-// - Add schemes / deep links if needed
-
 import type { ExpoConfig, ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => {
+  const bundleIdentifier =
+    process.env.MOBILE_BUNDLE_IDENTIFIER ?? "com.campusappkit.mobile";
+  const androidPackage = process.env.MOBILE_ANDROID_PACKAGE ?? bundleIdentifier;
+
   return {
     ...config,
-    // TODO: move values from app.json or override here
+    name: config.name ?? "Campus App Kit",
+    slug: config.slug ?? "campus-app-kit",
+    scheme: config.scheme ?? "campusapp",
+    version: config.version ?? "0.1.0",
+    plugins: config.plugins ?? ["expo-router"],
+    ios: {
+      ...config.ios,
+      bundleIdentifier
+    },
+    android: {
+      ...config.android,
+      package: androidPackage
+    },
     extra: {
-      // TODO: BFF_BASE_URL for production builds
+      ...config.extra,
+      bffBaseUrl: process.env.EXPO_PUBLIC_BFF_BASE_URL
     }
   };
 };
