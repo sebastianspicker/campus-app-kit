@@ -1,6 +1,6 @@
 import { Link } from "expo-router";
 import React from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 import { useEvents } from "../../src/hooks/useEvents";
 import { Card } from "../../src/ui/Card";
 import { Screen } from "../../src/ui/Screen";
@@ -19,13 +19,19 @@ export default function EventsScreen(): JSX.Element {
           <Link
             key={event.id}
             href={{ pathname: "/events/[id]", params: { id: event.id } }}
+            asChild
           >
-            <View>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={`${event.title}. ${new Date(
+                event.date
+              ).toLocaleString()}.`}
+            >
               <Card
                 title={event.title}
                 subtitle={new Date(event.date).toLocaleString()}
               />
-            </View>
+            </Pressable>
           </Link>
         ))}
         {!loading && !error && data?.events.length === 0 ? (

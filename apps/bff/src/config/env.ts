@@ -2,15 +2,19 @@ export type BffEnv = {
   port: number;
   institutionId: string;
   corsOrigins: string[];
+  trustProxy: TrustProxyMode;
 };
 
 export function getBffEnv(): BffEnv {
   return {
     port: parsePort(process.env.BFF_PORT),
     institutionId: requireNonEmpty(process.env.INSTITUTION_ID, "INSTITUTION_ID"),
-    corsOrigins: parseCsv(process.env.CORS_ORIGINS)
+    corsOrigins: parseCsv(process.env.CORS_ORIGINS),
+    trustProxy: parseTrustProxy(process.env.BFF_TRUST_PROXY)
   };
 }
+
+export type TrustProxyMode = "never" | "auto" | "always";
 
 function parsePort(raw: string | undefined): number {
   if (!raw) return 4000;
@@ -35,4 +39,13 @@ function requireNonEmpty(value: string | undefined, name: string): string {
     throw new Error(`${name} is required`);
   }
   return trimmed;
+}
+
+function parseTrustProxy(value: string | undefined): TrustProxyMode {
+  if (!value) return "auto";
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "always"].includes(normalized)) return "always";
+  if (["0", "false", "no", "never"].includes(normalized)) return "never";
+  if (normalized === "auto") return "auto";
+  throw new Error(`Invalid BFF_TRUST_PROXY: ${value}`);
 }

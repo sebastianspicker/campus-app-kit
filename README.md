@@ -1,16 +1,19 @@
-# Campus App Kit (Expo + RN)
+# Campus App Kit
 
-A public, privacy-safe starter for building a university Campus App with React Native + Expo and an optional Backend-for-Frontend (BFF).
+A public, privacy-safe starter for building a university Campus App with React Native + Expo and an optional Backend-for-Frontend (BFF). The repository includes public institution packs and connector stubs to enable private extensions in a separate codebase.
 
-This repository ships with a public institution pack tailored to a University for Music and Dance and aligned with the HfMT Cologne campus structure. No internal systems, credentials, or private endpoints are included.
+## 1) Overview
 
-## Goals
+Campus App Kit provides a reusable foundation for mobile campus apps that serve public data (rooms, schedules, events). It includes an optional BFF that aggregates public sources and a connector boundary that keeps sensitive integrations in a private repository. License: MIT (see `LICENSE`).
 
-- Ship a reusable public template with a clean security boundary.
-- Offer a strong product baseline for music and dance universities: rooms, schedules, and a public stage/events feed.
-- Provide a safe connector pattern that keeps sensitive integrations in a private repo.
+## 2) Scope and Non-Goals
 
-## Repository structure
+- Status: early alpha, best-effort maintenance.
+- Public data only; no private backend or credentials are included.
+- Not production-ready without a real backend and private connector implementations.
+- Not a full campus ERP or identity system; integrations must be added externally.
+
+## 3) Repository Structure
 
 ```
 apps/
@@ -23,78 +26,87 @@ docs/             Architecture and security notes
 infra/            Dev-only docker compose for local BFF
 ```
 
-## Getting started
-
-### Prerequisites
+## 4) Requirements
 
 - Node.js 20 (see `.nvmrc`)
 - pnpm 9 (see `package.json#packageManager`)
-- Expo Go app (for quick device testing)
+- Expo Go or a dev client for device testing (optional)
 
-### Install
+## 5) Quickstart
+
+1. Install dependencies:
 
 ```bash
 pnpm install --frozen-lockfile
 ```
 
-### Verify (recommended)
-
-```bash
-pnpm verify
-```
-
-### Run the BFF (optional, recommended)
+2. Run the BFF (optional, recommended for local data):
 
 ```bash
 INSTITUTION_ID=hfmt pnpm --filter @campus/bff dev
 ```
 
-### Run the mobile app
+3. Run the mobile app:
 
 ```bash
 pnpm --filter @campus/mobile start
 ```
 
-If you want the mobile app to call a running BFF, set:
+4. For production builds, set `EXPO_PUBLIC_BFF_BASE_URL` to your BFF base URL.
 
-- `EXPO_PUBLIC_BFF_BASE_URL`
+## 6) Configuration
 
-## Institution packs
+BFF environment variables:
+- `INSTITUTION_ID` (required; available ids live in `packages/institutions/src/packs/`)
+- `BFF_PORT` (optional; default `4000`)
+- `CORS_ORIGINS` (optional; comma-separated; use `*` for development)
+- `BFF_TRUST_PROXY` (optional; default `auto`; `auto` trusts forwarded headers only for private/loopback peers, `always` always trusts, `never` never trusts)
 
-This repo includes public institution packs:
+Mobile environment variables:
+- `EXPO_PUBLIC_BFF_BASE_URL` (required for production builds; defaults to `http://localhost:4000` in development)
 
-- `packages/institutions/src/packs/example.public.ts`
-- `packages/institutions/src/packs/hfmt.public.ts`
+## 7) Development Workflow
 
-The BFF loads the institution pack via environment variable:
+- Full verification (CI-aligned):
 
 ```bash
-INSTITUTION_ID=hfmt
+pnpm verify
 ```
 
-To adapt to another university, copy `example.public.ts` and adjust campuses, public rooms, and public sources.
+- Individual commands:
 
-## Connector pattern and private extensions
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
 
-To integrate protected systems (SSO, Studierendenservice, Asimut, ILIAS):
+- Run all apps in parallel:
 
-1. Create a private repo (e.g. `campus-app-private-connectors`).
-2. Implement connectors based on the interfaces in `apps/bff/src/connectors/private-stubs/`.
-3. Run a private BFF that imports this public kit and wires real connectors.
-4. Point the mobile app to your private BFF base URL.
+```bash
+pnpm dev
+```
 
-This keeps the public project safe while enabling full institution integration.
+## 8) Security and Privacy
 
-## Security
+- No secrets or private endpoints are included in this repository.
+- Public connectors only; private connectors live in a separate repo.
+- See `SECURITY.md` and `docs/threat-model-lite.md` for the current threat model.
 
-- No secrets or private endpoints in this repo.
-- Public connectors only; private connectors live elsewhere.
-- See `SECURITY.md` and `docs/threat-model-lite.md`.
+## 9) Troubleshooting
 
-## Contributing
+- Mobile app cannot reach the BFF: set `EXPO_PUBLIC_BFF_BASE_URL`.
+- BFF fails to start: verify `INSTITUTION_ID` and `BFF_PORT`.
+- Lockfile drift: re-run `pnpm install --frozen-lockfile`.
+- TypeScript build errors: run `pnpm build` from the repo root to respect build order.
 
-See `CONTRIBUTING.md`. Please keep sample data anonymized and synthetic.
+## 10) Docs Index
 
-## License
-
-MIT. See `LICENSE`.
+- `docs/RUNBOOK.md`
+- `docs/architecture.md`
+- `docs/ci.md`
+- `docs/connectors.md`
+- `docs/institutions.md`
+- `docs/deploy/`
+- `docs/threat-model-lite.md`

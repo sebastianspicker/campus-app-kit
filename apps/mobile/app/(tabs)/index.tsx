@@ -1,6 +1,6 @@
 import { Link } from "expo-router";
 import React from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 import { useToday } from "../../src/hooks/useToday";
 import { useSchedule } from "../../src/hooks/useSchedule";
 import { Card } from "../../src/ui/Card";
@@ -26,13 +26,19 @@ export default function TodayScreen(): JSX.Element {
           <Link
             key={event.id}
             href={{ pathname: "/events/[id]", params: { id: event.id } }}
+            asChild
           >
-            <View>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={`${event.title}. ${new Date(
+                event.date
+              ).toLocaleString()}.`}
+            >
               <Card
                 title={event.title}
                 subtitle={new Date(event.date).toLocaleString()}
               />
-            </View>
+            </Pressable>
           </Link>
         ))}
         {!loading && !error && data?.events.length === 0 ? (
@@ -48,15 +54,21 @@ export default function TodayScreen(): JSX.Element {
           <Link
             key={item.id}
             href={{ pathname: "/schedule/[id]", params: { id: item.id } }}
+            asChild
           >
-            <View>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={`${item.title}. ${new Date(
+                item.startsAt
+              ).toLocaleTimeString()}. Location: ${item.location ?? "TBA"}.`}
+            >
               <Card
                 title={item.title}
                 subtitle={`${new Date(item.startsAt).toLocaleTimeString()} - ${
                   item.location ?? "TBA"
                 }`}
               />
-            </View>
+            </Pressable>
           </Link>
         ))}
         {!scheduleState.loading && scheduleItems.length === 0 ? (

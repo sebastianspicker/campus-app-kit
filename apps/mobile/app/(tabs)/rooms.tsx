@@ -1,6 +1,6 @@
 import { Link } from "expo-router";
 import React from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 import { useRooms } from "../../src/hooks/useRooms";
 import { Card } from "../../src/ui/Card";
 import { Screen } from "../../src/ui/Screen";
@@ -19,10 +19,16 @@ export default function RoomsScreen(): JSX.Element {
           <Link
             key={room.id}
             href={{ pathname: "/rooms/[id]", params: { id: room.id } }}
+            asChild
           >
-            <View>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={`${room.name}. ${
+                room.campusId ? `Campus ${room.campusId}.` : ""
+              }`}
+            >
               <Card title={room.name} subtitle={room.campusId} />
-            </View>
+            </Pressable>
           </Link>
         ))}
         {!loading && !error && data?.rooms.length === 0 ? (

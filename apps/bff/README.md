@@ -21,6 +21,7 @@ Environment variables:
 - `INSTITUTION_ID` (required, e.g. `hfmt`)
 - `BFF_PORT` (optional, default `4000`)
 - `CORS_ORIGINS` (optional, comma-separated; use `*` for development)
+- `BFF_TRUST_PROXY` (optional, default `auto`; `auto` trusts forwarded headers only for private/loopback peers, `always` always trusts, `never` never trusts)
 
 ## Connector model
 

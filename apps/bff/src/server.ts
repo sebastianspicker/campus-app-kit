@@ -48,7 +48,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  const clientKey = getClientKey(req);
+  const clientKey = getClientKey(req, { trustProxy: env.trustProxy });
   const rate = checkRateLimit(clientKey);
   if (!rate.allowed) {
     res.setHeader("retry-after", String(rate.retryAfter));

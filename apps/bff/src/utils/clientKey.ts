@@ -1,4 +1,5 @@
 import type { IncomingMessage } from "node:http";
+import type { TrustProxyMode } from "../config/env";
 
 function normalizeIp(value: string | null | undefined): string | null {
   if (!value) return null;
@@ -27,20 +28,65 @@ function parseForwardedHeader(header: string): string | null {
   return value.split(":")[0];
 }
 
-export function getClientKey(req: IncomingMessage): string {
-  const xff = req.headers["x-forwarded-for"];
-  const xffValue = Array.isArray(xff) ? xff[0] : xff;
-  if (typeof xffValue === "string" && xffValue.trim()) {
-    const first = xffValue.split(",")[0];
-    return normalizeIp(first) ?? "unknown";
+type ClientKeyOptions = {
+  trustProxy?: TrustProxyMode;
+};
+
+export function getClientKey(req: IncomingMessage, options?: ClientKeyOptions): string {
+  const remoteAddress = normalizeIp(req.socket.remoteAddress) ?? "unknown";
+  const trustProxy = options?.trustProxy ?? "auto";
+  const canTrustForwarded =
+    trustProxy === "always" || (trustProxy === "auto" && isPrivateAddress(remoteAddress));
+
+  if (canTrustForwarded) {
+    const xff = req.headers["x-forwarded-for"];
+    const xffValue = Array.isArray(xff) ? xff[0] : xff;
+    if (typeof xffValue === "string" && xffValue.trim()) {
+      const first = xffValue.split(",")[0];
+      return normalizeIp(first) ?? "unknown";
+    }
+
+    const forwarded = req.headers["forwarded"];
+    const forwardedValue = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+    if (typeof forwardedValue === "string") {
+      const parsed = parseForwardedHeader(forwardedValue);
+      return normalizeIp(parsed) ?? "unknown";
+    }
   }
 
-  const forwarded = req.headers["forwarded"];
-  const forwardedValue = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-  if (typeof forwardedValue === "string") {
-    const parsed = parseForwardedHeader(forwardedValue);
-    return normalizeIp(parsed) ?? "unknown";
+  return remoteAddress;
+}
+
+function isPrivateAddress(value: string): boolean {
+  if (value === "unknown") return false;
+  const normalized = value.split("%")[0].toLowerCase();
+
+  if (normalized.includes(".")) {
+    return isPrivateIpv4(normalized);
   }
 
-  return normalizeIp(req.socket.remoteAddress) ?? "unknown";
+  return isPrivateIpv6(normalized);
+}
+
+function isPrivateIpv4(value: string): boolean {
+  const parts = value.split(".");
+  if (parts.length !== 4) return false;
+  const nums = parts.map((part) => Number(part));
+  if (nums.some((num) => !Number.isInteger(num) || num < 0 || num > 255)) return false;
+
+  const [first, second] = nums;
+  if (first === 10) return true;
+  if (first === 127) return true;
+  if (first === 169 && second === 254) return true;
+  if (first === 192 && second === 168) return true;
+  if (first === 172 && second >= 16 && second <= 31) return true;
+  return false;
+}
+
+function isPrivateIpv6(value: string): boolean {
+  if (value === "::1") return true;
+  if (value.startsWith("fc") || value.startsWith("fd")) return true;
+  if (value.startsWith("fe8") || value.startsWith("fe9")) return true;
+  if (value.startsWith("fea") || value.startsWith("feb")) return true;
+  return false;
 }

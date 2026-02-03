@@ -12,11 +12,12 @@ export async function fetchJsonWithTimeout<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const cleanup = linkAbortSignals(controller, init?.signal);
 
   try {
     const response = await fetch(url, {
       ...init,
-      signal: init?.signal ?? controller.signal
+      signal: controller.signal
     });
 
     if (!response.ok) {
@@ -34,6 +35,7 @@ export async function fetchJsonWithTimeout<T>(
     const data = (await response.json()) as T;
     return data;
   } finally {
+    cleanup();
     clearTimeout(timeoutId);
   }
 }
@@ -59,4 +61,23 @@ export async function parseBffError(response: Response): Promise<BffError> {
   }
 
   return { code: "unknown_error", message: "Unknown error" };
+}
+
+function linkAbortSignals(
+  controller: AbortController,
+  external?: AbortSignal | null
+): () => void {
+  if (!external) {
+    return () => undefined;
+  }
+
+  if (external.aborted) {
+    controller.abort();
+    return () => undefined;
+  }
+
+  const onAbort = () => controller.abort();
+  external.addEventListener("abort", onAbort, { once: true });
+
+  return () => external.removeEventListener("abort", onAbort);
 }

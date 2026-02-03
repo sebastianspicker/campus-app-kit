@@ -1,14 +1,32 @@
-node_modules
-.DS_Store
-.vscode/
-.idea/
-.expo/
+### Dependencies
+node_modules/
+.pnpm-store/
+
+### Build artifacts
+dist/
+build/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+*.log
+
+### Tooling caches
 .turbo/
+.cache/
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.expo/
+.expo-shared/
+
+### Environment files
 .env
 .env.*
-!/.env.example
-.pnpm-store
-dist
-build
-coverage
-*.log
+!.env.example
+!.env.*.example
+
+### OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

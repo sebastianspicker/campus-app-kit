@@ -4,7 +4,9 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-pnpm install --frozen-lockfile
+if [[ "${SKIP_INSTALL:-}" != "1" ]]; then
+  pnpm install --frozen-lockfile
+fi
 pnpm lint
 pnpm typecheck
 pnpm test
@@ -12,7 +14,25 @@ pnpm build
 
 if [[ "${SKIP_MARKER_CHECK:-}" != "1" ]]; then
   marker_pattern='(TODO|FIXME|SKELETON|PLACEHOLDER|TBD)'
-  if rg -n "$marker_pattern" -S --hidden --glob '!.git/**' --glob '!IMPLEMENTATION_BACKLOG.md' --glob '!scripts/verify-production-ready.sh' .; then
+  if command -v rg >/dev/null 2>&1; then
+    if rg -n "$marker_pattern" -S --hidden --glob '!.git/**' --glob '!IMPLEMENTATION_BACKLOG.md' --glob '!verify-production-ready.sh' .; then
+      echo
+      echo "Found TODO/FIXME/SKELETON/PLACEHOLDER/TBD markers. Resolve or document as \"won't do\"."
+      exit 1
+    fi
+  elif grep -RIn -E "$marker_pattern" \
+    --exclude-dir .git \
+    --exclude-dir node_modules \
+    --exclude-dir dist \
+    --exclude-dir build \
+    --exclude-dir coverage \
+    --exclude-dir .turbo \
+    --exclude-dir .expo \
+    --exclude-dir .expo-shared \
+    --exclude-dir .pnpm-store \
+    --exclude IMPLEMENTATION_BACKLOG.md \
+    --exclude verify-production-ready.sh \
+    .; then
     echo
     echo "Found TODO/FIXME/SKELETON/PLACEHOLDER/TBD markers. Resolve or document as \"won't do\"."
     exit 1
