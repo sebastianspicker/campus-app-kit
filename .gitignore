@@ -30,3 +30,10 @@ coverage/
 Thumbs.db
 .vscode/
 .idea/
+
+### docs (local findings/logs/decisions)
+.vscode
+DECISIONS.md
+FINDINGS.md
+LOG.md
+REFACTOR_PLAN.md
