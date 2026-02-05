@@ -7,18 +7,51 @@ on:
 
 permissions:
   contents: read
+  actions: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
+    name: Verify (lint, typecheck, test, build)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - name: Cache Turbo
+        uses: actions/cache@v4
         with:
-          version: 9
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.ref_name }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-${{ github.ref_name }}-
+            ${{ runner.os }}-turbo-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Enable corepack (pnpm@9.0.0)
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
       - run: pnpm install --frozen-lockfile
       - run: SKIP_INSTALL=1 ./scripts/verify-production-ready.sh
+      - name: Upload test artifacts (if any)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts
+          path: |
+            test-results/**
+            coverage/**
+            junit*.xml
+            junit-*.xml
+          if-no-files-found: ignore
+          retention-days: 7

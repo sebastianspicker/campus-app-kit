@@ -8,13 +8,28 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: gitleaks-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   scan:
+    name: Secret Scan (gitleaks)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: gitleaks/gitleaks-action@v2
+        with:
+          fetch-depth: 0
+      - name: Run gitleaks (licensed)
+        if: secrets.GITLEAKS_LICENSE != ''
+        uses: gitleaks/gitleaks-action@v2
         with:
           config-path: .gitleaks.toml
         env:
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+      - name: Run gitleaks (oss fallback)
+        if: secrets.GITLEAKS_LICENSE == ''
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: .gitleaks.toml
