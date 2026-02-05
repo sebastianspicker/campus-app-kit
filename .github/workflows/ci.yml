@@ -34,13 +34,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
       - name: Enable corepack (pnpm@9.0.0)
         run: |
           set -euo pipefail
           corepack enable
           corepack prepare pnpm@9.0.0 --activate
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: |
+          set -euo pipefail
+          echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
       - run: pnpm install --frozen-lockfile
       - run: SKIP_INSTALL=1 ./scripts/verify-production-ready.sh
       - name: Upload test artifacts (if any)

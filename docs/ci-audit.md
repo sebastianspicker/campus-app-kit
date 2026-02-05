@@ -24,7 +24,7 @@ Notes:
 
 | Workflow | Failure(s) | Root Cause | Fix Plan | Risk | How to verify |
 | --- | --- | --- | --- | --- | --- |
-| `ci` | `pnpm/action-setup@v4` step fails; downstream steps skipped | `pnpm/action-setup@v4` fails on runner before Node setup; no install executed | Remove `pnpm/action-setup`, use `actions/setup-node@v4` + Corepack to pin pnpm | Low | Re-run CI; locally run `./scripts/ci-local.sh` |
+| `ci` | `actions/setup-node@v4` step fails (pnpm not found) | `setup-node` with `cache: pnpm` requires pnpm on PATH before caching | Remove built-in pnpm cache, install pnpm via Corepack, then cache the pnpm store manually | Low | Re-run CI; locally run `./scripts/ci-local.sh` |
 | `dependency-review` | `actions/dependency-review-action@v4` step fails on PRs | Missing `pull-requests: read` permission for PR diff | Add `pull-requests: read` permission | Low | Re-run CI on a PR |
 | `gitleaks` | `gitleaks/gitleaks-action@v2` step fails on PRs | PRs from forks don’t get secrets; action likely fails when `GITLEAKS_LICENSE` missing | Add licensed + OSS fallback steps and keep scanning without secrets | Low | Re-run CI on a PR; locally run gitleaks in Docker |
 | `codeql` | Green in recent runs | No change required | Keep current setup with timeouts + concurrency | Low | Scheduled run stays green |
