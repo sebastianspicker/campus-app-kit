@@ -27,12 +27,22 @@ Primary entry points:
 - Full CI equivalent:
 
 ```bash
+make ci
+```
+
+- Full CI equivalent (script):
+
+```bash
 ./scripts/ci-local.sh
 ```
 
 - Individual tasks (when iterating locally):
 
 ```bash
+make lint
+make typecheck
+make test
+make build
 pnpm lint
 pnpm typecheck
 pnpm test
