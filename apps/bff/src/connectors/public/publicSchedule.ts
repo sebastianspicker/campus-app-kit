@@ -20,23 +20,32 @@ function unfoldIcsLines(input: string): string[] {
 }
 
 function parseIcsDate(value: string): string {
-  if (value.length === 8) {
-    const year = value.slice(0, 4);
-    const month = value.slice(4, 6);
-    const day = value.slice(6, 8);
-    return new Date(`${year}-${month}-${day}T00:00:00.000Z`).toISOString();
+  if (!value || typeof value !== "string") {
+    return new Date(0).toISOString();
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 8) {
+    const year = trimmed.slice(0, 4);
+    const month = trimmed.slice(4, 6);
+    const day = trimmed.slice(6, 8);
+    const date = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
+    return new Date(0).toISOString();
   }
 
-  const normalized = value.replace(/Z$/, "");
+  const normalized = trimmed.replace(/Z$/, "");
+  if (normalized.length < 15) return new Date(0).toISOString();
+
   const year = normalized.slice(0, 4);
   const month = normalized.slice(4, 6);
   const day = normalized.slice(6, 8);
-  const hour = normalized.slice(9, 11);
-  const minute = normalized.slice(11, 13);
+  const hour = normalized.slice(9, 11) || "00";
+  const minute = normalized.slice(11, 13) || "00";
   const second = normalized.slice(13, 15) || "00";
   const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
-
-  return value.endsWith("Z") ? new Date(`${iso}Z`).toISOString() : new Date(iso).toISOString();
+  const date = value.endsWith("Z") ? new Date(`${iso}Z`) : new Date(iso);
+  if (!Number.isNaN(date.getTime())) return date.toISOString();
+  return new Date(0).toISOString();
 }
 
 function parseIcsSchedule(ics: string, institutionId: string): ScheduleItem[] {

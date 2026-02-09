@@ -249,13 +249,15 @@ function extractDate(block: string): string | null {
     block.match(/(\d{2})\.(\d{2})\.(\d{4})\s*(\d{2}):(\d{2})/);
   if (dateTimeMatch) {
     const iso = `${dateTimeMatch[3]}-${dateTimeMatch[2]}-${dateTimeMatch[1]}T${dateTimeMatch[4]}:${dateTimeMatch[5]}:00.000Z`;
-    return new Date(iso).toISOString();
+    const date = new Date(iso);
+    if (!Number.isNaN(date.valueOf())) return date.toISOString();
   }
 
   const dateMatch = block.match(/(\d{2})\.(\d{2})\.(\d{4})/);
   if (dateMatch) {
     const iso = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}T00:00:00.000Z`;
-    return new Date(iso).toISOString();
+    const date = new Date(iso);
+    if (!Number.isNaN(date.valueOf())) return date.toISOString();
   }
 
   return null;

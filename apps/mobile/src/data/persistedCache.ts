@@ -43,7 +43,11 @@ export async function getPersistedCache<T>(key: string): Promise<T | null> {
   const storage = await getStorage();
   const raw = await storage.getItem(KEY_PREFIX + key);
   if (!raw) return null;
-  return JSON.parse(raw) as T;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
 }
 
 export async function setPersistedCache<T>(key: string, value: T): Promise<void> {

@@ -18,27 +18,26 @@ export function usePublicResource<T>(
 
   const controllerRef = useRef<AbortController | null>(null);
   const mountedRef = useRef<boolean>(false);
+  const loaderRef = useRef(loader);
+  loaderRef.current = loader;
 
-  const runLoad = useCallback(
-    async (force: boolean) => {
-      controllerRef.current?.abort();
-      const controller = new AbortController();
-      controllerRef.current = controller;
+  const runLoad = useCallback(async (force: boolean) => {
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
 
-      try {
-        const result = await loader({ force, signal: controller.signal });
-        if (!mountedRef.current || controllerRef.current !== controller) return;
-        setData(result);
-        setError(null);
-      } catch (err) {
-        if (!mountedRef.current || controllerRef.current !== controller) return;
-        const anyErr = err as { name?: unknown; message?: unknown };
-        if (anyErr?.name === "AbortError") return;
-        setError(err instanceof Error ? err.message : "Unknown error");
-      }
-    },
-    [loader]
-  );
+    try {
+      const result = await loaderRef.current({ force, signal: controller.signal });
+      if (!mountedRef.current || controllerRef.current !== controller) return;
+      setData(result);
+      setError(null);
+    } catch (err) {
+      if (!mountedRef.current || controllerRef.current !== controller) return;
+      const anyErr = err as { name?: unknown; message?: unknown };
+      if (anyErr?.name === "AbortError") return;
+      setError(err instanceof Error ? err.message : "Unknown error");
+    }
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;

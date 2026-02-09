@@ -23,12 +23,13 @@ export function checkRateLimit(
     return { allowed: true, retryAfter: 0 };
   }
 
-  if (existing.count >= limit) {
+  const currentCount = existing.count;
+  if (currentCount >= limit) {
     const retryAfter = Math.ceil((existing.resetAt - now) / 1000);
     return { allowed: false, retryAfter };
   }
 
-  existing.count += 1;
+  buckets.set(key, { count: currentCount + 1, resetAt: existing.resetAt });
   return { allowed: true, retryAfter: 0 };
 }
 

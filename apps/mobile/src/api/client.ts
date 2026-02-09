@@ -3,6 +3,8 @@ import { fetchJsonWithTimeout } from "../utils/fetchHelpers";
 import { ApiErrorException, parseApiError } from "./errors";
 import { withRetry } from "./retry";
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+
 export async function getJson<T>(
   path: string,
   parse?: (data: unknown) => T,
@@ -31,21 +33,36 @@ export async function getJson<T>(
 export async function getJsonResponse<T>(
   path: string,
   parse?: (data: unknown) => T,
-  options?: { signal?: AbortSignal }
+  options?: { signal?: AbortSignal; timeoutMs?: number }
 ): Promise<{ data: T; response: Response }> {
   const url = `${getBffBaseUrl()}${path}`;
-  const response = await fetch(url, { signal: options?.signal });
+  const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-  let body: unknown;
-  try {
-    body = await response.json();
-  } catch {
-    body = undefined;
-  }
+  const { data, response } = await withRetry(async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    if (options?.signal) {
+      options.signal.addEventListener("abort", () => controller.abort(), {
+        once: true
+      });
+    }
 
-  if (!response.ok) {
-    throw new ApiErrorException(parseApiError(response, body));
-  }
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        body = undefined;
+      }
+      if (!response.ok) {
+        throw new ApiErrorException(parseApiError(response, body));
+      }
+      return { data: parse ? parse(body) : (body as T), response };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  });
 
-  return { data: parse ? parse(body) : (body as T), response };
+  return { data, response };
 }

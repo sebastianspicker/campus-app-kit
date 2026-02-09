@@ -13,6 +13,8 @@ export function sendError(
   code: string,
   message: string
 ): void {
+  if (res.headersSent) return;
+
   const body: ErrorBody = {
     error: {
       code,

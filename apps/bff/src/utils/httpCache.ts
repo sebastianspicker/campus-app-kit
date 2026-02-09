@@ -7,10 +7,18 @@ export function sendJsonWithCache(
   body: unknown,
   options?: { status?: number; maxAgeSeconds?: number }
 ): void {
+  let json: string;
+  try {
+    json = JSON.stringify(body);
+  } catch {
+    throw new Error("Response body is not JSON-serializable");
+  }
+
   const status = options?.status ?? 200;
   const maxAgeSeconds = options?.maxAgeSeconds ?? 300;
-  const json = JSON.stringify(body);
   const etag = `"${createHash("sha1").update(json).digest("hex")}"`;
+
+  if (res.headersSent) return;
 
   res.setHeader("ETag", etag);
   res.setHeader("Cache-Control", `public, max-age=${maxAgeSeconds}`);

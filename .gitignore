@@ -35,6 +35,7 @@ junit-*.xml
 Thumbs.db
 .vscode/
 .idea/
+.cursor/
 
 ### docs (local findings/logs/decisions)
 .vscode

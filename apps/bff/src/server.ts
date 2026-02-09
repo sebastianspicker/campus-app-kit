@@ -34,6 +34,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "OPTIONS") {
+    res.setHeader("Allow", "GET, OPTIONS");
     res.writeHead(204);
     res.end();
     return;
