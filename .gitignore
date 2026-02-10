@@ -36,6 +36,7 @@ Thumbs.db
 .vscode/
 .idea/
 .cursor/
+.codex/
 
 ### docs (local findings/logs/decisions)
 .vscode
