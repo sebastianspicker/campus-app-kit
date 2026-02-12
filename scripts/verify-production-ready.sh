@@ -15,7 +15,20 @@ pnpm build
 if [[ "${SKIP_MARKER_CHECK:-}" != "1" ]]; then
   marker_pattern='(TODO|FIXME|SKELETON|PLACEHOLDER|TBD)'
   if command -v rg >/dev/null 2>&1; then
-    if rg -n "$marker_pattern" -S --hidden --glob '!.git/**' --glob '!IMPLEMENTATION_BACKLOG.md' --glob '!verify-production-ready.sh' .; then
+    if rg -n "$marker_pattern" -S --hidden \
+      --glob '!.git/**' \
+      --glob '!node_modules/**' \
+      --glob '!dist/**' \
+      --glob '!build/**' \
+      --glob '!coverage/**' \
+      --glob '!.turbo/**' \
+      --glob '!.expo/**' \
+      --glob '!.expo-shared/**' \
+      --glob '!.pnpm-store/**' \
+      --glob '!IMPLEMENTATION_BACKLOG.md' \
+      --glob '!BUGS_AND_FIXES.md' \
+      --glob '!verify-production-ready.sh' \
+      .; then
       echo
       echo "Found TODO/FIXME/SKELETON/PLACEHOLDER/TBD markers. Resolve or document as \"won't do\"."
       exit 1
@@ -31,6 +44,7 @@ if [[ "${SKIP_MARKER_CHECK:-}" != "1" ]]; then
     --exclude-dir .expo-shared \
     --exclude-dir .pnpm-store \
     --exclude IMPLEMENTATION_BACKLOG.md \
+    --exclude BUGS_AND_FIXES.md \
     --exclude verify-production-ready.sh \
     .; then
     echo
