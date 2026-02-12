@@ -8,7 +8,7 @@ List of known bugs and required fixes. Each item can be turned into a separate i
 
 ### 1. [Bug] BFF route handlers have no local error handling; any throw becomes generic 500
 
-**Description:** Routes `/events`, `/rooms`, `/schedule`, `/today` call connectors and `Zod.parse()` without try/catch. Errors are only caught by the server’s broad `catch {}`, which discards the error and returns a generic `500 internal_error` with no detail logged.
+**Description:** Routes `/events`, `/rooms`, `/schedule`, `/today` call connectors and `Zod.parse()` without try/catch. Errors are only caught by the server's broad `catch {}`, which discards the error and returns a generic `500 internal_error` with no detail logged.
 
 **Impact:** Connector failures, schema drift, or serialization errors produce opaque 500s; production debugging is blind (no stack, no error message).
 
@@ -28,9 +28,9 @@ List of known bugs and required fixes. Each item can be turned into a separate i
 
 ### 3. [Bug] Missing publicSources/publicRooms collapses to 200 with empty data
 
-**Description:** When `publicSources.events`, `publicSources.schedules`, or `publicRooms` are missing/empty, routes return `200` with empty arrays. There is no distinction between “no data” and “misconfigured / pipeline broken”.
+**Description:** When `publicSources.events`, `publicSources.schedules`, or `publicRooms` are missing/empty, routes return `200` with empty arrays. There is no distinction between "no data" and "misconfigured / pipeline broken".
 
-**Impact:** Operators and clients cannot tell “no events” from “events not configured” or “upstream fetch failed”.
+**Impact:** Operators and clients cannot tell "no events" from "events not configured" or "upstream fetch failed".
 
 **Fix:** Optionally validate that required sources exist for the institution and return a distinct status or error code when config is missing; or document and log when serving empty due to missing config.
 
@@ -38,11 +38,11 @@ List of known bugs and required fixes. Each item can be turned into a separate i
 
 ### 4. [Bug] `/today` has no date scoping; name implies time-bound semantics
 
-**Description:** `/today` returns the same events as `/events` plus rooms, with no filtering by “today”. It is a convenience bundle, not a time-scoped view.
+**Description:** `/today` returns the same events as `/events` plus rooms, with no filtering by "today". It is a convenience bundle, not a time-scoped view.
 
-**Impact:** Clients may assume “today” means “events for today” and build wrong UX (e.g. freshness, filters).
+**Impact:** Clients may assume "today" means "events for today" and build wrong UX (e.g. freshness, filters).
 
-**Fix:** Either add date scoping/filtering for “today” or rename the endpoint and document semantics (e.g. “aggregate home view”).
+**Fix:** Either add date scoping/filtering for "today" or rename the endpoint and document semantics (e.g. "aggregate home view").
 
 ---
 
@@ -56,19 +56,19 @@ List of known bugs and required fixes. Each item can be turned into a separate i
 
 ---
 
-### 6. [Bug/Config] BFF README “Running locally” omits required `INSTITUTION_ID`
+### 6. [Bug/Config] BFF README "Running locally" omits required `INSTITUTION_ID`
 
 **Description:** `apps/bff/README.md` shows `pnpm --filter @campus/bff dev` without setting `INSTITUTION_ID`. The BFF env loader throws when `INSTITUTION_ID` is missing.
 
 **Impact:** New users following the README get an immediate runtime error.
 
-**Fix:** Update the “Running locally” section to include `INSTITUTION_ID=hfmt` (or equivalent) in the example command or in a one-line “Quick start” that sets it.
+**Fix:** Update the "Running locally" section to include `INSTITUTION_ID=hfmt` (or equivalent) in the example command or in a one-line "Quick start" that sets it.
 
 ---
 
 ### 7. [Bug/Config] Mobile env: `MOBILE_PUBLIC_BFF_URL` is not Expo-public and likely unused in bundle
 
-**Description:** Root `.env.example` documents `MOBILE_PUBLIC_BFF_URL`, and `bffConfig.ts` uses it as fallback. Expo’s client-side env pattern uses `EXPO_PUBLIC_*`; non-prefixed vars are typically not available in the bundled app.
+**Description:** Root `.env.example` documents `MOBILE_PUBLIC_BFF_URL`, and `bffConfig.ts` uses it as fallback. Expo's client-side env pattern uses `EXPO_PUBLIC_*`; non-prefixed vars are typically not available in the bundled app.
 
 **Impact:** Users may set `MOBILE_PUBLIC_BFF_URL` expecting it to work; in preview/production builds the fallback is effectively dead.
 
@@ -110,11 +110,11 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ---
 
-### 12. [Operational] Document “empty response” semantics for events/rooms/schedule
+### 12. [Operational] Document "empty response" semantics for events/rooms/schedule
 
-**Description:** Empty arrays can mean “no data” or “config missing / upstream failed”. Recovery and triage are undocumented.
+**Description:** Empty arrays can mean "no data" or "config missing / upstream failed". Recovery and triage are undocumented.
 
-**Fix:** Add a short “Empty or missing data” section in README or runbook: when to check `publicSources` / `publicRooms`, env, and upstream availability.
+**Fix:** Add a short "Empty or missing data" section in README or runbook: when to check `publicSources` / `publicRooms`, env, and upstream availability.
 
 ---
 
@@ -188,7 +188,7 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ### 21. [Bug] Institution pack loaded before route check (unknown path still loads pack)
 
-**Description:** The server loads the institution pack before checking if the path is one of `/events`, `/rooms`, `/schedule`, `/today`. Unknown paths still trigger load and can return institution-related 404/500 instead of “not found”.
+**Description:** The server loads the institution pack before checking if the path is one of `/events`, `/rooms`, `/schedule`, `/today`. Unknown paths still trigger load and can return institution-related 404/500 instead of "not found".
 
 **Fix:** Check path first; load institution only for known data routes.
 
@@ -196,9 +196,9 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ### 22. [Bug] trustProxy "auto" heuristic can collapse rate limiting across clients
 
-**Description:** In “auto” mode, forwarded headers are trusted only when `remoteAddress` is considered private. If the heuristic fails (e.g. proxy not in list), all clients behind that proxy share one key.
+**Description:** In "auto" mode, forwarded headers are trusted only when `remoteAddress` is considered private. If the heuristic fails (e.g. proxy not in list), all clients behind that proxy share one key.
 
-**Fix:** Document “auto” semantics and deployment requirements; or allow explicit override per env (e.g. “behind proxy at X”) instead of relying only on private-IP detection.
+**Fix:** Document "auto" semantics and deployment requirements; or allow explicit override per env (e.g. "behind proxy at X") instead of relying only on private-IP detection.
 
 ---
 
@@ -234,17 +234,17 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ---
 
-### 27. [Bug] Event IDs unstable (date often “now”; same event gets different id over time)
+### 27. [Bug] Event IDs unstable (date often "now"; same event gets different id over time)
 
 **Description:** `buildEventId` includes `date`; many code paths use `new Date().toISOString()`, so the same event can get different ids across requests/caches.
 
-**Fix:** Prefer stable date from page (e.g. extracted datetime) for id construction; use “now” only when no date is available and document instability.
+**Fix:** Prefer stable date from page (e.g. extracted datetime) for id construction; use "now" only when no date is available and document instability.
 
 ---
 
 ### 28. [Bug] ICS/schedule: timezone and TZID ignored; epoch fallback for bad dates
 
-**Description:** Schedule parser ignores TZID; non-Z datetimes are interpreted in server timezone or as UTC. Invalid dates fall back to `new Date(0).toISOString()`, producing “1970” items.
+**Description:** Schedule parser ignores TZID; non-Z datetimes are interpreted in server timezone or as UTC. Invalid dates fall back to `new Date(0).toISOString()`, producing "1970" items.
 
 **Fix:** Respect TZID where possible; validate parsed date and skip or flag items with invalid date instead of epoch.
 
@@ -298,11 +298,11 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ---
 
-### 35. [Bug] Session type and getDemoSession() look production-ready (no “demo” marker)
+### 35. [Bug] Session type and getDemoSession() look production-ready (no "demo" marker)
 
-**Description:** `Session` and `getDemoSession()` look like real auth; there is no “logged out” or “demo” in the type. Easy for forks to assume auth is always present.
+**Description:** `Session` and `getDemoSession()` look like real auth; there is no "logged out" or "demo" in the type. Easy for forks to assume auth is always present.
 
-**Fix:** Rename or document clearly (e.g. `DemoSession`, JSDoc “template only”); or add a `isDemo: true` field and document that production must replace with real auth.
+**Fix:** Rename or document clearly (e.g. `DemoSession`, JSDoc "template only"); or add a `isDemo: true` field and document that production must replace with real auth.
 
 ---
 
@@ -322,11 +322,11 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ---
 
-### 38. [Bug] Private stubs return empty arrays indistinguishable from “no data”
+### 38. [Bug] Private stubs return empty arrays indistinguishable from "no data"
 
-**Description:** Stubs like `fetchBookings()` return `[]` with no signal that the connector is unimplemented. Downstream may treat “no bookings” as a real empty state.
+**Description:** Stubs like `fetchBookings()` return `[]` with no signal that the connector is unimplemented. Downstream may treat "no bookings" as a real empty state.
 
-**Fix:** Document stubs clearly; optionally throw or return a tagged shape (e.g. `{ stub: true, data: [] }`) so callers can distinguish “stub” from “empty”.
+**Fix:** Document stubs clearly; optionally throw or return a tagged shape (e.g. `{ stub: true, data: [] }`) so callers can distinguish "stub" from "empty".
 
 ---
 
@@ -336,12 +336,12 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 |--------|----------------|-----------|
 | Generic 500 on `/events`, `/rooms`, `/schedule`, `/today` | Connector or Zod throw; catch discards error | Log error in server catch; add route-level handling; §1, §13 |
 | BFF fails at startup | Missing `INSTITUTION_ID` | Set e.g. `INSTITUTION_ID=hfmt`; §6 |
-| Mobile “Missing BFF base URL” in build | Using `MOBILE_PUBLIC_BFF_URL` instead of Expo public | Set `EXPO_PUBLIC_BFF_BASE_URL`; §7 |
+| Mobile "Missing BFF base URL" in build | Using `MOBILE_PUBLIC_BFF_URL` instead of Expo public | Set `EXPO_PUBLIC_BFF_BASE_URL`; §7 |
 | `pnpm verify` fails on TODO/FIXME | `rg` scan hits node_modules/build | Add exclusions to rg in script; §8 |
 | Empty events/rooms/schedule | Missing config or upstream failure | Check `publicSources` / `publicRooms`, env, connectors; §3, §12 |
 | Rate limit too strict or bypassed | trustProxy / forwarded headers / OPTIONS | §22–25; document proxy setup |
 | Cached response has wrong request id | Cache replays headers | §5 |
-| Events/schedule wrong time or “1970” | Timezone/date parsing, invalid ICS | §28; validate dates, respect TZID |
+| Events/schedule wrong time or "1970" | Timezone/date parsing, invalid ICS | §28; validate dates, respect TZID |
 | Login not required to see tabs | No auth guard in layout | §34; add guard in private forks |
 
 ---
@@ -351,5 +351,4 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 - **Labels:** `bug`, `enhancement`, `documentation`, `operational` as appropriate.
 - **Title:** Use the **[Bug]** / **[Enhancement]** prefix or a corresponding label.
 - **Body:** Copy the relevant section (description, impact, fix) into the issue.
-- The **quick reference** table can be linked from the README or a “Troubleshooting” doc.
-
+- The **quick reference** table can be linked from the README or a "Troubleshooting" doc.

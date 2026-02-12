@@ -100,13 +100,39 @@ pnpm dev
 - BFF fails to start: verify `INSTITUTION_ID` and `BFF_PORT`.
 - Lockfile drift: re-run `pnpm install --frozen-lockfile`.
 - TypeScript build errors: run `pnpm build` from the repo root to respect build order.
+- Known bugs and required fixes: see `BUGS_AND_FIXES.md`.
 
-## 10) Docs Index
+## 10) Validation (build / run / test)
 
-- `docs/RUNBOOK.md`
-- `docs/architecture.md`
-- `docs/ci.md`
-- `docs/connectors.md`
-- `docs/institutions.md`
-- `docs/deploy/`
-- `docs/threat-model-lite.md`
+From the repo root:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm test
+pnpm verify
+```
+
+Optional run (BFF + mobile):
+
+```bash
+INSTITUTION_ID=hfmt pnpm --filter @campus/bff dev
+pnpm --filter @campus/mobile start
+```
+
+- **build:** `pnpm build` — builds all packages and apps (Turbo).
+- **test:** `pnpm test` — runs all tests.
+- **verify:** `pnpm verify` — full CI-style check (lint, typecheck, test, build, marker scan).
+
+## 11) Docs Index
+
+- `BUGS_AND_FIXES.md` — known bugs and required fixes (issue source).
+- `docs/runbook.md` — local commands and configuration.
+- `docs/architecture.md` — design overview.
+- `docs/ci.md` — CI workflows and local reproduction.
+- `docs/connectors.md` — BFF connectors and stubs.
+- `docs/institutions.md` — institution packs.
+- `docs/deploy/` — deployment (BFF, mobile).
+- `docs/faq.md` — frequently asked questions.
+- `docs/expo-ota-code-signing.md` — Expo OTA and code signing.
+- `docs/threat-model-lite.md` — threat model.
