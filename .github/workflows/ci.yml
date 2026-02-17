@@ -55,7 +55,7 @@ jobs:
       - run: SKIP_INSTALL=1 ./scripts/verify-production-ready.sh
       - name: Upload test artifacts (if any)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ci-artifacts
           path: |
