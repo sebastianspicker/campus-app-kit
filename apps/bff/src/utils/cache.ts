@@ -8,7 +8,7 @@ const inFlight = new Map<string, Promise<unknown>>();
 
 const DEFAULT_IN_FLIGHT_TIMEOUT_MS = 25_000;
 
-function timeoutPromise<T>(ms: number): Promise<never> {
+function timeoutPromise(ms: number): Promise<never> {
   return new Promise((_, reject) => {
     setTimeout(() => reject(new Error("Cache loader timeout")), ms);
   });
@@ -39,7 +39,7 @@ export async function getCached<T>(
     try {
       const value = await Promise.race([
         loader(),
-        timeoutPromise<T>(inFlightTimeoutMs)
+        timeoutPromise(inFlightTimeoutMs)
       ]);
       cache.set(key, { value, expiresAt: Date.now() + ttlMs });
       return value;
