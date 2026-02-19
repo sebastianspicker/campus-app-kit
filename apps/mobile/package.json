@@ -36,7 +36,7 @@
     "@types/react": "^18.2.0",
     "@types/react-test-renderer": "^18.0.7",
     "react-test-renderer": "^18.2.0",
-    "vitest": "^2.1.8"
+    "vitest": "^4.0.18"
   },
   "pnpm": {
     "overrides": {
