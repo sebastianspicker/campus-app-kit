@@ -21,7 +21,7 @@
     "clsx": "^2.1.1",
     "expo": "~51.0.0",
     "expo-image": "~2.0.0",
-    "expo-router": "~3.5.0",
+    "expo-router": "~6.0.23",
     "nativewind": "5.0.0-preview.2",
     "react": "18.2.0",
     "react-native": "0.74.0",
