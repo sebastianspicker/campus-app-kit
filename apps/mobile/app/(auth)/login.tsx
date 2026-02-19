@@ -17,7 +17,6 @@ export default function LoginScreen(): JSX.Element {
           title="Continue as Guest"
           onPress={() => router.replace("/(tabs)")}
           accessibilityLabel="Continue as Guest"
-          accessibilityRole="button"
         />
       </Section>
     </Screen>

@@ -55,8 +55,8 @@ ScrollView.displayName = "CSS(ScrollView)";
 
 export const Pressable = (
   props: React.ComponentProps<typeof RNPressable> & { className?: string }
-) => {
-  return useCssElement(RNPressable, props, { className: "style" });
+): React.ReactElement => {
+  return useCssElement(RNPressable, props, { className: "style" }) as React.ReactElement;
 };
 Pressable.displayName = "CSS(Pressable)";
 
@@ -73,12 +73,12 @@ export const AnimatedScrollView = (
     contentClassName?: string;
     contentContainerClassName?: string;
   }
-) => {
+): React.ReactElement => {
   return useCssElement(Animated.ScrollView, props, {
     className: "style",
     contentClassName: "contentContainerStyle",
     contentContainerClassName: "contentContainerStyle"
-  });
+  }) as React.ReactElement;
 };
 
 function TouchableHighlightInner(
