@@ -1,7 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { InstitutionPack } from "../config/loader";
-import { fetchPublicEvents } from "../connectors/public/hfmtWebEvents";
+import type { EventsResponse } from "@campus/shared";
 import { EventsResponseSchema } from "@campus/shared";
+import { fetchPublicEvents } from "../connectors/public/hfmtWebEvents";
 import { createJsonRoute } from "./createJsonRoute";
 
 export const handleEvents = createJsonRoute(
@@ -18,7 +19,7 @@ export const handleEvents = createJsonRoute(
   EventsResponseSchema,
   {
     maxAgeSeconds: 300,
-    getExtraHeaders: (data) => ({
+    getExtraHeaders: (data: EventsResponse) => ({
       ...(data._degraded ? { "x-data-degraded": "true" } : {}),
       ...(process.env.PUBLIC_EVENTS_MODE === "mock" ? { "x-data-mode": "mock" } : {})
     })

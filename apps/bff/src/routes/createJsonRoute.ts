@@ -29,16 +29,17 @@ export function createJsonRoute<T>(
         }
       }
       sendJsonWithCache(req, res, response, { maxAgeSeconds });
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof ZodError) {
         log("warn", "validation_error", { requestId, issues: err.issues });
         sendError(res, 500, "validation_error", "Response validation failed");
         return;
       }
+      const error = err instanceof Error ? err : new Error(String(err));
       log("error", "route_error", {
         requestId,
-        message: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined
+        message: error.message,
+        stack: error.stack
       });
       sendError(res, 500, "internal_error", "Unexpected server error");
     }
