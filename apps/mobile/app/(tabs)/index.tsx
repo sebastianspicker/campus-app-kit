@@ -1,91 +1,80 @@
-import { Link } from "expo-router";
-import React from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
-import { useToday } from "../../src/hooks/useToday";
-import { useSchedule } from "../../src/hooks/useSchedule";
-import { Card } from "../../src/ui/Card";
-import { Screen } from "../../src/ui/Screen";
-import { Section } from "../../src/ui/Section";
-import { colors, typography } from "../../src/ui/theme";
+import React, { useCallback } from "react";
+import { useToday } from "@/hooks/useToday";
+import { useSchedule } from "@/hooks/useSchedule";
+import { ResourceListSection } from "@/ui/ResourceListSection";
+import { Screen } from "@/ui/Screen";
+import type { PublicEvent } from "@campus/shared";
+import type { ScheduleItem } from "@campus/shared";
 
 export default function TodayScreen(): JSX.Element {
   const { data, error, loading, refreshing, refresh } = useToday();
   const scheduleState = useSchedule();
+  const events = data?.events ?? [];
   const scheduleItems = scheduleState.data?.schedule ?? [];
   const refreshingAll = refreshing || scheduleState.refreshing;
-  const refreshAll = async () => {
+  const refreshAll = useCallback(async () => {
     await Promise.all([refresh(), scheduleState.refresh()]);
-  };
+  }, [refresh, scheduleState.refresh]);
+
+  const eventsKeyExtractor = useCallback((e: PublicEvent) => e.id, []);
+  const eventsHref = useCallback(
+    (e: PublicEvent) => ({ pathname: "/events/[id]" as const, params: { id: e.id } }),
+    []
+  );
+  const eventsRenderCard = useCallback(
+    (e: PublicEvent) => ({
+      title: e.title,
+      subtitle: new Date(e.date).toLocaleString()
+    }),
+    []
+  );
+  const eventsAccessibilityLabel = useCallback(
+    (e: PublicEvent) => `${e.title}. ${new Date(e.date).toLocaleString()}.`,
+    []
+  );
+
+  const scheduleKeyExtractor = useCallback((s: ScheduleItem) => s.id, []);
+  const scheduleHref = useCallback(
+    (s: ScheduleItem) => ({ pathname: "/schedule/[id]" as const, params: { id: s.id } }),
+    []
+  );
+  const scheduleRenderCard = useCallback(
+    (s: ScheduleItem) => ({
+      title: s.title,
+      subtitle: `${new Date(s.startsAt).toLocaleTimeString()} - ${s.location ?? "TBA"}`
+    }),
+    []
+  );
+  const scheduleAccessibilityLabel = useCallback(
+    (s: ScheduleItem) =>
+      `${s.title}. ${new Date(s.startsAt).toLocaleTimeString()}. Location: ${s.location ?? "TBA"}.`,
+    []
+  );
 
   return (
     <Screen refreshing={refreshingAll} onRefresh={refreshAll}>
-      <Section title="Today">
-        {loading ? <ActivityIndicator /> : null}
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        {data?.events.map((event) => (
-          <Link
-            key={event.id}
-            href={{ pathname: "/events/[id]", params: { id: event.id } }}
-            asChild
-          >
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel={`${event.title}. ${new Date(
-                event.date
-              ).toLocaleString()}.`}
-            >
-              <Card
-                title={event.title}
-                subtitle={new Date(event.date).toLocaleString()}
-              />
-            </Pressable>
-          </Link>
-        ))}
-        {!loading && !error && data?.events.length === 0 ? (
-          <Text style={styles.muted}>No public events today.</Text>
-        ) : null}
-      </Section>
-      <Section title="Schedule">
-        {scheduleState.loading ? <ActivityIndicator /> : null}
-        {scheduleState.error ? (
-          <Text style={styles.error}>{scheduleState.error}</Text>
-        ) : null}
-        {scheduleItems.map((item) => (
-          <Link
-            key={item.id}
-            href={{ pathname: "/schedule/[id]", params: { id: item.id } }}
-            asChild
-          >
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel={`${item.title}. ${new Date(
-                item.startsAt
-              ).toLocaleTimeString()}. Location: ${item.location ?? "TBA"}.`}
-            >
-              <Card
-                title={item.title}
-                subtitle={`${new Date(item.startsAt).toLocaleTimeString()} - ${
-                  item.location ?? "TBA"
-                }`}
-              />
-            </Pressable>
-          </Link>
-        ))}
-        {!scheduleState.loading && scheduleItems.length === 0 ? (
-          <Text style={styles.muted}>No public schedule items.</Text>
-        ) : null}
-      </Section>
+      <ResourceListSection
+        title="Today"
+        loading={loading}
+        error={error}
+        items={events}
+        emptyMessage="No public events today."
+        keyExtractor={eventsKeyExtractor}
+        href={eventsHref}
+        renderCard={eventsRenderCard}
+        accessibilityLabel={eventsAccessibilityLabel}
+      />
+      <ResourceListSection
+        title="Schedule"
+        loading={scheduleState.loading}
+        error={scheduleState.error}
+        items={scheduleItems}
+        emptyMessage="No public schedule items."
+        keyExtractor={scheduleKeyExtractor}
+        href={scheduleHref}
+        renderCard={scheduleRenderCard}
+        accessibilityLabel={scheduleAccessibilityLabel}
+      />
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  error: {
-    ...typography.body,
-    color: colors.accent
-  },
-  muted: {
-    ...typography.body,
-    color: colors.muted
-  }
-});

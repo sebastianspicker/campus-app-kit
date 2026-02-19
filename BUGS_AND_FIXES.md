@@ -18,6 +18,8 @@ List of known bugs and required fixes. Each item can be turned into a separate i
 
 ### 2. [Bug/Operational] Mock events mode is environment-controlled with no route-level signal
 
+**Status: Fixed.** Response header `x-data-mode: mock` is set for `/events` and `/today` when `PUBLIC_EVENTS_MODE=mock`.
+
 **Description:** `PUBLIC_EVENTS_MODE=mock` and `PUBLIC_EVENTS_DATE` cause the events connector to return synthetic data. Routes do not indicate in the response that the payload is mocked.
 
 **Impact:** Mis-set env can silently switch `/events` and `/today` to placeholder data that looks real to clients.
@@ -47,6 +49,8 @@ List of known bugs and required fixes. Each item can be turned into a separate i
 ---
 
 ### 5. [Bug/Config] Cacheable responses replay `x-request-id` from cache
+
+**Status: Fixed.** `x-request-id` is set only for non-cacheable responses (health, errors, OPTIONS, 404, 405, 429); data routes do not set it.
 
 **Description:** `sendJsonWithCache` sets `Cache-Control: public, max-age=...`. The server also sets `x-request-id` on every response. Cached responses can replay an old request id, reducing correlation value.
 
@@ -130,6 +134,8 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ### 14. [Bug] Rate limiting bypass for disallowed methods; client key attacker-controlled
 
+**Status: Fixed.** Rate limiting now runs first (after URL + CORS); OPTIONS and all requests are rate-limited. Client key validates forwarded IPs (�23).
+
 **Description:** Rate limiting runs only after `guardMethods` returns. Requests with disallowed methods (e.g. POST) get 405 without being rate-limited, so floods can bypass throttling. Client key can be derived from forwarded headers when trust proxy is permissive, allowing many unique keys and evading per-client limits.
 
 **Fix:** Apply rate limiting before or regardless of method (e.g. rate-limit by IP/key first, then return 405 for bad method). Restrict or validate forwarded header usage and document trustProxy semantics.
@@ -196,6 +202,8 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ### 22. [Bug] trustProxy "auto" heuristic can collapse rate limiting across clients
 
+**Status: Fixed.** Documented in runbook: `auto` / `always` / `never` semantics and deployment guidance.
+
 **Description:** In "auto" mode, forwarded headers are trusted only when `remoteAddress` is considered private. If the heuristic fails (e.g. proxy not in list), all clients behind that proxy share one key.
 
 **Fix:** Document "auto" semantics and deployment requirements; or allow explicit override per env (e.g. "behind proxy at X") instead of relying only on private-IP detection.
@@ -203,6 +211,8 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 ---
 
 ### 23. [Bug] Client key from unvalidated X-Forwarded-For / Forwarded (spoofable)
+
+**Status: Fixed.** Forwarded values are validated with `node:net` `isIP()`; invalid values fall back to `remoteAddress`.
 
 **Description:** When forwarded headers are trusted, the client key is taken from header values with minimal normalization and no IP validation, allowing spoofed keys and rate-limit evasion.
 
@@ -212,6 +222,8 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ### 24. [Bug] In-memory rate limit buckets unbounded; cleanup is O(n)
 
+**Status: Fixed.** Map is capped at 20k buckets; when over cap, expired entries and oldest-by-reset are evicted.
+
 **Description:** `buckets` is a global Map with no size limit. Many unique keys (e.g. with spoofed headers) cause unbounded growth; cleanup iterates the full map.
 
 **Fix:** Cap map size (e.g. LRU eviction) or move to a bounded backend (e.g. Redis); consider periodic cleanup in a separate tick to avoid request-path spikes.
@@ -220,6 +232,8 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ### 25. [Bug] OPTIONS requests bypass rate limiting and route checks
 
+**Status: Fixed.** Rate limit runs before the OPTIONS branch, so OPTIONS is now rate-limited.
+
 **Description:** OPTIONS returns 204 before client key and rate limit; any path is accepted. Enables throttling bypass and masks invalid paths.
 
 **Fix:** Apply rate limiting to OPTIONS as well, or document that preflight is intentionally unthrottled; optionally 404 for unknown paths on OPTIONS.
@@ -227,6 +241,8 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 ---
 
 ### 26. [Bug] Public connectors swallow fetch/parse errors; return partial or fabricated data
+
+**Status: Fixed.** Events and schedule connectors log each failed source (`public_events_source_failed`, `public_schedule_source_failed`); `/events` and `/today` set `x-data-degraded: true` and optional `_degraded` in JSON when using fallback or partial data.
 
 **Description:** Events and schedule connectors use `try { ... } catch { continue }` and return partial results or fallback synthetic data with no error signal or logging.
 
@@ -292,6 +308,8 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ### 34. [Bug] No route-level auth gating; login is bypassable
 
+**Status: Documented.** Runbook describes optional auth guard for private forks; template remains unguarded by design.
+
 **Description:** Root layout registers `(tabs)` and `(auth)` with no guard. Tab screens are directly reachable without visiting login.
 
 **Fix:** For private forks: add a guard (e.g. in root layout or a wrapper) that redirects to login when session is missing; document that the template has no auth enforcement.
@@ -299,6 +317,8 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 ---
 
 ### 35. [Bug] Session type and getDemoSession() look production-ready (no "demo" marker)
+
+**Status: Fixed.** Session has optional `isDemo`; getDemoSession() returns `isDemo: true`; JSDoc states template-only and production must use real auth.
 
 **Description:** `Session` and `getDemoSession()` look like real auth; there is no "logged out" or "demo" in the type. Easy for forks to assume auth is always present.
 
@@ -316,6 +336,8 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 ### 37. [Bug] BFF server entrypoint has no tests (routing, CORS, rate limit, error mapping)
 
+**Status: Fixed.** `server.integration.test.ts` uses supertest against `createRequestListener()` for 404, 405, 429, institution-not-found, and successful GET /health and GET /events.
+
 **Description:** All BFF tests call route handlers directly; the real HTTP server pipeline (URL parsing, CORS, OPTIONS, method guard, rate limit, institution load, catch block, 404) is untested.
 
 **Fix:** Add integration tests that hit the server (e.g. with a test server or supertest) for at least: 404, 405, 429, institution load failure (404/500), and one successful route.
@@ -323,6 +345,8 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 ---
 
 ### 38. [Bug] Private stubs return empty arrays indistinguishable from "no data"
+
+**Status: Documented.** `docs/connectors.md` and `connectors/private-stubs/README.md` describe stub semantics and suggest tagged responses for private forks.
 
 **Description:** Stubs like `fetchBookings()` return `[]` with no signal that the connector is unimplemented. Downstream may treat "no bookings" as a real empty state.
 
@@ -334,15 +358,15 @@ Same as (1): Add try/catch per route, log errors, map Zod/connector failures to 
 
 | Symptom | Typical cause | Fix / see |
 |--------|----------------|-----------|
-| Generic 500 on `/events`, `/rooms`, `/schedule`, `/today` | Connector or Zod throw; catch discards error | Log error in server catch; add route-level handling; §1, §13 |
-| BFF fails at startup | Missing `INSTITUTION_ID` | Set e.g. `INSTITUTION_ID=hfmt`; §6 |
-| Mobile "Missing BFF base URL" in build | Using `MOBILE_PUBLIC_BFF_URL` instead of Expo public | Set `EXPO_PUBLIC_BFF_BASE_URL`; §7 |
-| `pnpm verify` fails on TODO/FIXME | `rg` scan hits node_modules/build | Add exclusions to rg in script; §8 |
-| Empty events/rooms/schedule | Missing config or upstream failure | Check `publicSources` / `publicRooms`, env, connectors; §3, §12 |
-| Rate limit too strict or bypassed | trustProxy / forwarded headers / OPTIONS | §22–25; document proxy setup |
-| Cached response has wrong request id | Cache replays headers | §5 |
-| Events/schedule wrong time or "1970" | Timezone/date parsing, invalid ICS | §28; validate dates, respect TZID |
-| Login not required to see tabs | No auth guard in layout | §34; add guard in private forks |
+| Generic 500 on `/events`, `/rooms`, `/schedule`, `/today` | Connector or Zod throw; catch discards error | Log error in server catch; add route-level handling; ?1, ?13 |
+| BFF fails at startup | Missing `INSTITUTION_ID` | Set e.g. `INSTITUTION_ID=hfmt`; ?6 |
+| Mobile "Missing BFF base URL" in build | Using `MOBILE_PUBLIC_BFF_URL` instead of Expo public | Set `EXPO_PUBLIC_BFF_BASE_URL`; ?7 |
+| `pnpm verify` fails on TODO/FIXME | `rg` scan hits node_modules/build | Add exclusions to rg in script; ?8 |
+| Empty events/rooms/schedule | Missing config or upstream failure | Check `publicSources` / `publicRooms`, env, connectors; ?3, ?12 |
+| Rate limit too strict or bypassed | trustProxy / forwarded headers / OPTIONS | ?22���25; document proxy setup |
+| Cached response has wrong request id | Cache replays headers | ?5 |
+| Events/schedule wrong time or "1970" | Timezone/date parsing, invalid ICS | ?28; validate dates, respect TZID |
+| Login not required to see tabs | No auth guard in layout | ?34; add guard in private forks |
 
 ---
 

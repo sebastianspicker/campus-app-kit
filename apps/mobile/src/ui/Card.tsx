@@ -11,8 +11,8 @@ export function Card({
 }): JSX.Element {
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{title}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      <Text selectable style={styles.title}>{title}</Text>
+      {subtitle ? <Text selectable style={styles.subtitle}>{subtitle}</Text> : null}
     </View>
   );
 }
@@ -21,6 +21,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: 12,
+    borderCurve: "continuous",
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border

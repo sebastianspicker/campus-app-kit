@@ -1,6 +1,7 @@
 import type { InstitutionPack } from "../../config/loader";
 import { getCached } from "../../utils/cache";
 import { fetchWithTimeout } from "../../utils/fetch";
+import { log } from "../../utils/logger";
 import { buildEventId } from "./eventId";
 
 export type PublicEvent = {
@@ -10,19 +11,22 @@ export type PublicEvent = {
   sourceUrl: string;
 };
 
+export type FetchPublicEventsResult = { events: PublicEvent[]; degraded: boolean };
+
 export async function fetchPublicEvents(
   institution: InstitutionPack
-): Promise<PublicEvent[]> {
+): Promise<FetchPublicEventsResult> {
   const sources = institution.publicSources?.events ?? [];
   const envDate = process.env.PUBLIC_EVENTS_DATE;
-  const now = envDate ? new Date(envDate) : new Date();
+  let now = envDate ? new Date(envDate) : new Date();
+  if (Number.isNaN(now.getTime())) now = new Date();
   const cacheKey = `public-events:${institution.id}`;
   const ttlMs = 5 * 60 * 1000;
   const mode = process.env.PUBLIC_EVENTS_MODE ?? "auto";
 
   return getCached(
     cacheKey,
-    async () => {
+    async (): Promise<FetchPublicEventsResult> => {
       if (mode === "mock") {
         const mockEvents = sources.map((source) => {
           const date = now.toISOString();
@@ -33,32 +37,39 @@ export async function fetchPublicEvents(
             sourceUrl: source.url
           };
         });
-
-        return mockEvents;
+        return { events: mockEvents, degraded: false };
       }
 
       const parsedEvents: PublicEvent[] = [];
+      let anyFailed = false;
 
       for (const source of sources) {
         try {
           const response = await fetchWithTimeout(source.url);
 
           if (!response.ok) {
+            anyFailed = true;
+            log("warn", "public_events_source_failed", {
+              sourceUrl: source.url,
+              reason: `HTTP ${response.status}`
+            });
             continue;
           }
 
           const html = await response.text();
-          parsedEvents.push(
-            ...extractEventsFromHtml(html, source.url)
-          );
-        } catch {
-          // Ignore failed sources and return partial results.
+          parsedEvents.push(...extractEventsFromHtml(html, source.url));
+        } catch (err) {
+          anyFailed = true;
+          log("warn", "public_events_source_failed", {
+            sourceUrl: source.url,
+            reason: err instanceof Error ? err.message : String(err)
+          });
         }
       }
 
       const deduped = dedupeAndSortEvents(parsedEvents);
       if (deduped.length > 0) {
-        return deduped.slice(0, 8);
+        return { events: deduped.slice(0, 8), degraded: anyFailed };
       }
 
       const fallbackEvents = sources.map((source) => {
@@ -71,7 +82,7 @@ export async function fetchPublicEvents(
         };
       });
 
-      return fallbackEvents;
+      return { events: fallbackEvents, degraded: true };
     },
     ttlMs
   );
@@ -279,7 +290,9 @@ function extractHref(block: string, sourceUrl: string): string | null {
 
 function safeResolveUrl(href: string, sourceUrl: string): string | null {
   try {
-    return new URL(href, sourceUrl).toString();
+    const url = new URL(href, sourceUrl);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.toString();
   } catch {
     return null;
   }

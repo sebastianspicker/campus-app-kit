@@ -1,6 +1,9 @@
+/** @deprecated Prefer EXPO_PUBLIC_BFF_BASE_URL; MOBILE_PUBLIC_BFF_URL is not Expo-public and may be unavailable in bundled builds */
+const LEGACY_ENV_KEY = "MOBILE_PUBLIC_BFF_URL";
+
 export function resolveBffBaseUrl(): string {
   const fromExpoPublic = process.env.EXPO_PUBLIC_BFF_BASE_URL;
-  const fromLegacy = process.env.MOBILE_PUBLIC_BFF_URL;
+  const fromLegacy = process.env[LEGACY_ENV_KEY];
   const fromConfig = fromExpoPublic ?? fromLegacy;
 
   if (fromConfig) {

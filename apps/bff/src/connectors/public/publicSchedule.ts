@@ -1,6 +1,7 @@
 import type { InstitutionPack } from "../../config/loader";
 import { getCached } from "../../utils/cache";
 import { fetchWithTimeout } from "../../utils/fetch";
+import { log } from "../../utils/logger";
 import type { ScheduleItem } from "@campus/shared";
 
 function unfoldIcsLines(input: string): string[] {
@@ -19,9 +20,15 @@ function unfoldIcsLines(input: string): string[] {
   return unfolded;
 }
 
-function parseIcsDate(value: string): string {
+/**
+ * Parses an ICS date value (e.g. 20240310 or 20240310T180000Z).
+ * Returns null for invalid or missing values so callers can skip the event
+ * instead of emitting 1970-01-01. TZID from the property key is not yet
+ * applied; non-Z times are interpreted as UTC.
+ */
+function parseIcsDate(value: string): string | null {
   if (!value || typeof value !== "string") {
-    return new Date(0).toISOString();
+    return null;
   }
   const trimmed = value.trim();
   if (trimmed.length === 8) {
@@ -30,11 +37,11 @@ function parseIcsDate(value: string): string {
     const day = trimmed.slice(6, 8);
     const date = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
     if (!Number.isNaN(date.getTime())) return date.toISOString();
-    return new Date(0).toISOString();
+    return null;
   }
 
   const normalized = trimmed.replace(/Z$/, "");
-  if (normalized.length < 15) return new Date(0).toISOString();
+  if (normalized.length < 15) return null;
 
   const year = normalized.slice(0, 4);
   const month = normalized.slice(4, 6);
@@ -45,7 +52,7 @@ function parseIcsDate(value: string): string {
   const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
   const date = value.endsWith("Z") ? new Date(`${iso}Z`) : new Date(iso);
   if (!Number.isNaN(date.getTime())) return date.toISOString();
-  return new Date(0).toISOString();
+  return null;
 }
 
 function parseIcsSchedule(ics: string, institutionId: string): ScheduleItem[] {
@@ -61,11 +68,14 @@ function parseIcsSchedule(ics: string, institutionId: string): ScheduleItem[] {
 
     if (line === "END:VEVENT") {
       if (current.SUMMARY && current.DTSTART) {
+        const startsAt = parseIcsDate(current.DTSTART);
+        if (startsAt === null) continue;
+        const endsAt = current.DTEND ? parseIcsDate(current.DTEND) ?? undefined : undefined;
         items.push({
           id: current.UID ?? `${institutionId}-${items.length + 1}`,
           title: current.SUMMARY,
-          startsAt: parseIcsDate(current.DTSTART),
-          endsAt: current.DTEND ? parseIcsDate(current.DTEND) : undefined,
+          startsAt,
+          endsAt,
           location: current.LOCATION,
           campusId: current["X-CAMPUS-ID"] ?? current["X-CAMPUS"]
         });
@@ -102,13 +112,20 @@ export async function fetchPublicSchedule(
           const response = await fetchWithTimeout(source.url);
 
           if (!response.ok) {
+            log("warn", "public_schedule_source_failed", {
+              sourceUrl: source.url,
+              reason: `HTTP ${response.status}`
+            });
             continue;
           }
 
           const text = await response.text();
           results.push(...parseIcsSchedule(text, institution.id));
-        } catch {
-          // Ignore failed sources and return partial results.
+        } catch (err) {
+          log("warn", "public_schedule_source_failed", {
+            sourceUrl: source.url,
+            reason: err instanceof Error ? err.message : String(err)
+          });
         }
       }
 

@@ -5,7 +5,22 @@ type Bucket = {
 
 const buckets = new Map<string, Bucket>();
 const cleanupIntervalMs = 60_000;
+const maxBuckets = 20_000;
 let lastCleanup = 0;
+
+function evictIfOverCap(): void {
+  if (buckets.size < maxBuckets) return;
+  const now = Date.now();
+  for (const [k, entry] of buckets.entries()) {
+    if (entry.resetAt <= now) buckets.delete(k);
+    if (buckets.size <= maxBuckets * 0.9) return;
+  }
+  const byReset = [...buckets.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt);
+  const toEvict = byReset.length - Math.floor(maxBuckets * 0.8);
+  for (let i = 0; i < toEvict && i < byReset.length; i++) {
+    buckets.delete(byReset[i][0]);
+  }
+}
 
 export function checkRateLimit(
   key: string,
@@ -15,6 +30,7 @@ export function checkRateLimit(
   const windowMs = options?.windowMs ?? 60_000;
   const now = Date.now();
   maybeCleanup(now);
+  evictIfOverCap();
 
   const existing = buckets.get(key);
 

@@ -1,6 +1,28 @@
 # Connectors
 
-Connectors provide data to the BFF.
+Connectors provide data to the BFF. The BFF loads an institution pack, then calls the appropriate connector(s) per route.
+
+```mermaid
+flowchart LR
+  subgraph Routes["BFF routes"]
+    E[/events]
+    T[/today]
+    S[/schedule]
+  end
+  subgraph Public["Public connectors"]
+    Events[fetchPublicEvents]
+    Schedule[fetchPublicSchedule]
+  end
+  subgraph Stubs["Private stubs"]
+    Bookings[fetchBookings]
+  end
+  E --> Events
+  T --> Events
+  S --> Schedule
+  Events --> Web[Websites / HTML]
+  Schedule --> ICS[ICS feeds]
+  Bookings -.->|empty []| -
+```
 
 ## Public connectors
 
@@ -9,8 +31,7 @@ Connectors provide data to the BFF.
 
 ## Private stubs
 
-The public repo ships interfaces and stubs only.
-Private repos implement the real connectors and wire them in.
+The public repo ships interfaces and stubs only. Stubs return empty arrays (e.g. `fetchBookings()` → `[]`) with no signal that the connector is unimplemented; for private forks, consider tagged responses (e.g. `{ stub: true, data: [] }`) or clear documentation. Private repos implement the real connectors and wire them in.
 
 ## Pattern
 

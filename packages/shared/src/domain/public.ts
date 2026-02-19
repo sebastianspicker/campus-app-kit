@@ -18,20 +18,25 @@ export const RoomSchema = z.object({
 export type Room = z.infer<typeof RoomSchema>;
 
 export const EventsResponseSchema = z.object({
-  events: z.array(PublicEventSchema)
+  events: z.array(PublicEventSchema),
+  _degraded: z.boolean().optional(),
+  _sourcesConfigured: z.boolean().optional()
 });
 
 export type EventsResponse = z.infer<typeof EventsResponseSchema>;
 
 export const RoomsResponseSchema = z.object({
-  rooms: z.array(RoomSchema)
+  rooms: z.array(RoomSchema),
+  _sourcesConfigured: z.boolean().optional()
 });
 
 export type RoomsResponse = z.infer<typeof RoomsResponseSchema>;
 
 export const TodayResponseSchema = z.object({
   events: z.array(PublicEventSchema),
-  rooms: z.array(RoomSchema)
+  rooms: z.array(RoomSchema),
+  _degraded: z.boolean().optional(),
+  _sourcesConfigured: z.boolean().optional()
 });
 
 export type TodayResponse = z.infer<typeof TodayResponseSchema>;
@@ -48,7 +53,8 @@ export const ScheduleItemSchema = z.object({
 export type ScheduleItem = z.infer<typeof ScheduleItemSchema>;
 
 export const ScheduleResponseSchema = z.object({
-  schedule: z.array(ScheduleItemSchema)
+  schedule: z.array(ScheduleItemSchema),
+  _sourcesConfigured: z.boolean().optional()
 });
 
 export type ScheduleResponse = z.infer<typeof ScheduleResponseSchema>;

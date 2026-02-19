@@ -13,7 +13,7 @@ Public backend-for-frontend for the Campus App Kit. It exposes only public data 
 ## Running locally
 
 ```bash
-pnpm --filter @campus/bff dev
+INSTITUTION_ID=hfmt pnpm --filter @campus/bff dev
 ```
 
 Environment variables:
@@ -31,8 +31,10 @@ Real implementations belong in a private repo.
 
 ## Tests
 
-Run all tests from the repo root:
+From the repo root:
 
 ```bash
 pnpm --filter @campus/bff test
 ```
+
+For full setup and BFF request flow, see the repository root **docs/** (e.g. `docs/runbook.md`, `docs/architecture.md`).

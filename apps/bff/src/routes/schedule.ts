@@ -2,14 +2,18 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { InstitutionPack } from "../config/loader";
 import { ScheduleResponseSchema } from "@campus/shared";
 import { fetchPublicSchedule } from "../connectors/public/publicSchedule";
-import { sendJsonWithCache } from "../utils/httpCache";
+import { createJsonRoute } from "./createJsonRoute";
 
-export async function handleSchedule(
-  req: IncomingMessage,
-  res: ServerResponse,
-  institution: InstitutionPack
-): Promise<void> {
-  const schedule = await fetchPublicSchedule(institution);
-  const response = ScheduleResponseSchema.parse({ schedule });
-  sendJsonWithCache(req, res, response, { maxAgeSeconds: 300 });
-}
+export const handleSchedule = createJsonRoute(
+  async (institution) => {
+    const schedule = await fetchPublicSchedule(institution);
+    const sourcesConfigured =
+      (institution.publicSources?.schedules?.length ?? 0) > 0;
+    return {
+      schedule,
+      _sourcesConfigured: sourcesConfigured ? undefined : false
+    };
+  },
+  ScheduleResponseSchema,
+  { maxAgeSeconds: 300 }
+) as (req: IncomingMessage, res: ServerResponse, institution: InstitutionPack) => Promise<void>;

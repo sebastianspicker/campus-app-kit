@@ -13,7 +13,14 @@ export function sendError(
   code: string,
   message: string
 ): void {
-  if (res.headersSent) return;
+  if (res.headersSent) {
+    try {
+      res.end();
+    } catch {
+      // Ignore if stream already closed
+    }
+    return;
+  }
 
   const body: ErrorBody = {
     error: {

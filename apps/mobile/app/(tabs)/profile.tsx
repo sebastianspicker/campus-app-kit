@@ -1,10 +1,10 @@
 import React from "react";
 import { StyleSheet, Text } from "react-native";
 import { getDemoSession } from "../../src/auth/session";
-import { Card } from "../../src/ui/Card";
-import { Screen } from "../../src/ui/Screen";
-import { Section } from "../../src/ui/Section";
-import { colors, typography } from "../../src/ui/theme";
+import { Card } from "@/ui/Card";
+import { Screen } from "@/ui/Screen";
+import { Section } from "@/ui/Section";
+import { colors, typography } from "@/ui/theme";
 
 export default function ProfileScreen(): JSX.Element {
   const session = getDemoSession();

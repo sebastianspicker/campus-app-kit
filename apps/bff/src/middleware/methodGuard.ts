@@ -1,12 +1,14 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { sendError } from "../utils/errors";
+import { setRequestIdHeader } from "../utils/requestId";
 
 // Placeholder: Allow only GET/OPTIONS for public endpoints
 
 export function guardMethods(
   req: IncomingMessage,
   res: ServerResponse,
-  allowed: string[] = ["GET", "OPTIONS"]
+  allowed: string[] = ["GET", "OPTIONS"],
+  requestId?: string
 ): boolean {
   // return true if allowed, false if responded with error
   const method = req.method ?? "GET";
@@ -15,6 +17,7 @@ export function guardMethods(
     return true;
   }
 
+  if (requestId) setRequestIdHeader(res, requestId);
   res.setHeader("Allow", allowed.join(", "));
   sendError(res, 405, "method_not_allowed", "Method not allowed");
   return false;

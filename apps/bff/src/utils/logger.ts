@@ -18,25 +18,46 @@ export function log(
   console.log(JSON.stringify(payload));
 }
 
-function sanitizeContext(
-  context: Record<string, unknown> | undefined
-): Record<string, unknown> {
-  if (!context) return {};
-
-  const blockedKeys = new Set([
+const BLOCKED_KEYS = new Set(
+  [
     "authorization",
     "cookie",
     "set-cookie",
     "password",
     "token",
-    "accessToken",
-    "refreshToken"
-  ]);
+    "accesstoken",
+    "refreshtoken"
+  ].map((k) => k.toLowerCase())
+);
+
+function isBlocked(key: string): boolean {
+  return BLOCKED_KEYS.has(key.toLowerCase());
+}
+
+function sanitizeContext(
+  context: Record<string, unknown> | undefined
+): Record<string, unknown> {
+  if (!context) return {};
 
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(context)) {
-    if (blockedKeys.has(key)) continue;
-    result[key] = value;
+    if (isBlocked(key)) continue;
+    result[key] = sanitizeValue(value);
   }
   return result;
+}
+
+function sanitizeValue(value: unknown): unknown {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(sanitizeValue);
+  if (typeof value === "object" && value !== null) {
+    const obj = value as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (isBlocked(k)) continue;
+      out[k] = sanitizeValue(v);
+    }
+    return out;
+  }
+  return value;
 }

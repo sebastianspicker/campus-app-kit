@@ -24,25 +24,28 @@ function unfoldLines(input: string): string[] {
 }
 
 function parseIcsDate(value: string): string {
+  let date: Date;
   // DATE (all-day)
   if (/^\d{8}$/.test(value)) {
     const year = value.slice(0, 4);
     const month = value.slice(4, 6);
     const day = value.slice(6, 8);
-    return new Date(`${year}-${month}-${day}T00:00:00.000Z`).toISOString();
+    date = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+  } else {
+    const normalized = value.replace(/Z$/, "");
+    const year = normalized.slice(0, 4);
+    const month = normalized.slice(4, 6);
+    const day = normalized.slice(6, 8);
+    const hour = normalized.slice(9, 11);
+    const minute = normalized.slice(11, 13);
+    const second = normalized.slice(13, 15) || "00";
+    const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}.000`;
+    date = value.endsWith("Z") ? new Date(`${iso}Z`) : new Date(`${iso}Z`);
   }
-
-  const normalized = value.replace(/Z$/, "");
-  const year = normalized.slice(0, 4);
-  const month = normalized.slice(4, 6);
-  const day = normalized.slice(6, 8);
-  const hour = normalized.slice(9, 11);
-  const minute = normalized.slice(11, 13);
-  const second = normalized.slice(13, 15) || "00";
-  const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}.000`;
-  return value.endsWith("Z")
-    ? new Date(`${iso}Z`).toISOString()
-    : new Date(`${iso}Z`).toISOString();
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`Invalid ICS date: ${value}`);
+  }
+  return date.toISOString();
 }
 
 export function parseIcs(ics: string): ParsedIcsEvent[] {
@@ -65,17 +68,21 @@ export function parseIcs(ics: string): ParsedIcsEvent[] {
       const summary = current.SUMMARY?.value?.trim();
       const dtStart = current.DTSTART?.value?.trim();
       if (summary && dtStart) {
-        events.push({
-          id: uid || `${events.length + 1}`,
-          title: summary,
-          startsAt: parseIcsDate(dtStart),
-          endsAt: current.DTEND?.value ? parseIcsDate(current.DTEND.value) : undefined,
-          location: current.LOCATION?.value?.trim() || undefined,
-          campusId:
-            current["X-CAMPUS-ID"]?.value?.trim() ||
-            current["X-CAMPUS"]?.value?.trim() ||
-            undefined
-        });
+        try {
+          events.push({
+            id: uid || `${events.length + 1}`,
+            title: summary,
+            startsAt: parseIcsDate(dtStart),
+            endsAt: current.DTEND?.value ? parseIcsDate(current.DTEND.value) : undefined,
+            location: current.LOCATION?.value?.trim() || undefined,
+            campusId:
+              current["X-CAMPUS-ID"]?.value?.trim() ||
+              current["X-CAMPUS"]?.value?.trim() ||
+              undefined
+          });
+        } catch {
+          // Skip event with invalid date
+        }
       }
       current = {};
       continue;

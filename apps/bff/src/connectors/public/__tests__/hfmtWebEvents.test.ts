@@ -40,7 +40,7 @@ describe("fetchPublicEvents", () => {
   });
 
   it("parses HfMT events", async () => {
-    const events = await fetchPublicEvents(institution);
+    const { events, degraded } = await fetchPublicEvents(institution);
 
     expect(events.length).toBe(2);
     expect(events[0].title).toBe("Spring Concert");
@@ -48,6 +48,7 @@ describe("fetchPublicEvents", () => {
     expect(events[0].sourceUrl).toBe(
       "https://www.hfmt-koeln.de/veranstaltungen/spring-concert"
     );
+    expect(degraded).toBe(false);
   });
 
   it("falls back to tile attributes and anchor parsing", async () => {
@@ -61,7 +62,7 @@ describe("fetchPublicEvents", () => {
       text: async () => html
     }));
 
-    const events = await fetchPublicEvents(institution);
+    const { events } = await fetchPublicEvents(institution);
     expect(events.length).toBeGreaterThan(0);
     expect(events[0].title).toBe("Piano Recital");
     expect(events[0].sourceUrl).toBe(
@@ -72,8 +73,9 @@ describe("fetchPublicEvents", () => {
   it("falls back to mock when fetch fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("timeout")));
 
-    const events = await fetchPublicEvents(institution);
+    const { events, degraded } = await fetchPublicEvents(institution);
     expect(events.length).toBe(1);
     expect(events[0].title).toBe("Official Events");
+    expect(degraded).toBe(true);
   });
 });

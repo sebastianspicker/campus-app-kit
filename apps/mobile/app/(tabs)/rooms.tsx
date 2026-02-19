@@ -1,51 +1,37 @@
-import { Link } from "expo-router";
-import React from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
-import { useRooms } from "../../src/hooks/useRooms";
-import { Card } from "../../src/ui/Card";
-import { Screen } from "../../src/ui/Screen";
-import { Section } from "../../src/ui/Section";
-import { colors, typography } from "../../src/ui/theme";
+import React, { useCallback } from "react";
+import { useRooms } from "@/hooks/useRooms";
+import { ResourceListSection } from "@/ui/ResourceListSection";
+import { Screen } from "@/ui/Screen";
+import type { Room } from "@campus/shared";
 
 export default function RoomsScreen(): JSX.Element {
   const { data, error, loading, refreshing, refresh } = useRooms();
+  const rooms = data?.rooms ?? [];
+
+  const keyExtractor = useCallback((r: Room) => r.id, []);
+  const href = useCallback(
+    (r: Room) => ({ pathname: "/rooms/[id]" as const, params: { id: r.id } }),
+    []
+  );
+  const renderCard = useCallback((r: Room) => ({ title: r.name, subtitle: r.campusId }), []);
+  const accessibilityLabel = useCallback(
+    (r: Room) => `${r.name}. ${r.campusId ? `Campus ${r.campusId}.` : ""}`,
+    []
+  );
 
   return (
     <Screen refreshing={refreshing} onRefresh={refresh}>
-      <Section title="Rooms">
-        {loading ? <ActivityIndicator /> : null}
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        {data?.rooms.map((room) => (
-          <Link
-            key={room.id}
-            href={{ pathname: "/rooms/[id]", params: { id: room.id } }}
-            asChild
-          >
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel={`${room.name}. ${
-                room.campusId ? `Campus ${room.campusId}.` : ""
-              }`}
-            >
-              <Card title={room.name} subtitle={room.campusId} />
-            </Pressable>
-          </Link>
-        ))}
-        {!loading && !error && data?.rooms.length === 0 ? (
-          <Text style={styles.muted}>No rooms available.</Text>
-        ) : null}
-      </Section>
+      <ResourceListSection
+        title="Rooms"
+        loading={loading}
+        error={error}
+        items={rooms}
+        emptyMessage="No rooms available."
+        keyExtractor={keyExtractor}
+        href={href}
+        renderCard={renderCard}
+        accessibilityLabel={accessibilityLabel}
+      />
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  error: {
-    ...typography.body,
-    color: colors.accent
-  },
-  muted: {
-    ...typography.body,
-    color: colors.muted
-  }
-});

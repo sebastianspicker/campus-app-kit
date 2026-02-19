@@ -1,10 +1,23 @@
 # Institution Packs
 
-Institution packs define public, non-sensitive configuration.
-They allow the public repo to be tailored to a specific university
-without exposing private systems.
+Institution packs define public, non-sensitive configuration. They allow the public repo to be tailored to a specific university without exposing private systems.
 
-## Public Pack Rules
+```mermaid
+flowchart LR
+  subgraph BFF["BFF"]
+    Env[INSTITUTION_ID]
+    Load[loadInstitutionPack]
+    Env --> Load
+  end
+  subgraph Packs["Institution packs"]
+    H[hfmt]
+    Other[other ids]
+  end
+  Load --> Packs
+  Load --> Routes[Routes use pack]
+```
+
+## Public pack rules
 
 - Only public campus data (locations, addresses, labels).
 - Public event sources only (official website).

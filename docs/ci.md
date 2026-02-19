@@ -20,6 +20,15 @@ Each workflow has:
 - `timeout-minutes` to prevent hanging
 - Caching for `pnpm` and Turbo build metadata
 
+## Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `./scripts/verify-production-ready.sh` | Used by CI: lint, typecheck, tests, build, marker check. |
+| `./scripts/ci-local.sh` | Local CI equivalent: install + verify-production-ready. |
+| `./scripts/build.sh` | Convenience: runs `pnpm build` at repo root. |
+| `./scripts/generate-lockfile.sh` | Regenerates `pnpm-lock.yaml` (e.g. after adding deps). |
+
 ## Local reproduction
 
 Primary entry points:

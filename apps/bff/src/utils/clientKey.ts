@@ -1,4 +1,5 @@
 import type { IncomingMessage } from "node:http";
+import { isIP } from "node:net";
 import type { TrustProxyMode } from "../config/env";
 
 function normalizeIp(value: string | null | undefined): string | null {
@@ -25,7 +26,13 @@ function parseForwardedHeader(header: string): string | null {
       return value.slice(1, end);
     }
   }
-  return value.split(":")[0];
+  // host:port (IPv4 or hostname) – port is numeric suffix; do not split IPv6 on ":"
+  const lastColon = value.lastIndexOf(":");
+  if (lastColon !== -1) {
+    const after = value.slice(lastColon + 1);
+    if (/^\d+$/.test(after)) return value.slice(0, lastColon);
+  }
+  return value;
 }
 
 type ClientKeyOptions = {
@@ -42,15 +49,17 @@ export function getClientKey(req: IncomingMessage, options?: ClientKeyOptions): 
     const xff = req.headers["x-forwarded-for"];
     const xffValue = Array.isArray(xff) ? xff[0] : xff;
     if (typeof xffValue === "string" && xffValue.trim()) {
-      const first = xffValue.split(",")[0];
-      return normalizeIp(first) ?? "unknown";
+      const first = xffValue.split(",")[0].trim();
+      const candidate = normalizeIp(first);
+      if (candidate && isValidIp(candidate)) return candidate;
     }
 
     const forwarded = req.headers["forwarded"];
     const forwardedValue = Array.isArray(forwarded) ? forwarded[0] : forwarded;
     if (typeof forwardedValue === "string") {
       const parsed = parseForwardedHeader(forwardedValue);
-      return normalizeIp(parsed) ?? "unknown";
+      const candidate = normalizeIp(parsed);
+      if (candidate && isValidIp(candidate)) return candidate;
     }
   }
 
@@ -89,4 +98,10 @@ function isPrivateIpv6(value: string): boolean {
   if (value.startsWith("fe8") || value.startsWith("fe9")) return true;
   if (value.startsWith("fea") || value.startsWith("feb")) return true;
   return false;
+}
+
+function isValidIp(value: string): boolean {
+  if (!value || value === "unknown") return false;
+  const trimmed = value.trim();
+  return isIP(trimmed.split("%")[0]) !== 0;
 }

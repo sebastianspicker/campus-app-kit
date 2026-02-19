@@ -12,7 +12,7 @@ export function MetaRow({
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      <Text selectable style={styles.value}>{value}</Text>
     </View>
   );
 }

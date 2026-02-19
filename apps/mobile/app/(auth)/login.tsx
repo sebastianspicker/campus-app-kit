@@ -1,9 +1,9 @@
 import React from "react";
 import { Button, StyleSheet, Text } from "react-native";
 import { router } from "expo-router";
-import { Screen } from "../../src/ui/Screen";
-import { Section } from "../../src/ui/Section";
-import { colors, typography } from "../../src/ui/theme";
+import { Screen } from "@/ui/Screen";
+import { Section } from "@/ui/Section";
+import { colors, typography } from "@/ui/theme";
 
 export default function LoginScreen(): JSX.Element {
   return (
@@ -16,6 +16,8 @@ export default function LoginScreen(): JSX.Element {
         <Button
           title="Continue as Guest"
           onPress={() => router.replace("/(tabs)")}
+          accessibilityLabel="Continue as Guest"
+          accessibilityRole="button"
         />
       </Section>
     </Screen>

@@ -1,7 +1,6 @@
 import React from "react";
 import {
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   View
@@ -23,32 +22,24 @@ export function Screen({
     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
   ) : undefined;
 
-  const content = scroll ? (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      refreshControl={refreshControl}
-    >
-      {children}
-    </ScrollView>
-  ) : (
-    <View style={styles.container}>{children}</View>
-  );
-
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {content}
-    </SafeAreaView>
+    <View style={styles.root}>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={refreshControl}
+        scrollEnabled={scroll}
+      >
+        {children}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: colors.background
-  },
-  container: {
-    flex: 1,
-    padding: spacing.lg
   },
   scrollContent: {
     padding: spacing.lg,

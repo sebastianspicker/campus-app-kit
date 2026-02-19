@@ -1,138 +1,125 @@
 # Campus App Kit
 
-A public, privacy-safe starter for building a university Campus App with React Native + Expo and an optional Backend-for-Frontend (BFF). The repository includes public institution packs and connector stubs to enable private extensions in a separate codebase.
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node 20](https://img.shields.io/badge/node-20.x-green.svg)](.nvmrc)
+[![pnpm 9](https://img.shields.io/badge/pnpm-9-orange.svg)](package.json)
 
-## 1) Overview
+A public, privacy-safe starter for building a university campus app with **React Native + Expo** and an optional **Backend-for-Frontend (BFF)**. Includes public institution packs and connector stubs so you can extend with private integrations in a separate codebase.
 
-Campus App Kit provides a reusable foundation for mobile campus apps that serve public data (rooms, schedules, events). It includes an optional BFF that aggregates public sources and a connector boundary that keeps sensitive integrations in a private repository. License: MIT (see `LICENSE`).
+---
 
-## 2) Scope and Non-Goals
+## Features
 
-- Status: early alpha, best-effort maintenance.
-- Public data only; no private backend or credentials are included.
-- Not production-ready without a real backend and private connector implementations.
-- Not a full campus ERP or identity system; integrations must be added externally.
+- **Mobile app** – Expo (SDK 51) with Expo Router; tabs for Today, Events, Rooms, Schedule; shared UI components and theme.
+- **BFF** – Optional Node.js API: public connectors (events, schedule), rate limiting, HTTP caching, CORS. No secrets; private logic stays in your fork.
+- **Shared** – Zod schemas and domain types used by both BFF and mobile.
+- **Institution packs** – Public config per institution (e.g. `hfmt`); easy to add more.
 
-## 3) Repository Structure
+---
+
+## Quick start
+
+```bash
+pnpm install --frozen-lockfile
+INSTITUTION_ID=hfmt pnpm dev
+```
+
+Then open the mobile app (Expo Go or dev client) and point it at the BFF. For step-by-step commands and env vars, see [Runbook](docs/runbook.md).
+
+---
+
+## Repository structure
 
 ```
 apps/
   mobile/         Expo React Native app (Expo Router)
-  bff/            Optional BFF API (public connectors only + private stubs)
+  bff/            Optional BFF API (public connectors + private stubs)
 packages/
   shared/         Domain types + Zod schemas
-  institutions/   Public institution packs (bundleable)
-docs/             Architecture and security notes
-infra/            Dev-only docker compose for local BFF
+  institutions/   Public institution packs
+docs/             Architecture, runbook, CI, deployment
+scripts/          verify-production-ready, ci-local, build
 ```
 
-## 4) Requirements
+High-level data flow and public vs private split are described with diagrams in [Architecture](docs/architecture.md).
 
-- Node.js 20 (see `.nvmrc`)
-- pnpm 9 (see `package.json#packageManager`)
+---
+
+## Requirements
+
+- **Node.js 20** (see `.nvmrc`)
+- **pnpm 9** (see `package.json` → `packageManager`)
 - Expo Go or a dev client for device testing (optional)
 
-## 5) Quickstart
+---
 
-1. Install dependencies:
+## Configuration
 
-```bash
-pnpm install --frozen-lockfile
-```
+| Context | Key variables |
+|--------|----------------|
+| **BFF** | `INSTITUTION_ID` (required), `BFF_PORT`, `CORS_ORIGINS`, `BFF_TRUST_PROXY` |
+| **Mobile** | `EXPO_PUBLIC_BFF_BASE_URL` (required for production) |
 
-2. Run the BFF (optional, recommended for local data):
+Full list and semantics: [Runbook → Configuration](docs/runbook.md#configuration).
 
-```bash
-INSTITUTION_ID=hfmt pnpm --filter @campus/bff dev
-```
+---
 
-3. Run the mobile app:
+## Development
 
-```bash
-pnpm --filter @campus/mobile start
-```
+| Command | Description |
+|--------|-------------|
+| `pnpm verify` | Full CI-style check (lint, typecheck, test, build, marker scan) |
+| `pnpm lint`   | Lint |
+| `pnpm typecheck` | TypeScript |
+| `pnpm test`   | Tests |
+| `pnpm build`  | Build all (Turbo) |
+| `pnpm dev`    | Run BFF + mobile in parallel (set `INSTITUTION_ID` for BFF) |
 
-4. For production builds, set `EXPO_PUBLIC_BFF_BASE_URL` to your BFF base URL.
+---
 
-## 6) Configuration
+## Security and privacy
 
-BFF environment variables:
-- `INSTITUTION_ID` (required; available ids live in `packages/institutions/src/packs/`)
-- `BFF_PORT` (optional; default `4000`)
-- `CORS_ORIGINS` (optional; comma-separated; use `*` for development)
-- `BFF_TRUST_PROXY` (optional; default `auto`; `auto` trusts forwarded headers only for private/loopback peers, `always` always trusts, `never` never trusts)
+- No secrets or private endpoints in this repo.
+- Public connectors only; private connectors belong in a separate (private) repo.
+- See [SECURITY.md](SECURITY.md) and [Threat model](docs/threat-model-lite.md).
 
-Mobile environment variables:
-- `EXPO_PUBLIC_BFF_BASE_URL` (required for production builds; defaults to `http://localhost:4000` in development)
+---
 
-## 7) Development Workflow
+## Troubleshooting
 
-- Full verification (CI-aligned):
+- **Mobile can’t reach BFF** – Set `EXPO_PUBLIC_BFF_BASE_URL`.
+- **BFF won’t start** – Set `INSTITUTION_ID` (e.g. `hfmt`) and check `BFF_PORT`.
+- **Lockfile errors** – Run `pnpm install --frozen-lockfile` from repo root.
+- **Empty events/rooms/schedule** – See [Empty or missing data](docs/runbook.md#empty-or-missing-data).
+- **Known issues** – [BUGS_AND_FIXES.md](BUGS_AND_FIXES.md) (with quick reference table).
 
-```bash
-pnpm verify
-```
+---
 
-- Individual commands:
+## Documentation index
 
-```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-```
+| Doc | Description |
+|-----|-------------|
+| [docs/runbook.md](docs/runbook.md) | Local setup, config, commands, BFF endpoints |
+| [docs/architecture.md](docs/architecture.md) | Design overview and Mermaid diagrams |
+| [docs/ci.md](docs/ci.md) | CI workflows and scripts |
+| [docs/connectors.md](docs/connectors.md) | BFF connectors and stubs |
+| [docs/institutions.md](docs/institutions.md) | Institution packs |
+| [docs/deploy/](docs/deploy/) | Deployment (BFF, mobile) |
+| [docs/faq.md](docs/faq.md) | FAQ |
+| [docs/OPEN_IMPROVEMENTS_AND_PLAN.md](docs/OPEN_IMPROVEMENTS_AND_PLAN.md) | Open improvements and implementation plan |
+| [docs/threat-model-lite.md](docs/threat-model-lite.md) | Threat model |
+| [BUGS_AND_FIXES.md](BUGS_AND_FIXES.md) | Known bugs and required fixes |
 
-- Run all apps in parallel:
+Expo-related: [expo-api-routes](docs/expo-api-routes.md), [expo-tailwind-setup](docs/expo-tailwind-setup.md), [expo-ota-code-signing](docs/expo-ota-code-signing.md).
 
-```bash
-pnpm dev
-```
+---
 
-## 8) Security and Privacy
+## Contributing
 
-- No secrets or private endpoints are included in this repository.
-- Public connectors only; private connectors live in a separate repo.
-- See `SECURITY.md` and `docs/threat-model-lite.md` for the current threat model.
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and keep the repo safe to publish (no secrets, no private endpoints). Run `pnpm verify` before opening a PR.
 
-## 9) Troubleshooting
+---
 
-- Mobile app cannot reach the BFF: set `EXPO_PUBLIC_BFF_BASE_URL`.
-- BFF fails to start: verify `INSTITUTION_ID` and `BFF_PORT`.
-- Lockfile drift: re-run `pnpm install --frozen-lockfile`.
-- TypeScript build errors: run `pnpm build` from the repo root to respect build order.
-- Known bugs and required fixes: see `BUGS_AND_FIXES.md`.
+## License
 
-## 10) Validation (build / run / test)
-
-From the repo root:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm build
-pnpm test
-pnpm verify
-```
-
-Optional run (BFF + mobile):
-
-```bash
-INSTITUTION_ID=hfmt pnpm --filter @campus/bff dev
-pnpm --filter @campus/mobile start
-```
-
-- **build:** `pnpm build` — builds all packages and apps (Turbo).
-- **test:** `pnpm test` — runs all tests.
-- **verify:** `pnpm verify` — full CI-style check (lint, typecheck, test, build, marker scan).
-
-## 11) Docs Index
-
-- `BUGS_AND_FIXES.md` — known bugs and required fixes (issue source).
-- `docs/runbook.md` — local commands and configuration.
-- `docs/architecture.md` — design overview.
-- `docs/ci.md` — CI workflows and local reproduction.
-- `docs/connectors.md` — BFF connectors and stubs.
-- `docs/institutions.md` — institution packs.
-- `docs/deploy/` — deployment (BFF, mobile).
-- `docs/faq.md` — frequently asked questions.
-- `docs/expo-ota-code-signing.md` — Expo OTA and code signing.
-- `docs/threat-model-lite.md` — threat model.
+MIT. See [LICENSE](LICENSE).

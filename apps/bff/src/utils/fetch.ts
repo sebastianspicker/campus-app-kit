@@ -3,11 +3,18 @@ export async function fetchWithTimeout(
   options?: RequestInit,
   timeoutMs = 8000
 ): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
+  const callerSignal = options?.signal;
+  if (callerSignal != null) {
+    callerSignal.addEventListener("abort", () => timeoutController.abort(), {
+      once: true
+    });
+  }
+  const signal = timeoutController.signal;
 
   try {
-    return await fetch(url, { ...options, signal: controller.signal });
+    return await fetch(url, { ...options, signal });
   } finally {
     clearTimeout(timeoutId);
   }

@@ -1,4 +1,6 @@
-import { Platform } from "react-native";
+const expoOs = process.env.EXPO_OS;
+const isIos = expoOs === "ios";
+const isAndroid = expoOs === "android";
 
 export const colors = {
   background: "#f7f5f2",
@@ -17,40 +19,29 @@ export const spacing = {
   xl: 28
 };
 
+const fontFamily = {
+  serif: isIos ? "Georgia" : isAndroid ? "serif" : "Georgia",
+  sans: isIos ? "Avenir Next" : isAndroid ? "sans-serif" : "Avenir Next"
+};
+
 export const typography = {
   heading: {
     fontSize: 24,
     fontWeight: "700" as const,
-    fontFamily: Platform.select({
-      ios: "Georgia",
-      android: "serif",
-      default: "Georgia"
-    })
+    fontFamily: fontFamily.serif
   },
   subheading: {
     fontSize: 18,
     fontWeight: "700" as const,
-    fontFamily: Platform.select({
-      ios: "Georgia",
-      android: "serif",
-      default: "Georgia"
-    })
+    fontFamily: fontFamily.serif
   },
   body: {
     fontSize: 16,
-    fontFamily: Platform.select({
-      ios: "Avenir Next",
-      android: "sans-serif",
-      default: "Avenir Next"
-    })
+    fontFamily: fontFamily.sans
   },
   caption: {
     fontSize: 13,
     color: colors.muted,
-    fontFamily: Platform.select({
-      ios: "Avenir Next",
-      android: "sans-serif",
-      default: "Avenir Next"
-    })
+    fontFamily: fontFamily.sans
   }
 };

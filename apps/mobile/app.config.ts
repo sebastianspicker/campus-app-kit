@@ -12,6 +12,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     scheme: config.scheme ?? "campusapp",
     version: config.version ?? "0.1.0",
     plugins: config.plugins ?? ["expo-router"],
+    web: {
+      ...config.web,
+      output: "server"
+    },
     ios: {
       ...config.ios,
       bundleIdentifier

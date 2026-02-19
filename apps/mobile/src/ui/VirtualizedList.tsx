@@ -1,6 +1,6 @@
+import { FlashList } from "@shopify/flash-list";
 import React from "react";
 import {
-  FlatList,
   ListRenderItem,
   StyleProp,
   StyleSheet,
@@ -8,27 +8,34 @@ import {
   ViewStyle
 } from "react-native";
 
+const DEFAULT_ESTIMATED_ITEM_SIZE = 72;
+
 export function VirtualizedList<T>({
   data,
   renderItem,
   keyExtractor,
   contentContainerStyle,
-  emptyText
+  emptyText,
+  estimatedItemSize = DEFAULT_ESTIMATED_ITEM_SIZE
 }: {
   data: readonly T[];
   renderItem: ListRenderItem<T>;
   keyExtractor: (item: T, index: number) => string;
   contentContainerStyle?: StyleProp<ViewStyle>;
   emptyText?: string;
+  estimatedItemSize?: number;
 }): JSX.Element {
   return (
-    <FlatList
-      data={data}
+    <FlashList
+      data={data as T[]}
       renderItem={renderItem}
-      keyExtractor={keyExtractor}
+      keyExtractor={(item: T, index: number) => keyExtractor(item, index)}
+      estimatedItemSize={estimatedItemSize}
       contentContainerStyle={contentContainerStyle}
       ListEmptyComponent={
-        emptyText ? <Text style={styles.empty}>{emptyText}</Text> : null
+        emptyText != null && emptyText !== "" ? (
+          <Text style={styles.empty}>{emptyText}</Text>
+        ) : null
       }
     />
   );
