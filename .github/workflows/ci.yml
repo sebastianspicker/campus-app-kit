@@ -31,7 +31,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-${{ github.ref_name }}-
             ${{ runner.os }}-turbo-
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
       - name: Enable corepack (pnpm@9.0.0)
