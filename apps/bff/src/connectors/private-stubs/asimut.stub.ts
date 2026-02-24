@@ -1,3 +1,5 @@
+import { log } from "../../utils/logger";
+
 export type Booking = {
   id: string;
   title: string;
@@ -5,6 +7,12 @@ export type Booking = {
   endsAt: string;
 };
 
-export async function fetchBookings(): Promise<Booking[]> {
-  return [];
+export type BookingsResult = {
+  data: Booking[];
+  _isStub: boolean;
+};
+
+export async function fetchBookings(): Promise<BookingsResult> {
+  log("warn", "stub_called", { connector: "asimut" });
+  return { data: [], _isStub: true };
 }

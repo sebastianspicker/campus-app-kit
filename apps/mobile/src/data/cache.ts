@@ -5,6 +5,25 @@ type CacheEntry<T> = {
 
 const cache = new Map<string, CacheEntry<unknown>>();
 const inFlight = new Map<string, Promise<unknown>>();
+const MAX_CACHE_ENTRIES = 50;
+const DEFAULT_LOADER_TIMEOUT_MS = 15_000;
+
+function timeoutPromise(ms: number): Promise<never> {
+  return new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("Cache loader timeout")), ms);
+  });
+}
+
+function evictIfNeeded(): void {
+  if (cache.size <= MAX_CACHE_ENTRIES) return;
+  // Map preserves insertion order. Remove oldest (first) entries.
+  const it = cache.keys();
+  while (cache.size > MAX_CACHE_ENTRIES) {
+    const key = it.next().value;
+    if (key === undefined) break;
+    cache.delete(key);
+  }
+}
 
 export async function getCached<T>(
   key: string,
@@ -19,16 +38,20 @@ export async function getCached<T>(
     return entry.value;
   }
 
-  if (!force) {
-    const existing = inFlight.get(key);
-    if (existing) return existing as Promise<T>;
-  }
+  // #72: Reuse in-flight promise even if forcing (to avoid parallel redundant net calls)
+  const existing = inFlight.get(key);
+  if (existing) return existing as Promise<T>;
 
   const promiseRef: { current: Promise<unknown> | null } = { current: null };
   const promise = (async () => {
     try {
-      const value = await loader();
+      // #73: Add timeout to prevent infinite loading state
+      const value = await Promise.race([
+        loader(),
+        timeoutPromise(DEFAULT_LOADER_TIMEOUT_MS)
+      ]);
       cache.set(key, { value, expiresAt: Date.now() + ttlMs });
+      evictIfNeeded();
       return value;
     } finally {
       if (inFlight.get(key) === promiseRef.current) inFlight.delete(key);

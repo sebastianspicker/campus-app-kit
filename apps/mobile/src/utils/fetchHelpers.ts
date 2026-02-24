@@ -26,14 +26,37 @@ export async function fetchJsonWithTimeout<T>(
         bffError.code === "unknown_error"
           ? `Request failed (${response.status})`
           : bffError.message;
+      const retryAfter = response.headers.get("retry-after");
       const err = new Error(message);
-      (err as { status?: number; code?: string }).status = response.status;
-      (err as { status?: number; code?: string }).code = bffError.code;
+      (err as { status?: number; code?: string; retryAfterInSeconds?: number }).status = response.status;
+      (err as { status?: number; code?: string; retryAfterInSeconds?: number }).code = bffError.code;
+      if (retryAfter) {
+        // #62: Support both seconds and HTTP-date
+        const seconds = parseInt(retryAfter, 10);
+        if (!isNaN(seconds)) {
+          (err as { retryAfterInSeconds?: number }).retryAfterInSeconds = seconds;
+        } else {
+          const date = new Date(retryAfter);
+          if (!isNaN(date.getTime())) {
+            const diff = Math.max(0, Math.ceil((date.getTime() - Date.now()) / 1000));
+            (err as { retryAfterInSeconds?: number }).retryAfterInSeconds = diff;
+          }
+        }
+      }
       throw err;
     }
 
-    const data = (await response.json()) as T;
-    return data;
+    // #61: Handle 204 No Content or empty bodies
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    const text = await response.text();
+    if (!text) {
+      return {} as T;
+    }
+
+    return JSON.parse(text) as T;
   } finally {
     cleanup();
     clearTimeout(timeoutId);

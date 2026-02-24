@@ -7,16 +7,24 @@ import { createJsonRoute } from "./createJsonRoute";
 
 export const handleToday = createJsonRoute(
   async (institution) => {
-    const { events, degraded } = await fetchPublicEvents(institution);
-    const eventsConfigured =
-      (institution.publicSources?.events?.length ?? 0) > 0;
+    const eventsConfigured = (institution.publicSources?.events?.length ?? 0) > 0;
     const roomsConfigured = (institution.publicRooms?.length ?? 0) > 0;
-    const sourcesConfigured = eventsConfigured || roomsConfigured;
+
+    if (!eventsConfigured && !roomsConfigured) {
+      throw new Error("NO_CONFIG_SOURCES: No event or room sources configured for today view");
+    }
+
+    const { events, degraded } = await fetchPublicEvents(institution);
+
+    // Date scoping: Filter events to only show those for today
+    const todayStr = new Date().toISOString().split("T")[0];
+    const todayEvents = events.filter(e => e.date.startsWith(todayStr));
+
     return {
-      events,
+      events: todayEvents,
       rooms: institution.publicRooms ?? [],
       _degraded: degraded,
-      _sourcesConfigured: sourcesConfigured ? undefined : false
+      _sourcesConfigured: true
     };
   },
   TodayResponseSchema,

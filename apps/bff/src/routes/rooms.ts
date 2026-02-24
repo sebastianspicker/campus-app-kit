@@ -6,10 +6,12 @@ import { createJsonRoute } from "./createJsonRoute";
 export const handleRooms = createJsonRoute(
   async (institution) => {
     const rooms = institution.publicRooms ?? [];
-    const sourcesConfigured = rooms.length > 0;
+    if (rooms.length === 0) {
+      throw new Error("NO_CONFIG_SOURCES: No rooms configured");
+    }
     return {
       rooms,
-      _sourcesConfigured: sourcesConfigured ? undefined : false
+      _sourcesConfigured: true
     };
   },
   RoomsResponseSchema,

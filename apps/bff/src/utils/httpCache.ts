@@ -16,7 +16,9 @@ export function sendJsonWithCache(
 
   const status = options?.status ?? 200;
   const maxAgeSeconds = options?.maxAgeSeconds ?? 300;
-  const etag = `"${createHash("sha1").update(json).digest("hex")}"`;
+  // Using 'md5' as it is generally faster than 'sha1' and sufficient for ETags.
+  // In Node.js, we could also use a faster non-cryptographic hash if available as a dependency.
+  const etag = `"${createHash("md5").update(json).digest("hex")}"`;
 
   if (res.headersSent) return;
 

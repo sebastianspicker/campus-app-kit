@@ -1,4 +1,5 @@
 import type { ServerResponse } from "node:http";
+import { log } from "./logger";
 
 export type ErrorBody = {
   error: {
@@ -14,10 +15,11 @@ export function sendError(
   message: string
 ): void {
   if (res.headersSent) {
+    log("warn", "send_error_after_headers", { status, code, message });
     try {
-      res.end();
+      if (!res.writableEnded) res.end();
     } catch {
-      // Ignore if stream already closed
+      // Ignore
     }
     return;
   }

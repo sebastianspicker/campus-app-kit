@@ -10,15 +10,16 @@ let lastCleanup = 0;
 
 function evictIfOverCap(): void {
   if (buckets.size < maxBuckets) return;
-  const now = Date.now();
-  for (const [k, entry] of buckets.entries()) {
-    if (entry.resetAt <= now) buckets.delete(k);
-    if (buckets.size <= maxBuckets * 0.9) return;
-  }
-  const byReset = [...buckets.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt);
-  const toEvict = byReset.length - Math.floor(maxBuckets * 0.8);
-  for (let i = 0; i < toEvict && i < byReset.length; i++) {
-    buckets.delete(byReset[i][0]);
+
+  // Maps in JS/TS preserve insertion order. Removing from the beginning
+  // of the iterator removes the oldest entries.
+  const toEvict = buckets.size - Math.floor(maxBuckets * 0.8);
+  const keys = buckets.keys();
+
+  for (let i = 0; i < toEvict; i++) {
+    const key = keys.next().value;
+    if (key === undefined) break;
+    buckets.delete(key);
   }
 }
 

@@ -50,7 +50,19 @@ export function getClientKey(req: IncomingMessage, options?: ClientKeyOptions): 
     const xffValue = Array.isArray(xff) ? xff[0] : xff;
     if (typeof xffValue === "string" && xffValue.trim()) {
       const first = xffValue.split(",")[0].trim();
-      const candidate = normalizeIp(first);
+      // Handle IP:port or [IPv6]:port
+      let ipPart = first;
+      if (first.startsWith("[")) {
+        const end = first.indexOf("]");
+        if (end !== -1) ipPart = first.slice(1, end);
+      } else {
+        const lastColon = first.lastIndexOf(":");
+        if (lastColon !== -1 && first.indexOf(":") === lastColon) {
+          // Likely IPv4:port
+          ipPart = first.slice(0, lastColon);
+        }
+      }
+      const candidate = normalizeIp(ipPart);
       if (candidate && isValidIp(candidate)) return candidate;
     }
 

@@ -7,13 +7,15 @@ import { createJsonRoute } from "./createJsonRoute";
 
 export const handleEvents = createJsonRoute(
   async (institution) => {
+    const sources = institution.publicSources?.events ?? [];
+    if (sources.length === 0) {
+      throw new Error("NO_CONFIG_SOURCES: No event sources configured");
+    }
     const { events, degraded } = await fetchPublicEvents(institution);
-    const sourcesConfigured =
-      (institution.publicSources?.events?.length ?? 0) > 0;
     return {
       events,
       _degraded: degraded,
-      _sourcesConfigured: sourcesConfigured ? undefined : false
+      _sourcesConfigured: true
     };
   },
   EventsResponseSchema,

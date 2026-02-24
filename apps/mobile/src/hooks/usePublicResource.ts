@@ -60,7 +60,7 @@ export function usePublicResource<T>(
     try {
       await runLoad(true);
     } finally {
-      setRefreshing(false);
+      if (mountedRef.current) setRefreshing(false);
     }
   }, [runLoad]);
 

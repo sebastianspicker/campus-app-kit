@@ -13,6 +13,8 @@ export type PublicEvent = {
 
 export type FetchPublicEventsResult = { events: PublicEvent[]; degraded: boolean };
 
+import { BFF_ENV } from "../../config/env";
+
 export async function fetchPublicEvents(
   institution: InstitutionPack
 ): Promise<FetchPublicEventsResult> {
@@ -21,14 +23,14 @@ export async function fetchPublicEvents(
   let now = envDate ? new Date(envDate) : new Date();
   if (Number.isNaN(now.getTime())) now = new Date();
   const cacheKey = `public-events:${institution.id}`;
-  const ttlMs = 5 * 60 * 1000;
+  const ttlMs = BFF_ENV.defaultCacheTtl * 1000;
   const mode = process.env.PUBLIC_EVENTS_MODE ?? "auto";
 
   return getCached(
     cacheKey,
     async (): Promise<FetchPublicEventsResult> => {
       if (mode === "mock") {
-        const mockEvents = sources.map((source) => {
+        const mockEvents = sources.map((source: { url: string; label: string }) => {
           const date = now.toISOString();
           return {
             id: buildEventId({ sourceUrl: source.url, title: source.label, date }),
@@ -40,39 +42,37 @@ export async function fetchPublicEvents(
         return { events: mockEvents, degraded: false };
       }
 
-      const parsedEvents: PublicEvent[] = [];
       let anyFailed = false;
-
-      for (const source of sources) {
-        try {
+      const settlement = await Promise.allSettled(
+        sources.map(async (source: { url: string; label: string }) => {
           const response = await fetchWithTimeout(source.url);
-
           if (!response.ok) {
-            anyFailed = true;
-            log("warn", "public_events_source_failed", {
-              sourceUrl: source.url,
-              reason: `HTTP ${response.status}`
-            });
-            continue;
+            throw new Error(`HTTP ${response.status}`);
           }
-
           const html = await response.text();
-          parsedEvents.push(...extractEventsFromHtml(html, source.url));
-        } catch (err) {
+          return extractEventsFromHtml(html, source.url);
+        })
+      );
+
+      const parsedEvents: PublicEvent[] = [];
+      settlement.forEach((result: PromiseSettledResult<PublicEvent[]>, index: number) => {
+        if (result.status === "fulfilled") {
+          parsedEvents.push(...result.value);
+        } else {
           anyFailed = true;
           log("warn", "public_events_source_failed", {
-            sourceUrl: source.url,
-            reason: err instanceof Error ? err.message : String(err)
+            sourceUrl: sources[index].url,
+            reason: result.reason instanceof Error ? result.reason.message : String(result.reason)
           });
         }
-      }
+      });
 
       const deduped = dedupeAndSortEvents(parsedEvents);
       if (deduped.length > 0) {
         return { events: deduped.slice(0, 8), degraded: anyFailed };
       }
 
-      const fallbackEvents = sources.map((source) => {
+      const fallbackEvents = sources.map((source: { url: string; label: string }) => {
         const date = now.toISOString();
         return {
           id: buildEventId({ sourceUrl: source.url, title: source.label, date }),
@@ -108,11 +108,11 @@ function extractHfmtEvents(
 
   for (const block of blocks) {
     const title = extractTitle(block);
-    if (!title) {
+    if (!title || title.length > 200) { // Limit title length to avoid extreme cases
       continue;
     }
 
-    const date = extractDate(block) ?? new Date().toISOString();
+    const date = extractDate(block) ?? "1970-01-01T00:00:00.000Z";
     const url = extractHref(block, sourceUrl);
 
     if (!url) {
@@ -139,7 +139,7 @@ function extractHfmtEvents(
     html.match(/<div[^>]*class="[^"]*event[^"]*"[\s\S]*?<\/div>/gi) ?? [];
   for (const block of tiles) {
     const title = extractTitle(block);
-    const date = extractDate(block) ?? new Date().toISOString();
+    const date = extractDate(block) ?? "1970-01-01T00:00:00.000Z";
     const url = extractHref(block, sourceUrl);
 
     if (!title || !url) {
@@ -184,7 +184,7 @@ function extractGenericEvents(
       continue;
     }
 
-    const date = new Date().toISOString();
+    const date = "1970-01-01T00:00:00.000Z";
     const resolvedUrl = safeResolveUrl(href, sourceUrl);
 
     if (!resolvedUrl) {
@@ -291,7 +291,12 @@ function extractHref(block: string, sourceUrl: string): string | null {
 function safeResolveUrl(href: string, sourceUrl: string): string | null {
   try {
     const url = new URL(href, sourceUrl);
+    // Only allow http/https protocols. Rejects javascript:, data:, etc.
     if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+
+    // Safety check: prevent extreme URL lengths
+    if (url.toString().length > 2048) return null;
+
     return url.toString();
   } catch {
     return null;

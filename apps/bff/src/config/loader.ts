@@ -3,9 +3,14 @@ import { getInstitutionPack } from "@campus/institutions";
 
 export type InstitutionPack = ReturnType<typeof InstitutionPackSchema.parse>;
 
+let cachedPack: InstitutionPack | null = null;
+
 export async function loadInstitutionPack(
   institutionId: string
 ): Promise<InstitutionPack> {
-  const pack = getInstitutionPack(institutionId);
-  return InstitutionPackSchema.parse(pack);
+  if (cachedPack && cachedPack.id === institutionId) {
+    return cachedPack;
+  }
+  cachedPack = await getInstitutionPack(institutionId);
+  return cachedPack;
 }

@@ -22,6 +22,7 @@ export function createJsonRoute<T>(
     try {
       const data = await loader(institution);
       const response = schema.parse(data);
+
       if (getExtraHeaders) {
         const extra = getExtraHeaders(response);
         for (const [key, value] of Object.entries(extra)) {
@@ -36,6 +37,13 @@ export function createJsonRoute<T>(
         return;
       }
       const error = err instanceof Error ? err : new Error(String(err));
+
+      if (error.message.startsWith("NO_CONFIG_SOURCES:")) {
+        log("warn", "no_config_sources", { requestId, message: error.message });
+        sendError(res, 404, "not_found", error.message.replace("NO_CONFIG_SOURCES:", "").trim());
+        return;
+      }
+
       log("error", "route_error", {
         requestId,
         message: error.message,

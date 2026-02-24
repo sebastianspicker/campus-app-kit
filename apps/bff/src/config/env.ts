@@ -3,15 +3,19 @@ export type BffEnv = {
   institutionId: string;
   corsOrigins: string[];
   trustProxy: TrustProxyMode;
+  defaultCacheTtl: number;
+};
+
+export const BFF_ENV: BffEnv = {
+  port: parsePort(process.env.BFF_PORT),
+  institutionId: requireNonEmpty(process.env.INSTITUTION_ID, "INSTITUTION_ID"),
+  corsOrigins: parseCsv(process.env.CORS_ORIGINS),
+  trustProxy: parseTrustProxy(process.env.BFF_TRUST_PROXY),
+  defaultCacheTtl: parseInt(process.env.BFF_DEFAULT_CACHE_TTL ?? "300", 10)
 };
 
 export function getBffEnv(): BffEnv {
-  return {
-    port: parsePort(process.env.BFF_PORT),
-    institutionId: requireNonEmpty(process.env.INSTITUTION_ID, "INSTITUTION_ID"),
-    corsOrigins: parseCsv(process.env.CORS_ORIGINS),
-    trustProxy: parseTrustProxy(process.env.BFF_TRUST_PROXY)
-  };
+  return BFF_ENV;
 }
 
 export type TrustProxyMode = "never" | "auto" | "always";

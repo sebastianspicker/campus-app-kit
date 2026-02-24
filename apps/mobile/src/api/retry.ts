@@ -16,7 +16,10 @@ export async function withRetry<T>(
         throw err;
       }
 
-      const delay = backoffWithJitter(baseDelayMs, attempt);
+      const retryAfterSeconds = (err as { retryAfterInSeconds?: number }).retryAfterInSeconds;
+      const delay = typeof retryAfterSeconds === "number"
+        ? retryAfterSeconds * 1000
+        : backoffWithJitter(baseDelayMs, attempt);
       await sleep(delay);
     }
   }

@@ -6,12 +6,14 @@ import { createJsonRoute } from "./createJsonRoute";
 
 export const handleSchedule = createJsonRoute(
   async (institution) => {
+    const schedules = institution.publicSources?.schedules ?? [];
+    if (schedules.length === 0) {
+      throw new Error("NO_CONFIG_SOURCES: No schedules configured");
+    }
     const schedule = await fetchPublicSchedule(institution);
-    const sourcesConfigured =
-      (institution.publicSources?.schedules?.length ?? 0) > 0;
     return {
       schedule,
-      _sourcesConfigured: sourcesConfigured ? undefined : false
+      _sourcesConfigured: true
     };
   },
   ScheduleResponseSchema,

@@ -1,24 +1,31 @@
 /** @deprecated Prefer EXPO_PUBLIC_BFF_BASE_URL; MOBILE_PUBLIC_BFF_URL is not Expo-public and may be unavailable in bundled builds */
 const LEGACY_ENV_KEY = "MOBILE_PUBLIC_BFF_URL";
 
+let memoizedBffBaseUrl: string | null = null;
+
 export function resolveBffBaseUrl(): string {
-  const fromExpoPublic = process.env.EXPO_PUBLIC_BFF_BASE_URL;
-  const fromLegacy = process.env[LEGACY_ENV_KEY];
-  const fromConfig = fromExpoPublic ?? fromLegacy;
+  if (memoizedBffBaseUrl) return memoizedBffBaseUrl;
 
-  if (fromConfig) {
-    return normalizeBaseUrl(fromConfig);
-  }
+  const result = ((): string => {
+    const fromConfig = process.env.EXPO_PUBLIC_BFF_BASE_URL;
 
-  const nodeEnv = process.env.NODE_ENV;
-  const isDev = typeof __DEV__ === "boolean" ? __DEV__ : nodeEnv !== "production";
-  if (isDev) {
-    return "http://localhost:4000";
-  }
+    if (fromConfig) {
+      return normalizeBaseUrl(fromConfig);
+    }
 
-  throw new Error(
-    "Missing BFF base URL. Set EXPO_PUBLIC_BFF_BASE_URL for the mobile app build."
-  );
+    const nodeEnv = process.env.NODE_ENV;
+    const isDev = typeof __DEV__ === "boolean" ? __DEV__ : nodeEnv !== "production";
+    if (isDev) {
+      return "http://localhost:4000";
+    }
+
+    throw new Error(
+      "Missing BFF base URL. Set EXPO_PUBLIC_BFF_BASE_URL for the mobile app build."
+    );
+  })();
+
+  memoizedBffBaseUrl = result;
+  return result;
 }
 
 function normalizeBaseUrl(input: string): string {

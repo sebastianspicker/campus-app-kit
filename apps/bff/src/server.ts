@@ -4,6 +4,7 @@ import http from "node:http";
 import { getBffEnv } from "./config/env";
 import { loadInstitutionPack } from "./config/loader";
 import { guardMethods } from "./middleware/methodGuard";
+import { guardAuth } from "./middleware/authGuard";
 import { handleEvents } from "./routes/events";
 import { handleHealth } from "./routes/health";
 import { handleRooms } from "./routes/rooms";
@@ -11,6 +12,7 @@ import { handleSchedule } from "./routes/schedule";
 import { handleToday } from "./routes/today";
 import { getCorsHeaders } from "./utils/cors";
 import { getClientKey } from "./utils/clientKey";
+import { guardSecurityHeaders } from "./middleware/securityHeaders";
 import { checkRateLimit } from "./utils/rateLimit";
 import { sendError } from "./utils/errors";
 import { log } from "./utils/logger";
@@ -23,8 +25,9 @@ const DATA_ROUTES: Record<string, (req: IncomingMessage, res: ServerResponse, in
   "/today": handleToday
 };
 
+import { BFF_ENV } from "./config/env";
+
 export function createRequestListener(): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
-  const env = getBffEnv();
   return async (req, res): Promise<void> => {
     const startedAt = Date.now();
     const requestId = getRequestId(req);
@@ -44,13 +47,14 @@ export function createRequestListener(): (req: IncomingMessage, res: ServerRespo
         sendError(res, 400, "bad_request", "Invalid request URL");
         return;
       }
-
-      const cors = getCorsHeaders(req.headers.origin, env.corsOrigins);
+      const cors = getCorsHeaders(req.headers.origin, BFF_ENV.corsOrigins);
       for (const [key, value] of Object.entries(cors)) {
         res.setHeader(key, value);
       }
 
-      const clientKey = getClientKey(req, { trustProxy: env.trustProxy });
+      guardSecurityHeaders(req, res);
+
+      const clientKey = getClientKey(req, { trustProxy: BFF_ENV.trustProxy });
       const rate = checkRateLimit(clientKey);
       if (!rate.allowed) {
         setRequestIdHeader(res, requestId);
@@ -81,31 +85,36 @@ export function createRequestListener(): (req: IncomingMessage, res: ServerRespo
         return;
       }
 
-      if (url.pathname === "/health") {
-        setRequestIdHeader(res, requestId);
-        await handleHealth(req, res);
-        log("info", "health_ok", { requestId, durationMs: Date.now() - startedAt });
-        return;
-      }
-
       const dataHandler = DATA_ROUTES[url.pathname];
       if (dataHandler) {
         let institution: InstitutionPack;
         try {
-          institution = await loadInstitutionPack(env.institutionId);
+          institution = await loadInstitutionPack(BFF_ENV.institutionId);
         } catch (err) {
-          const message = err instanceof Error ? err.message : "Failed to load institution";
-          log("error", "institution_load_failed", { requestId, message, stack: err instanceof Error ? err.stack : undefined });
+          const message = err instanceof Error ? err.message : String(err);
+          log("error", "institution_load_failed", {
+            requestId,
+            message,
+            stack: err instanceof Error ? err.stack : undefined
+          });
           setRequestIdHeader(res, requestId);
+
           if (message.includes("Unknown institutionId")) {
-            sendError(res, 404, "institution_not_found", "Institution not found");
+            sendError(res, 404, "institution_not_found", "The requested institution is not configured");
             return;
           }
-          sendError(res, 500, "institution_load_failed", "Failed to load institution");
+          sendError(res, 500, "internal_error", "An internal error occurred while loading configuration");
           return;
         }
         await dataHandler(req, res, institution);
         log("info", "data_route_ok", { requestId, path: url.pathname, durationMs: Date.now() - startedAt });
+        return;
+      }
+
+      if (url.pathname === "/health") {
+        setRequestIdHeader(res, requestId);
+        await handleHealth(req, res);
+        log("info", "health_ok", { requestId, durationMs: Date.now() - startedAt });
         return;
       }
 
@@ -120,9 +129,28 @@ export function createRequestListener(): (req: IncomingMessage, res: ServerRespo
   };
 }
 
-const env = getBffEnv();
-const server = http.createServer(createRequestListener());
-server.listen(env.port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`BFF listening on http://localhost:${env.port}`);
-});
+async function startServer(): Promise<void> {
+  log("info", "server_starting", {
+    port: BFF_ENV.port,
+    institutionId: BFF_ENV.institutionId
+  });
+
+  try {
+    // #55: Startup validation dry-run
+    await loadInstitutionPack(BFF_ENV.institutionId);
+    log("info", "startup_validation_ok");
+  } catch (err) {
+    log("error", "startup_validation_failed", {
+      message: err instanceof Error ? err.message : String(err)
+    });
+    process.exit(1);
+  }
+
+  const server = http.createServer(createRequestListener());
+  server.listen(BFF_ENV.port, () => {
+    // eslint-disable-next-line no-console
+    console.log(`BFF listening on http://localhost:${BFF_ENV.port}`);
+  });
+}
+
+void startServer();
