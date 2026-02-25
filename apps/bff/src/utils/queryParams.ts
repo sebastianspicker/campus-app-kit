@@ -116,3 +116,29 @@ export function parseScheduleFilter(params: URLSearchParams): ScheduleFilterOpti
     offset: getNumberParam(params, "offset") ?? 0
   };
 }
+
+/**
+ * Filter options for rooms endpoint.
+ */
+export interface RoomsFilterOptions {
+  /** Filter by campus ID */
+  campus?: string;
+  /** Search term for room name (case-insensitive partial match) */
+  search?: string;
+  /** Maximum number of rooms to return */
+  limit?: number;
+  /** Offset for pagination */
+  offset?: number;
+}
+
+/**
+ * Parse filter options from query parameters for rooms endpoint.
+ */
+export function parseRoomsFilter(params: URLSearchParams): RoomsFilterOptions {
+  return {
+    campus: getStringParam(params, "campus"),
+    search: getStringParam(params, "search"),
+    limit: getNumberParam(params, "limit"),
+    offset: getNumberParam(params, "offset") ?? 0
+  };
+}

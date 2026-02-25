@@ -31,6 +31,16 @@ Then open the mobile app with Expo Go or a dev client.
 - **Institution packs** – Public config per institution; easy to add more
 - **Shared types** – Zod schemas used by both BFF and mobile
 
+## Mobile App Screenshots (Mock Data)
+
+| Today | Rooms |
+|---|---|
+| ![Today screen with mock data in dark theme](docs/screenshots/mobile-today-dark.png) | ![Rooms screen with mock data in dark theme](docs/screenshots/mobile-rooms-dark.png) |
+
+| Stage | Profile | Detail |
+|---|---|---|
+| ![Stage screen with mock events in dark theme](docs/screenshots/mobile-stage-dark.png) | ![Profile screen with theme selection in dark theme](docs/screenshots/mobile-profile-dark.png) | ![Event detail screen with mock data in dark theme](docs/screenshots/mobile-event-detail-dark.png) |
+
 ---
 
 ## Project Structure
@@ -88,9 +98,10 @@ Additional options: `BFF_PORT`, `CORS_ORIGINS`, `BFF_TRUST_PROXY`. See [Runbook 
 
 ## Status
 
+- **Version:** 1.0.0
 - **Bugs:** All known issues resolved ✅
-- **Limitations:** ICS RRULE (recurring events) not yet supported
-- **Improvement Plan:** See [plans/comprehensive-improvement-plan-2026.md](plans/comprehensive-improvement-plan-2026.md)
+- **Features:** ICS RRULE (recurring events) supported ✅
+- **Changelog:** See [CHANGELOG.md](CHANGELOG.md)
 
 ---
 

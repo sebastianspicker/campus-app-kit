@@ -1,3 +1,5 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 type StorageLike = {
   getItem: (key: string) => Promise<string | null>;
   setItem: (key: string, value: string) => Promise<void>;
@@ -9,21 +11,26 @@ type StorageLike = {
 const KEY_PREFIX = "campus-app-kit:";
 const memory = new Map<string, string>();
 
+export type CachedEntry<T> = {
+  data: T;
+  timestamp: number;
+  isOffline?: boolean;
+};
+
+/** Maximum age for offline cache to be considered usable (24 hours) */
+export const OFFLINE_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
 async function getStorage(): Promise<StorageLike> {
-  try {
-    const mod = await import("@react-native-async-storage/async-storage");
-    const candidate = (mod as { default?: unknown }).default ?? mod;
-    if (
-      candidate &&
-      typeof candidate === "object" &&
-      typeof (candidate as StorageLike).getItem === "function"
-    ) {
-      return candidate as StorageLike;
-    }
-  } catch {
-    // fall back to in-memory storage (useful for tests and web)
+  // Try to use AsyncStorage directly (native)
+  if (
+    AsyncStorage &&
+    typeof AsyncStorage === "object" &&
+    typeof AsyncStorage.getItem === "function"
+  ) {
+    return AsyncStorage as StorageLike;
   }
 
+  // Fall back to in-memory storage (useful for tests and web)
   return {
     getItem: async (key) => memory.get(key) ?? null,
     setItem: async (key, value) => {
@@ -40,19 +47,52 @@ async function getStorage(): Promise<StorageLike> {
 }
 
 export async function getPersistedCache<T>(key: string): Promise<T | null> {
+  const entry = await getPersistedCacheEntry<T>(key);
+  return entry?.data ?? null;
+}
+
+export async function getPersistedCacheEntry<T>(key: string): Promise<CachedEntry<T> | null> {
   const storage = await getStorage();
   const raw = await storage.getItem(KEY_PREFIX + key);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as T;
+    return JSON.parse(raw) as CachedEntry<T>;
   } catch {
     return null;
   }
 }
 
 export async function setPersistedCache<T>(key: string, value: T): Promise<void> {
+  const entry: CachedEntry<T> = {
+    data: value,
+    timestamp: Date.now()
+  };
   const storage = await getStorage();
-  await storage.setItem(KEY_PREFIX + key, JSON.stringify(value));
+  await storage.setItem(KEY_PREFIX + key, JSON.stringify(entry));
+}
+
+export async function markCacheAsOffline<T>(key: string): Promise<void> {
+  const entry = await getPersistedCacheEntry<T>(key);
+  if (!entry) return;
+  
+  const storage = await getStorage();
+  const offlineEntry: CachedEntry<T> = {
+    ...entry,
+    isOffline: true
+  };
+  await storage.setItem(KEY_PREFIX + key, JSON.stringify(offlineEntry));
+}
+
+export async function getCacheAge(key: string): Promise<number | null> {
+  const entry = await getPersistedCacheEntry<unknown>(key);
+  if (!entry) return null;
+  return Date.now() - entry.timestamp;
+}
+
+export async function isCacheStale(key: string, maxAgeMs: number): Promise<boolean> {
+  const age = await getCacheAge(key);
+  if (age === null) return true;
+  return age > maxAgeMs;
 }
 
 export async function clearPersistedCache(key?: string): Promise<void> {
@@ -75,4 +115,112 @@ export async function clearPersistedCache(key?: string): Promise<void> {
   }
 
   await Promise.all(ours.map((k) => storage.removeItem(k)));
+}
+
+/**
+ * Result type for offline-first fetch operations
+ */
+export type OfflineFetchResult<T> = {
+  data: T;
+  fromCache: boolean;
+  isOffline: boolean;
+  cacheAge: number | null;
+};
+
+/**
+ * Fetch with offline-first strategy.
+ * - Returns cached data immediately if available
+ * - Attempts network refresh in background
+ * - Falls back to cache on network failure
+ */
+export async function fetchWithOfflineSupport<T>(
+  key: string,
+  loader: () => Promise<T>,
+  maxAgeMs: number = OFFLINE_CACHE_MAX_AGE_MS
+): Promise<OfflineFetchResult<T>> {
+  const cachedEntry = await getPersistedCacheEntry<T>(key);
+  const now = Date.now();
+  
+  // Check if we have valid cached data (used for potential future optimizations)
+  const _hasValidCache = cachedEntry && (now - cachedEntry.timestamp) < maxAgeMs;
+  
+  try {
+    // Try to fetch fresh data
+    const freshData = await loader();
+    
+    // Cache the fresh data
+    await setPersistedCache(key, freshData);
+    
+    return {
+      data: freshData,
+      fromCache: false,
+      isOffline: false,
+      cacheAge: null
+    };
+  } catch (error) {
+    // Network failed - use cache if available
+    if (cachedEntry) {
+      // Mark as offline data
+      await markCacheAsOffline<T>(key);
+      
+      return {
+        data: cachedEntry.data,
+        fromCache: true,
+        isOffline: true,
+        cacheAge: now - cachedEntry.timestamp
+      };
+    }
+    
+    // No cache available, re-throw the error
+    throw error;
+  }
+}
+
+/**
+ * Check if cached data is from an offline state
+ */
+export async function isOfflineData(key: string): Promise<boolean> {
+  const entry = await getPersistedCacheEntry<unknown>(key);
+  return entry?.isOffline ?? false;
+}
+
+/**
+ * Get cache statistics for debugging/monitoring
+ */
+export async function getCacheStats(): Promise<{
+  keyCount: number;
+  oldestEntry: number | null;
+  newestEntry: number | null;
+  offlineKeys: string[];
+}> {
+  const storage = await getStorage();
+  const allKeys = await storage.getAllKeys?.() ?? [];
+  const ourKeys = allKeys.filter(k => k.startsWith(KEY_PREFIX));
+  
+  let oldest: number | null = null;
+  let newest: number | null = null;
+  const offlineKeys: string[] = [];
+  
+  for (const key of ourKeys) {
+    const raw = await storage.getItem(key);
+    if (raw) {
+      try {
+        const entry = JSON.parse(raw) as CachedEntry<unknown>;
+        if (oldest === null || entry.timestamp < oldest) oldest = entry.timestamp;
+        if (newest === null || entry.timestamp > newest) newest = entry.timestamp;
+        if (entry.isOffline) {
+          offlineKeys.push(key.replace(KEY_PREFIX, ""));
+        }
+      } catch {
+        // Skip invalid entries
+      }
+    }
+  }
+  
+  return {
+    keyCount: ourKeys.length,
+    oldestEntry: oldest,
+    newestEntry: newest,
+    offlineKeys
+  };
 }

@@ -1,10 +1,12 @@
 import { InstitutionPackSchema, type InstitutionPack } from "@campus/shared";
 import { examplePublicPack } from "./packs/example.public";
 import { hfmtPublicPack } from "./packs/hfmt.public";
+import { mockuniPublicPack } from "./packs/mockuni.public";
 
 const packs = {
   example: examplePublicPack,
-  hfmt: hfmtPublicPack
+  hfmt: hfmtPublicPack,
+  mockuni: mockuniPublicPack
 } as const;
 
 export type KnownInstitutionId = keyof typeof packs;

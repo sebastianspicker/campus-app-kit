@@ -1,23 +1,95 @@
-import React from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
-import { colors, spacing, typography } from "../ui/theme";
+import { spacing, typography } from "../ui/theme";
+import { useTheme } from "../ui/ThemeContext";
 
 export type SearchBarProps = {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
+  /** Debounce delay in milliseconds (default: 300ms) */
+  debounceMs?: number;
+  /** Called immediately when user types (before debounce) */
+  onImmediateChange?: (text: string) => void;
 };
 
-export function SearchBar({ value, onChangeText, placeholder = "Search..." }: SearchBarProps): JSX.Element {
+export function SearchBar({ 
+  value, 
+  onChangeText, 
+  placeholder = "Search...",
+  debounceMs = 300,
+  onImmediateChange
+}: SearchBarProps): JSX.Element {
+  const theme = useTheme();
+  const ui = theme.ui;
+  const [localValue, setLocalValue] = useState(value);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync local value when external value changes
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleChangeText = useCallback((text: string) => {
+    setLocalValue(text);
+    
+    // Call immediate change callback if provided
+    onImmediateChange?.(text);
+    
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Set new debounced timer
+    debounceTimerRef.current = setTimeout(() => {
+      onChangeText(text);
+    }, debounceMs);
+  }, [onChangeText, debounceMs, onImmediateChange]);
+
+  const controlPaddingX = Math.round(spacing.md * ui.controlScale);
+  const controlPaddingY = Math.round(spacing.sm * ui.controlScale);
+  const controlRadius = Math.round(8 * ui.borderRadiusScale);
+  const inputFontSize = Math.round(typography.body.fontSize * ui.fontScale);
+  const inputLineHeight = Math.round(typography.body.lineHeight * ui.fontScale);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.inputContainer}>
+    <View style={[styles.container, { paddingHorizontal: controlPaddingX, paddingVertical: controlPaddingY }]}>
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+            borderWidth: ui.borderWidth,
+            borderRadius: controlRadius,
+            paddingHorizontal: controlPaddingX,
+            paddingVertical: controlPaddingY,
+          },
+        ]}
+      >
         <TextInput
-          style={styles.input}
-          value={value}
-          onChangeText={onChangeText}
+          style={[
+            styles.input,
+            {
+              color: theme.colors.text,
+              fontSize: inputFontSize,
+              lineHeight: inputLineHeight,
+            },
+          ]}
+          value={localValue}
+          onChangeText={handleChangeText}
           placeholder={placeholder}
-          placeholderTextColor={colors.muted}
+          placeholderTextColor={theme.colors.placeholder}
           autoCapitalize="none"
           autoCorrect={false}
           clearButtonMode="while-editing"
@@ -29,22 +101,13 @@ export function SearchBar({ value, onChangeText, placeholder = "Search..." }: Se
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm
   },
   input: {
     flex: 1,
-    ...typography.body,
-    color: colors.text
+    ...typography.body
   }
 });

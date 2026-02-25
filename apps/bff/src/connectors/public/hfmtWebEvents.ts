@@ -4,6 +4,9 @@ import { fetchWithTimeout } from "../../utils/fetch";
 import { log } from "../../utils/logger";
 import { buildEventId } from "./eventId";
 
+// Import mock fixtures for mock mode
+import mockuniEventsFixture from "../../__fixtures__/mockuni-events.json";
+
 export type PublicEvent = {
   id: string;
   title: string;
@@ -30,6 +33,12 @@ export async function fetchPublicEvents(
     cacheKey,
     async (): Promise<FetchPublicEventsResult> => {
       if (mode === "mock") {
+        // Use institution-specific fixture if available
+        if (institution.id === "mockuni") {
+          const fixtureEvents = mockuniEventsFixture.events as PublicEvent[];
+          return { events: fixtureEvents, degraded: false };
+        }
+        // Fallback: create basic mock events from source labels
         const mockEvents = sources.map((source: { url: string; label: string }) => {
           const date = now.toISOString();
           return {

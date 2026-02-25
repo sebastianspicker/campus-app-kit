@@ -1,13 +1,32 @@
 import { StyleSheet } from "react-native";
-import { colors, typography } from "./theme";
+import { darkColors, ThemeColors, typography } from "./theme";
 
-export const listScreenStyles = StyleSheet.create({
+type ListScreenStyles = {
   error: {
-    ...typography.body,
-    color: colors.accent
-  },
+    color: string;
+    fontFamily: string;
+    fontSize: number;
+    lineHeight: number;
+  };
   muted: {
-    ...typography.body,
-    color: colors.muted
-  }
-});
+    color: string;
+    fontFamily: string;
+    fontSize: number;
+    lineHeight: number;
+  };
+};
+
+export function createListScreenStyles(themeColors: ThemeColors): ListScreenStyles {
+  return StyleSheet.create({
+    error: {
+      ...typography.body,
+      color: themeColors.accent,
+    },
+    muted: {
+      ...typography.body,
+      color: themeColors.muted,
+    },
+  });
+}
+
+export const listScreenStyles = createListScreenStyles(darkColors);

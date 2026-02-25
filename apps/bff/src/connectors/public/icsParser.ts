@@ -13,7 +13,7 @@ export type ParsedIcsEvent = {
 };
 
 // Configuration for RRULE expansion
-const DEFAULT_RRULE_HORIZON_DAYS = 365; // Expand events up to 1 year in the future
+const DEFAULT_RRULE_HORIZON_DAYS = 90; // Expand events up to 3 months in the future by default
 const DEFAULT_RRULE_MAX_INSTANCES = 100; // Maximum instances per recurring event
 
 // #66: Stable fallback ID when UID is missing

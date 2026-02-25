@@ -1,7 +1,7 @@
 {
   "name": "campus-app-kit",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "build": "turbo run build",

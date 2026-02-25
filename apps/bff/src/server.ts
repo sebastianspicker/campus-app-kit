@@ -1,10 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { InstitutionPack } from "./config/loader";
 import http from "node:http";
-import { getBffEnv } from "./config/env";
 import { loadInstitutionPack } from "./config/loader";
 import { guardMethods } from "./middleware/methodGuard";
-import { guardAuth } from "./middleware/authGuard";
 import { handleEvents } from "./routes/events";
 import { handleHealth } from "./routes/health";
 import { handleRooms } from "./routes/rooms";

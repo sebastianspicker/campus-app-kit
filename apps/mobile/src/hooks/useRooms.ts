@@ -1,15 +1,22 @@
 import type { RoomsResponse } from "../api/types";
-import { fetchRooms } from "../data/publicApi";
+import { fetchRooms, type RoomsFilterOptions } from "../data/publicApi";
 import { usePublicResource } from "./usePublicResource";
 
-export function useRooms(): {
+export function useRooms(options?: RoomsFilterOptions): {
   data: RoomsResponse | null;
   error: string | null;
   loading: boolean;
   refreshing: boolean;
   refresh: () => Promise<void>;
 } {
-  return usePublicResource<RoomsResponse>((options) =>
-    fetchRooms({ force: options.force, signal: options.signal })
+  return usePublicResource<RoomsResponse>((fetchOptions) =>
+    fetchRooms({ 
+      force: fetchOptions.force, 
+      signal: fetchOptions.signal,
+      campus: options?.campus,
+      search: options?.search,
+      limit: options?.limit,
+      offset: options?.offset
+    })
   );
 }

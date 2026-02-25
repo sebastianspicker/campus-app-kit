@@ -16,6 +16,7 @@ import {
 } from "@campus/shared";
 import { getBffBaseUrl } from "../utils/env";
 import { getCached } from "./cache";
+import { fetchWithOfflineSupport } from "./persistedCache";
 
 const DEFAULT_TTL_MS = 60_000;
 
@@ -50,16 +51,43 @@ function safeParse<T>(data: unknown, schema: z.ZodType<T>): T {
   }
 }
 
+// Add a new type for offline-aware responses
+export type OfflineAwareResponse<T> = T & {
+  _offlineMeta?: {
+    fromCache: boolean;
+    isOffline: boolean;
+    cacheAge: number | null;
+  };
+};
+
+// Modify getCachedJson to support offline mode
 async function getCachedJson<T>(
   path: string,
   schema: z.ZodType<T>,
   keySuffix: string,
-  options?: { force?: boolean; signal?: AbortSignal; queryParams?: Record<string, string> }
+  options?: { force?: boolean; signal?: AbortSignal; queryParams?: Record<string, string>; offlineMode?: boolean }
 ): Promise<T> {
   const cacheKey = getPublicCacheKey(keySuffix, options?.queryParams);
   const queryString = options?.queryParams 
     ? `?${new URLSearchParams(options.queryParams).toString()}`
     : "";
+  
+  if (options?.offlineMode) {
+    const result = await fetchWithOfflineSupport<T>(
+      cacheKey,
+      () => getJson<T>(`${path}${queryString}`, (data) => safeParse(data, schema), { signal: options?.signal })
+    );
+    
+    // Attach offline metadata to response
+    const response = result.data as OfflineAwareResponse<T>;
+    response._offlineMeta = {
+      fromCache: result.fromCache,
+      isOffline: result.isOffline,
+      cacheAge: result.cacheAge
+    };
+    return response;
+  }
+  
   return getCached(
     cacheKey,
     () =>
@@ -77,6 +105,7 @@ export type EventsFilterOptions = {
   to?: string;
   limit?: number;
   offset?: number;
+  offlineMode?: boolean;
 };
 
 export function fetchEvents(options?: EventsFilterOptions): Promise<EventsResponse> {
@@ -90,20 +119,65 @@ export function fetchEvents(options?: EventsFilterOptions): Promise<EventsRespon
   return getCachedJson("/events", EventsResponseSchema, "events", {
     force: options?.force,
     signal: options?.signal,
-    queryParams
+    queryParams,
+    offlineMode: options?.offlineMode
   });
 }
 
-export function fetchRooms(options?: { force?: boolean; signal?: AbortSignal }): Promise<RoomsResponse> {
-  return getCachedJson("/rooms", RoomsResponseSchema, "rooms", options);
+export type RoomsFilterOptions = {
+  force?: boolean;
+  signal?: AbortSignal;
+  campus?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+  offlineMode?: boolean;
+};
+
+export function fetchRooms(options?: RoomsFilterOptions): Promise<RoomsResponse> {
+  const queryParams: Record<string, string> = {};
+  if (options?.campus) queryParams.campus = options.campus;
+  if (options?.search) queryParams.search = options.search;
+  if (options?.limit !== undefined) queryParams.limit = String(options.limit);
+  if (options?.offset !== undefined) queryParams.offset = String(options.offset);
+  
+  return getCachedJson("/rooms", RoomsResponseSchema, "rooms", {
+    force: options?.force,
+    signal: options?.signal,
+    queryParams,
+    offlineMode: options?.offlineMode
+  });
 }
 
-export function fetchToday(options?: { force?: boolean; signal?: AbortSignal }): Promise<TodayResponse> {
+export function fetchToday(options?: { force?: boolean; signal?: AbortSignal; offlineMode?: boolean }): Promise<TodayResponse> {
   return getCachedJson("/today", TodayResponseSchema, "today", options);
 }
 
-export function fetchSchedule(
-  options?: { force?: boolean; signal?: AbortSignal }
-): Promise<ScheduleResponse> {
-  return getCachedJson("/schedule", ScheduleResponseSchema, "schedule", options);
+export type ScheduleFilterOptions = {
+  force?: boolean;
+  signal?: AbortSignal;
+  search?: string;
+  from?: string;
+  to?: string;
+  campus?: string;
+  limit?: number;
+  offset?: number;
+  offlineMode?: boolean;
+};
+
+export function fetchSchedule(options?: ScheduleFilterOptions): Promise<ScheduleResponse> {
+  const queryParams: Record<string, string> = {};
+  if (options?.search) queryParams.search = options.search;
+  if (options?.from) queryParams.from = options.from;
+  if (options?.to) queryParams.to = options.to;
+  if (options?.campus) queryParams.campus = options.campus;
+  if (options?.limit !== undefined) queryParams.limit = String(options.limit);
+  if (options?.offset !== undefined) queryParams.offset = String(options.offset);
+  
+  return getCachedJson("/schedule", ScheduleResponseSchema, "schedule", {
+    force: options?.force,
+    signal: options?.signal,
+    queryParams,
+    offlineMode: options?.offlineMode
+  });
 }

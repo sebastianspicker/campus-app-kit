@@ -4,6 +4,7 @@ export type BffEnv = {
   corsOrigins: string[];
   trustProxy: TrustProxyMode;
   defaultCacheTtl: number;
+  rruleExpansionHorizonDays: number;
 };
 
 export const BFF_ENV: BffEnv = {
@@ -11,7 +12,8 @@ export const BFF_ENV: BffEnv = {
   institutionId: requireNonEmpty(process.env.INSTITUTION_ID, "INSTITUTION_ID"),
   corsOrigins: parseCsv(process.env.CORS_ORIGINS),
   trustProxy: parseTrustProxy(process.env.BFF_TRUST_PROXY),
-  defaultCacheTtl: parseInt(process.env.BFF_DEFAULT_CACHE_TTL ?? "300", 10)
+  defaultCacheTtl: parseInt(process.env.BFF_DEFAULT_CACHE_TTL ?? "300", 10),
+  rruleExpansionHorizonDays: parseInt(process.env.RRULE_EXPANSION_HORIZON_DAYS ?? "90", 10)
 };
 
 export function getBffEnv(): BffEnv {

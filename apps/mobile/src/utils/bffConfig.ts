@@ -1,5 +1,4 @@
 /** @deprecated Prefer EXPO_PUBLIC_BFF_BASE_URL; MOBILE_PUBLIC_BFF_URL is not Expo-public and may be unavailable in bundled builds */
-const LEGACY_ENV_KEY = "MOBILE_PUBLIC_BFF_URL";
 
 let memoizedBffBaseUrl: string | null = null;
 
@@ -7,16 +6,22 @@ export function resolveBffBaseUrl(): string {
   if (memoizedBffBaseUrl) return memoizedBffBaseUrl;
 
   const result = ((): string => {
+    // Try various ways to get the BFF URL
     const fromConfig = process.env.EXPO_PUBLIC_BFF_BASE_URL;
-
+    
+    // For web, also check window location
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _isWeb = typeof window !== "undefined" && typeof document !== "undefined";
+    
+    // For development, always use localhost:4000
+    // This is the safest fallback for local development
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      return "http://localhost:4000";
+    }
+    
+    // In production, require the env var
     if (fromConfig) {
       return normalizeBaseUrl(fromConfig);
-    }
-
-    const nodeEnv = process.env.NODE_ENV;
-    const isDev = typeof __DEV__ === "boolean" ? __DEV__ : nodeEnv !== "production";
-    if (isDev) {
-      return "http://localhost:4000";
     }
 
     throw new Error(
