@@ -5,7 +5,7 @@ import { fetchPublicSchedule } from "../connectors/public/publicSchedule";
 import { createJsonRoute } from "./createJsonRoute";
 
 export const handleSchedule = createJsonRoute(
-  async (institution) => {
+  async (institution, _req) => {
     const schedules = institution.publicSources?.schedules ?? [];
     if (schedules.length === 0) {
       throw new Error("NO_CONFIG_SOURCES: No schedules configured");

@@ -6,7 +6,7 @@ import { fetchPublicEvents } from "../connectors/public/hfmtWebEvents";
 import { createJsonRoute } from "./createJsonRoute";
 
 export const handleToday = createJsonRoute(
-  async (institution) => {
+  async (institution, _req) => {
     const eventsConfigured = (institution.publicSources?.events?.length ?? 0) > 0;
     const roomsConfigured = (institution.publicRooms?.length ?? 0) > 0;
 

@@ -1,10 +1,9 @@
 import React from "react";
-import { Text } from "react-native";
 import { EmptyState } from "./EmptyState";
-import { LoadingBlock } from "./LoadingBlock";
+import { ErrorState } from "./ErrorState";
 import { ResourceListItem } from "./ResourceListItem";
 import { Section } from "./Section";
-import { listScreenStyles } from "./listScreenStyles";
+import { SkeletonList } from "./Skeleton";
 
 export type ResourceListSectionProps<T> = {
   title: string;
@@ -16,6 +15,7 @@ export type ResourceListSectionProps<T> = {
   href: (item: T) => { pathname: string; params: Record<string, string> };
   renderCard: (item: T) => { title: string; subtitle?: string };
   accessibilityLabel: (item: T) => string;
+  onRetry?: () => void;
 };
 
 export function ResourceListSection<T>({
@@ -27,21 +27,24 @@ export function ResourceListSection<T>({
   keyExtractor,
   href,
   renderCard,
-  accessibilityLabel
+  accessibilityLabel,
+  onRetry
 }: ResourceListSectionProps<T>): JSX.Element {
   return (
     <Section title={title}>
-      {loading ? <LoadingBlock /> : null}
-      {error ? <Text selectable style={listScreenStyles.error}>{error}</Text> : null}
-      {items.map((item) => (
-        <ResourceListItem
-          key={keyExtractor(item)}
-          item={item}
-          href={href}
-          renderCard={renderCard}
-          accessibilityLabel={accessibilityLabel}
-        />
-      ))}
+      {loading ? <SkeletonList count={3} /> : null}
+      {error ? <ErrorState message={error} onRetry={onRetry} /> : null}
+      {!loading && !error
+        ? items.map((item) => (
+            <ResourceListItem
+              key={keyExtractor(item)}
+              item={item}
+              href={href}
+              renderCard={renderCard}
+              accessibilityLabel={accessibilityLabel}
+            />
+          ))
+        : null}
       {!loading && !error && items.length === 0 ? (
         <EmptyState message={emptyMessage} />
       ) : null}

@@ -4,7 +4,7 @@ import { RoomsResponseSchema } from "@campus/shared";
 import { createJsonRoute } from "./createJsonRoute";
 
 export const handleRooms = createJsonRoute(
-  async (institution) => {
+  async (institution, _req) => {
     const rooms = institution.publicRooms ?? [];
     if (rooms.length === 0) {
       throw new Error("NO_CONFIG_SOURCES: No rooms configured");

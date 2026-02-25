@@ -7,7 +7,7 @@ import { sendError } from "../utils/errors";
 import { log } from "../utils/logger";
 import { getRequestId } from "../utils/requestId";
 
-type JsonRouteLoader = (institution: InstitutionPack) => Promise<unknown>;
+type JsonRouteLoader = (institution: InstitutionPack, req: IncomingMessage) => Promise<unknown>;
 
 export function createJsonRoute<T>(
   loader: JsonRouteLoader,
@@ -20,7 +20,7 @@ export function createJsonRoute<T>(
   return async (req, res, institution): Promise<void> => {
     const requestId = getRequestId(req);
     try {
-      const data = await loader(institution);
+      const data = await loader(institution, req);
       const response = schema.parse(data);
 
       if (getExtraHeaders) {
