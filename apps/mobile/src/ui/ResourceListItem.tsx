@@ -33,22 +33,25 @@ function ResourceListItemInner<T>({
   const label = accessibilityLabel(item);
   const theme = useTheme();
 
-  // Reanimated press scale effect for tactile feedback
-  const scale = useSharedValue(1);
+  // Reanimated press scale and opacity effect for hyper-responsive tactile feedback
+  const pressed = useSharedValue(0);
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: 1 - pressed.value * 0.04 }],
+    opacity: 1 - pressed.value * 0.3,
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.96, {
-      damping: 20,
-      stiffness: 300,
-      mass: 0.8
+    // Ultra-fast engagement
+    pressed.value = withSpring(1, {
+      damping: 15,
+      stiffness: 450,
+      mass: 0.5
     });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, {
+    // Smooth, luxurious release
+    pressed.value = withSpring(0, {
       damping: 20,
       stiffness: 300,
       mass: 0.8
@@ -94,19 +97,20 @@ const styles = StyleSheet.create({
     width: 8,
     height: 14,
     justifyContent: "center",
+    opacity: 0.6, // 2026: Subdued iconography, letting typography shine
   },
   chevronLine: {
-    width: 2,
-    height: 8,
+    width: 1.5, // Thinner, precise
+    height: 8.5,
     borderRadius: 1,
     position: "absolute",
   },
   chevronTop: {
-    top: 1,
+    top: 0.5,
     transform: [{ rotate: "-45deg" }],
   },
   chevronBottom: {
-    bottom: 1,
+    bottom: 0.5,
     transform: [{ rotate: "45deg" }],
   },
 });

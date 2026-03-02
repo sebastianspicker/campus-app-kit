@@ -14,15 +14,17 @@ export function Section({
   const ui = theme.ui;
 
   return (
-    <View style={[styles.section, { marginBottom: Math.round(spacing.lg * ui.controlScale) }]}>
+    <View style={[styles.section, { marginBottom: Math.round(spacing.xl * ui.controlScale) }]}>
       <Text
         style={[
           styles.title,
           {
-            color: theme.colors.text,
-            marginBottom: Math.round(spacing.sm * ui.controlScale),
-            fontSize: Math.round(typography.subheading.fontSize * ui.fontScale),
-            lineHeight: Math.round(typography.subheading.lineHeight * ui.fontScale),
+            color: theme.colors.muted,
+            marginBottom: Math.round(spacing.md * ui.controlScale),
+            fontSize: Math.round(typography.small.fontSize * ui.fontScale),
+            letterSpacing: typography.small.letterSpacing,
+            textTransform: "uppercase",
+            fontWeight: "700",
           },
         ]}
       >
@@ -36,9 +38,9 @@ export function Section({
 const styles = StyleSheet.create({
   section: {},
   title: {
-    ...typography.subheading,
+    ...typography.small,
   },
   body: {
-    gap: spacing.sm
+    gap: spacing.md
   }
 });

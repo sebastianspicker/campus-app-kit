@@ -32,9 +32,9 @@ export function Screen({
     />
   ) : undefined;
 
-  // Modernized looser padding for breathing room
-  const contentPadding = Math.round(spacing.xl * ui.controlScale);
-  const contentGap = Math.round(spacing.lg * ui.controlScale);
+  // 2026: Hyper-generous negative space for breathing room
+  const contentPadding = Math.round(spacing.xxl * ui.controlScale);
+  const contentGap = Math.round(spacing.xl * ui.controlScale);
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>

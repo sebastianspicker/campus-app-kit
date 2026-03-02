@@ -41,38 +41,38 @@ export type ThemeUi = {
 
 // Light theme colors - Sophisticated, clean, airy 2026 aesthetic
 const lightColors: ThemeColors = {
-  background: "#fdfdfc",      // Crisp warm white
+  background: "#fcfcfc",      // Crisp super-warm white
   surface: "#ffffff",         // Pure white for elevated surfaces
-  text: "#1a1a1a",            // Softened jet black
-  muted: "#737373",           // Neutral balanced gray
-  accent: "#ea580c",          // Deeper, vibrant tactile orange
+  text: "#111113",            // Deep ink black
+  muted: "#6b7280",           // Refined cool gray
+  accent: "#4f46e5",          // Deep neon indigo/violet
   accentText: "#ffffff",      // Contrast for accent
-  border: "#efede8",          // Very faint warm gray border
-  error: "#dc2626",
-  success: "#16a34a",
-  warning: "#d97706",
-  info: "#2563eb",
-  overlay: "rgba(0, 0, 0, 0.25)", // Softer translucent overlay
-  disabled: "#a3a3a3",
-  placeholder: "#a3a3a3",
+  border: "rgba(0, 0, 0, 0.05)", // Ultra-subtle border
+  error: "#ef4444",
+  success: "#10b981",
+  warning: "#f59e0b",
+  info: "#3b82f6",
+  overlay: "rgba(0, 0, 0, 0.15)", // Softer translucent overlay
+  disabled: "#9ca3af",
+  placeholder: "#9ca3af",
 };
 
 // Dark theme colors - "Deep Space Glass" 2026 premium aesthetic
 const darkColors: ThemeColors = {
-  background: "#050505",      // Near OLED black
-  surface: "#121212",         // Elevated very dark gray, high quality
-  text: "#ededed",            // Crisp but not stark white
-  muted: "#a1a1aa",           // Cool visible gray
-  accent: "#f97316",          // Neonic vibrant orange
-  accentText: "#ffffff",      // For buttons with orange backgrounds
-  border: "#262626",          // Barely-there structural line
+  background: "#000000",      // Deep space OLED black
+  surface: "#111113",         // Very dark premium tint
+  text: "#f9fafb",            // Crisper off-white
+  muted: "#9ca3af",           // Visible gray
+  accent: "#818cf8",          // Neon vibrant indigo
+  accentText: "#000000",      // For buttons with bright backgrounds
+  border: "rgba(255, 255, 255, 0.08)", // Barely-there structural line
   error: "#f87171",
   success: "#4ade80",
   warning: "#fbbf24",
   info: "#60a5fa",
-  overlay: "rgba(0, 0, 0, 0.45)", // Tinted cinematic blur backdrop
-  disabled: "#525252",
-  placeholder: "#525252",
+  overlay: "rgba(0, 0, 0, 0.65)", // Deeper cinematic blur backdrop
+  disabled: "#4b5563",
+  placeholder: "#4b5563",
 };
 
 // High-contrast accessibility theme with larger visual affordances
@@ -100,7 +100,7 @@ const standardUi: ThemeUi = {
   borderWidth: 0.5,
   emphasisBorderWidth: 1.5,
   // Larger, softer curves matching Apple/Google 2026 fluid design guidelines
-  borderRadiusScale: 1.5, 
+  borderRadiusScale: 1.5,
 };
 
 const accessibilityUi: ThemeUi = {
@@ -159,54 +159,63 @@ const fontFamily = {
 
 export const typography = {
   heading: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "700" as const,
-    fontFamily: fontFamily.serif,
-    lineHeight: 32,
+    fontFamily: fontFamily.sans, // Switch to high-impact sans
+    lineHeight: 34,
+    letterSpacing: -0.5,
   },
   subheading: {
-    fontSize: 18,
-    fontWeight: "700" as const,
-    fontFamily: fontFamily.serif,
-    lineHeight: 24,
+    fontSize: 20,
+    fontWeight: "600" as const,
+    fontFamily: fontFamily.sans,
+    lineHeight: 28,
+    letterSpacing: -0.3,
   },
   body: {
     fontSize: 16,
     fontFamily: fontFamily.sans,
-    lineHeight: 22,
+    lineHeight: 24,
+    letterSpacing: -0.1,
   },
   caption: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: fontFamily.sans,
-    lineHeight: 18,
+    lineHeight: 20,
+    letterSpacing: 0,
   },
   small: {
     fontSize: 12,
     fontFamily: fontFamily.sans,
     lineHeight: 16,
+    letterSpacing: 0.2, // Wide tracking for sub-labels
   },
   // Relative font sizes for accessibility scaling
   relative: {
     heading: {
-      fontSize: 24,
+      fontSize: 28,
       fontWeight: "700" as const,
-      fontFamily: fontFamily.serif,
+      fontFamily: fontFamily.sans,
+      letterSpacing: -0.5,
       allowFontScaling: true,
     },
     subheading: {
-      fontSize: 18,
-      fontWeight: "700" as const,
-      fontFamily: fontFamily.serif,
+      fontSize: 20,
+      fontWeight: "600" as const,
+      fontFamily: fontFamily.sans,
+      letterSpacing: -0.3,
       allowFontScaling: true,
     },
     body: {
       fontSize: 16,
       fontFamily: fontFamily.sans,
+      letterSpacing: -0.1,
       allowFontScaling: true,
     },
     caption: {
-      fontSize: 13,
+      fontSize: 14,
       fontFamily: fontFamily.sans,
+      letterSpacing: 0,
       allowFontScaling: true,
     },
   },
@@ -231,30 +240,30 @@ export const borderRadius = {
 export const shadows = {
   sm: {
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.18,
-    shadowRadius: 1.0,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03, // Ultra-airy ambient shadow
+    shadowRadius: 12,
+    elevation: 2,
   },
   md: {
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 24,
+    elevation: 4,
   },
   lg: {
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.08,
+    shadowRadius: 36, // Huge radius for diffuse bleeding light effect
+    elevation: 8,
   },
   xl: {
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.44,
-    shadowRadius: 10.32,
+    shadowOffset: { width: 0, height: 24 },
+    shadowOpacity: 0.12,
+    shadowRadius: 48,
     elevation: 12,
   },
 } as const;
