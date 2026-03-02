@@ -95,7 +95,7 @@ describe("ThemeContext", () => {
 
     const instance = tree.root;
     expect(instance.findByProps({ "data-testid": "color-scheme" }).props.children).toBe("dark");
-    expect(instance.findByProps({ "data-testid": "background-color" }).props.children).toBe("#0b1020");
+    expect(instance.findByProps({ "data-testid": "background-color" }).props.children).toBe("#050505");
   });
 
   it("loads saved accessibility preference", async () => {

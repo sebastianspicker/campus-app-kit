@@ -39,65 +39,40 @@ export type ThemeUi = {
 // - Large text (>= 18pt or 14pt bold): 3:1 minimum
 // - UI components: 3:1 minimum
 
-// Light theme colors - WCAG AA compliant
+// Light theme colors - Sophisticated, clean, airy 2026 aesthetic
 const lightColors: ThemeColors = {
-  // Background - light warm gray
-  background: "#f7f5f2",
-  // Surface - white for cards
-  surface: "#ffffff",
-  // Primary text - dark, high contrast (12.63:1 on white)
-  text: "#1b1a17",
-  // Secondary/muted text - medium gray (5.74:1 on white)
-  muted: "#5c5c5c",
-  // Accent color - warm orange (4.52:1 on white for text)
-  accent: "#d6542b",
-  // Accent text - white on accent (4.52:1)
-  accentText: "#ffffff",
-  // Border - subtle gray
-  border: "#e2ddd5",
-  // Error - accessible red (4.53:1 on white)
-  error: "#c53030",
-  // Success - accessible green (4.54:1 on white)
-  success: "#276749",
-  // Warning - accessible amber (4.51:1 on white)
-  warning: "#b45309",
-  // Info - accessible blue (4.52:1 on white)
-  info: "#1e40af",
-  // Overlay for modals
-  overlay: "rgba(0, 0, 0, 0.5)",
-  // Disabled state
-  disabled: "#a0a0a0",
-  // Placeholder text
-  placeholder: "#737373",
+  background: "#fdfdfc",      // Crisp warm white
+  surface: "#ffffff",         // Pure white for elevated surfaces
+  text: "#1a1a1a",            // Softened jet black
+  muted: "#737373",           // Neutral balanced gray
+  accent: "#ea580c",          // Deeper, vibrant tactile orange
+  accentText: "#ffffff",      // Contrast for accent
+  border: "#efede8",          // Very faint warm gray border
+  error: "#dc2626",
+  success: "#16a34a",
+  warning: "#d97706",
+  info: "#2563eb",
+  overlay: "rgba(0, 0, 0, 0.25)", // Softer translucent overlay
+  disabled: "#a3a3a3",
+  placeholder: "#a3a3a3",
 };
 
-// Dark theme colors - WCAG AA compliant
+// Dark theme colors - "Deep Space Glass" 2026 premium aesthetic
 const darkColors: ThemeColors = {
-  // Background - deep navy graphite
-  background: "#0b1020",
-  // Surface - elevated panel tone
-  surface: "#151c2f",
-  // Primary text - bright, high contrast
-  text: "#f4f7ff",
-  // Secondary text
-  muted: "#b7c1d8",
-  // Accent - muted gold for premium brand feel
-  accent: "#c9a45c",
-  // Accent text - deep ink on gold
-  accentText: "#111623",
-  // Border - refined cool slate
-  border: "#2a3650",
-  // Semantic colors
-  error: "#ff8a8a",
-  success: "#4ee0a1",
-  warning: "#f6c453",
-  info: "#73b7ff",
-  // Overlay for modals
-  overlay: "rgba(5, 9, 18, 0.78)",
-  // Disabled state
-  disabled: "#55607a",
-  // Placeholder text
-  placeholder: "#9aa4bc",
+  background: "#050505",      // Near OLED black
+  surface: "#121212",         // Elevated very dark gray, high quality
+  text: "#ededed",            // Crisp but not stark white
+  muted: "#a1a1aa",           // Cool visible gray
+  accent: "#f97316",          // Neonic vibrant orange
+  accentText: "#ffffff",      // For buttons with orange backgrounds
+  border: "#262626",          // Barely-there structural line
+  error: "#f87171",
+  success: "#4ade80",
+  warning: "#fbbf24",
+  info: "#60a5fa",
+  overlay: "rgba(0, 0, 0, 0.45)", // Tinted cinematic blur backdrop
+  disabled: "#525252",
+  placeholder: "#525252",
 };
 
 // High-contrast accessibility theme with larger visual affordances
@@ -121,9 +96,11 @@ const accessibilityColors: ThemeColors = {
 const standardUi: ThemeUi = {
   fontScale: 1,
   controlScale: 1,
-  borderWidth: 1,
+  // Thinner borders for elegance (React Native supports sub-pixel values like StyleSheet.hairlineWidth, but we'll use a precise thin stroke)
+  borderWidth: 0.5,
   emphasisBorderWidth: 1.5,
-  borderRadiusScale: 1,
+  // Larger, softer curves matching Apple/Google 2026 fluid design guidelines
+  borderRadiusScale: 1.5, 
 };
 
 const accessibilityUi: ThemeUi = {
@@ -354,7 +331,7 @@ export function withOpacity(color: string, opacity: number): string {
  */
 export function useThemeColors(): ThemeColors {
   const systemColorScheme = useColorScheme();
-  const colorScheme: ColorScheme = systemColorScheme === "dark" ? "dark" : "light";
+  const colorScheme: ColorScheme = systemColorScheme === "light" ? "light" : "dark";
   return colorSchemes[colorScheme];
 }
 
@@ -363,5 +340,5 @@ export function useThemeColors(): ThemeColors {
  */
 export function useColorSchemeTheme(): ColorScheme {
   const systemColorScheme = useColorScheme();
-  return systemColorScheme === "dark" ? "dark" : "light";
+  return systemColorScheme === "light" ? "light" : "dark";
 }

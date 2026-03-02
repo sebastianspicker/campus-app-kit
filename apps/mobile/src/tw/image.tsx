@@ -1,4 +1,4 @@
-import { useCssElement } from "react-native-css";
+import { cssInterop } from "nativewind";
 import React from "react";
 import { StyleSheet } from "react-native";
 import { Image as RNImage } from "expo-image";
@@ -23,7 +23,8 @@ function CSSImage(props: RNImageProps) {
 
 export type ImageProps = RNImageProps & { className?: string };
 
-export const Image = (props: ImageProps) => {
-  return useCssElement(CSSImage, props, { className: "style" });
-};
+// Wrap CSSImage with NativeWind's cssInterop
+cssInterop(CSSImage, { className: "style" });
+
+export const Image = CSSImage as React.ComponentType<ImageProps>;
 Image.displayName = "CSS(Image)";

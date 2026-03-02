@@ -8,6 +8,8 @@ import { ThemeColors, ThemeUi, ColorScheme, colorSchemes, uiSchemes, darkColors,
 // ============================================
 
 export type ThemePreference = "light" | "dark" | "accessibility" | "system";
+export const DEFAULT_THEME_PREFERENCE: ThemePreference = "dark";
+export const DEFAULT_COLOR_SCHEME: ColorScheme = "dark";
 
 export type Theme = {
   colors: ThemeColors;
@@ -37,7 +39,7 @@ const THEME_STORAGE_KEY = "@campus-app/theme-preference";
 
 export function ThemeProvider({ children }: { children: ReactNode }): JSX.Element {
   const systemColorScheme = useColorScheme();
-  const [preference, setPreferenceState] = useState<ThemePreference>("dark");
+  const [preference, setPreferenceState] = useState<ThemePreference>(DEFAULT_THEME_PREFERENCE);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load saved theme preference on mount
@@ -57,9 +59,9 @@ export function ThemeProvider({ children }: { children: ReactNode }): JSX.Elemen
   }, []);
 
   // Resolve the actual color scheme based on preference
-  const resolvedScheme: ColorScheme = 
-    preference === "system" 
-      ? (systemColorScheme === "dark" ? "dark" : "light")
+  const resolvedScheme: ColorScheme =
+    preference === "system"
+      ? (systemColorScheme === "light" ? "light" : DEFAULT_COLOR_SCHEME)
       : preference;
 
   const theme: Theme = {
@@ -90,7 +92,7 @@ export function ThemeProvider({ children }: { children: ReactNode }): JSX.Elemen
       colors: darkColors,
       ui: uiSchemes.dark,
       isDark: true,
-      colorScheme: "dark",
+      colorScheme: DEFAULT_COLOR_SCHEME,
     },
     preference,
     setPreference,
@@ -167,7 +169,8 @@ export function useIsDarkMode(): boolean {
  */
 export function useSystemTheme(): Theme {
   const systemColorScheme = useColorScheme();
-  const colorScheme: ColorScheme = systemColorScheme === "dark" ? "dark" : "light";
+  const colorScheme: ColorScheme =
+    systemColorScheme === "light" ? "light" : DEFAULT_COLOR_SCHEME;
 
   return {
     colors: getThemeColors(colorScheme),

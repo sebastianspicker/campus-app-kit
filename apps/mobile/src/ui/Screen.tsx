@@ -32,8 +32,9 @@ export function Screen({
     />
   ) : undefined;
 
-  const contentPadding = Math.round(spacing.lg * ui.controlScale);
-  const contentGap = Math.round(spacing.md * ui.controlScale);
+  // Modernized looser padding for breathing room
+  const contentPadding = Math.round(spacing.xl * ui.controlScale);
+  const contentGap = Math.round(spacing.lg * ui.controlScale);
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
@@ -48,6 +49,7 @@ export function Screen({
         ]}
         refreshControl={refreshControl}
         scrollEnabled={scroll}
+        showsVerticalScrollIndicator={false} // Cleaner look
       >
         {children}
       </ScrollView>
@@ -59,5 +61,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  scrollContent: {},
+  scrollContent: {
+    paddingBottom: spacing.xxl * 2, // Extra bottom padding for floating tab bars / modern bottom bounds
+  },
 });

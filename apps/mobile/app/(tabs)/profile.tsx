@@ -15,8 +15,8 @@ export default function ProfileScreen(): JSX.Element {
   const ui = theme.ui;
 
   const themeOptions: { label: string; value: ThemePreference }[] = [
+    { label: "Dark (Default)", value: "dark" },
     { label: "System", value: "system" },
-    { label: "Dark", value: "dark" },
     { label: "Light", value: "light" },
     { label: "Accessibility", value: "accessibility" },
   ];

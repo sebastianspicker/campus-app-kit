@@ -1,7 +1,4 @@
-import {
-  useCssElement,
-  useNativeVariable as useFunctionalVariable
-} from "react-native-css";
+import { cssInterop, useUnstableNativeVariable } from "nativewind";
 import { Link as RouterLink } from "expo-router";
 import React from "react";
 import {
@@ -17,69 +14,47 @@ import Animated from "react-native-reanimated";
 
 type LinkProps = React.ComponentProps<typeof RouterLink> & { className?: string };
 
-export const Link = (props: LinkProps) => {
-  return useCssElement(RouterLink, props, { className: "style" });
-};
+cssInterop(RouterLink, { className: "style" });
+export const Link = RouterLink as unknown as React.ComponentType<LinkProps>;
 
 export const useCSSVariable =
   process.env.EXPO_OS !== "web"
-    ? useFunctionalVariable
+    ? useUnstableNativeVariable
     : (variable: string) => `var(${variable})`;
 
 export type ViewProps = React.ComponentProps<typeof RNView> & { className?: string };
 
-export const View = (props: ViewProps) => {
-  return useCssElement(RNView, props, { className: "style" });
-};
-View.displayName = "CSS(View)";
+cssInterop(RNView, { className: "style" });
+export const View = RNView as unknown as React.ComponentType<ViewProps>;
 
-export const Text = (
-  props: React.ComponentProps<typeof RNText> & { className?: string }
-) => {
-  return useCssElement(RNText, props, { className: "style" });
-};
-Text.displayName = "CSS(Text)";
+cssInterop(RNText, { className: "style" });
+export const Text = RNText as unknown as React.ComponentType<React.ComponentProps<typeof RNText> & { className?: string }>;
 
-export const ScrollView = (
-  props: React.ComponentProps<typeof RNScrollView> & {
-    className?: string;
-    contentContainerClassName?: string;
-  }
-) => {
-  return useCssElement(RNScrollView, props, {
-    className: "style",
-    contentContainerClassName: "contentContainerStyle"
-  });
-};
-ScrollView.displayName = "CSS(ScrollView)";
+cssInterop(RNScrollView, {
+  className: "style",
+  contentContainerClassName: "contentContainerStyle"
+});
+export const ScrollView = RNScrollView as unknown as React.ComponentType<React.ComponentProps<typeof RNScrollView> & {
+  className?: string;
+  contentContainerClassName?: string;
+}>;
 
-export const Pressable = (
-  props: React.ComponentProps<typeof RNPressable> & { className?: string }
-): React.ReactElement => {
-  return useCssElement(RNPressable, props, { className: "style" }) as React.ReactElement;
-};
-Pressable.displayName = "CSS(Pressable)";
+cssInterop(RNPressable, { className: "style" });
+export const Pressable = RNPressable as unknown as React.ComponentType<React.ComponentProps<typeof RNPressable> & { className?: string }>;
 
-export const TextInput = (
-  props: React.ComponentProps<typeof RNTextInput> & { className?: string }
-) => {
-  return useCssElement(RNTextInput, props, { className: "style" });
-};
-TextInput.displayName = "CSS(TextInput)";
+cssInterop(RNTextInput, { className: "style" });
+export const TextInput = RNTextInput as unknown as React.ComponentType<React.ComponentProps<typeof RNTextInput> & { className?: string }>;
 
-export const AnimatedScrollView = (
-  props: React.ComponentProps<typeof Animated.ScrollView> & {
-    className?: string;
-    contentClassName?: string;
-    contentContainerClassName?: string;
-  }
-): React.ReactElement => {
-  return useCssElement(Animated.ScrollView, props, {
-    className: "style",
-    contentClassName: "contentContainerStyle",
-    contentContainerClassName: "contentContainerStyle"
-  }) as React.ReactElement;
-};
+cssInterop(Animated.ScrollView, {
+  className: "style",
+  contentClassName: "contentContainerStyle",
+  contentContainerClassName: "contentContainerStyle"
+});
+export const AnimatedScrollView = Animated.ScrollView as unknown as React.ComponentType<React.ComponentProps<typeof Animated.ScrollView> & {
+  className?: string;
+  contentClassName?: string;
+  contentContainerClassName?: string;
+}>;
 
 function TouchableHighlightInner(
   props: React.ComponentProps<typeof RNTouchableHighlight>
@@ -95,11 +70,7 @@ function TouchableHighlightInner(
   );
 }
 
-export const TouchableHighlight = (
-  props: React.ComponentProps<typeof RNTouchableHighlight> & { className?: string }
-) => {
-  return useCssElement(TouchableHighlightInner, props, { className: "style" });
-};
-TouchableHighlight.displayName = "CSS(TouchableHighlight)";
+cssInterop(TouchableHighlightInner, { className: "style" });
+export const TouchableHighlight = TouchableHighlightInner as unknown as React.ComponentType<React.ComponentProps<typeof RNTouchableHighlight> & { className?: string }>;
 
 export { Image } from "./image";
