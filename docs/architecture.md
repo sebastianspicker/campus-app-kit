@@ -19,3 +19,8 @@ Some setup details still depend on the current local workflow and may change aga
 - Shaped typescript into a usable first pass during publication work.
 
 - Earlier scratch notes were compressed into the current guidance.
+
+## Architecture
+- Reduced the run surface that later fixes have to touch.
+
+- Earlier scratch notes were compressed into the current guidance.
