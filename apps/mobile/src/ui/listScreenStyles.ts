@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { darkColors, ThemeColors, typography } from "./theme";
+import { ThemeColors, typography } from "./theme";
 
 type ListScreenStyles = {
   error: {
@@ -28,5 +28,3 @@ export function createListScreenStyles(themeColors: ThemeColors): ListScreenStyl
     },
   });
 }
-
-export const listScreenStyles = createListScreenStyles(darkColors);

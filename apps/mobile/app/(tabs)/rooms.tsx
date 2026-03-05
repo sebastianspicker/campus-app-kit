@@ -34,6 +34,7 @@ export default function RoomsScreen(): JSX.Element {
         error={error}
         items={rooms}
         emptyMessage={search ? `No rooms matching "${search}"` : "No rooms available."}
+        emptyIcon={"🏢"}
         keyExtractor={keyExtractor}
         href={href}
         renderCard={renderCard}

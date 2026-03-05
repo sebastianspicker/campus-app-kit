@@ -5,7 +5,7 @@ import { EmptyState } from "./EmptyState";
 import { LoadingBlock } from "./LoadingBlock";
 import { Screen } from "./Screen";
 import { Section } from "./Section";
-import { typography } from "./theme";
+import { scaled, scaledFont, scaledRadius, typography } from "./theme";
 import { useTheme } from "./ThemeContext";
 
 export type ResourceDetailScreenProps<T> = {
@@ -18,6 +18,8 @@ export type ResourceDetailScreenProps<T> = {
   cardSubtitle?: string;
   renderMeta?: () => React.ReactNode;
   footnote?: string;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 };
 
 export function ResourceDetailScreen<T>({
@@ -29,13 +31,15 @@ export function ResourceDetailScreen<T>({
   cardTitle,
   cardSubtitle,
   renderMeta,
-  footnote
+  footnote,
+  refreshing,
+  onRefresh
 }: ResourceDetailScreenProps<T>): JSX.Element {
   const theme = useTheme();
   const ui = theme.ui;
 
   return (
-    <Screen>
+    <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <Section title={title}>
         {loading ? <LoadingBlock /> : null}
         {error ? (
@@ -45,8 +49,8 @@ export function ResourceDetailScreen<T>({
               styles.error,
               {
                 color: theme.colors.accent,
-                fontSize: Math.round(typography.body.fontSize * ui.fontScale),
-                lineHeight: Math.round(typography.body.lineHeight * ui.fontScale),
+                fontSize: scaledFont(typography.body.fontSize, ui),
+                lineHeight: scaledFont(typography.body.lineHeight, ui),
               },
             ]}
           >
@@ -62,8 +66,8 @@ export function ResourceDetailScreen<T>({
                 borderColor: theme.colors.border,
                 backgroundColor: theme.colors.surface,
                 borderWidth: ui.borderWidth,
-                borderRadius: Math.round(12 * ui.borderRadiusScale),
-                padding: Math.round(12 * ui.controlScale),
+                borderRadius: scaledRadius(12, ui),
+                padding: scaled(12, ui),
               },
             ]}
           >
@@ -80,8 +84,8 @@ export function ResourceDetailScreen<T>({
               styles.muted,
               {
                 color: theme.colors.muted,
-                fontSize: Math.round(typography.caption.fontSize * ui.fontScale),
-                lineHeight: Math.round(typography.caption.lineHeight * ui.fontScale),
+                fontSize: scaledFont(typography.caption.fontSize, ui),
+                lineHeight: scaledFont(typography.caption.lineHeight, ui),
               },
             ]}
           >

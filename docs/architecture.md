@@ -91,6 +91,14 @@ sequenceDiagram
 3. Responses are normalized into shared domain models (Zod-validated).
 4. Mobile app renders the data and caches briefly (e.g. `getCachedJson`).
 
+## Expo API Routes
+
+The mobile app can also expose server-side API routes using Expo Router's `+api.ts` convention (files under `apps/mobile/app/` with the `+api.ts` suffix). These run on the dev server in development and on EAS Hosting in production.
+
+Use Expo API routes when you need server-side secrets, third-party API proxies, webhooks, or server-side validation that belongs with the app deployment. Prefer the BFF when you need institution-specific public data, a shared backend for multiple clients, or independent deployment (Docker, Kubernetes).
+
+Provided routes: `GET /api/hello` (demo) and `GET /api/health` (health check). Requires `web.output: "server"` in `app.config.ts`.
+
 ## Key files
 
 | Layer | Location |

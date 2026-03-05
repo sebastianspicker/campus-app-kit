@@ -336,6 +336,27 @@ export function withOpacity(color: string, opacity: number): string {
 }
 
 /**
+ * Scale a value by the control scale factor (for paddings, margins, sizes).
+ */
+export function scaled(value: number, ui: ThemeUi): number {
+  return Math.round(value * ui.controlScale);
+}
+
+/**
+ * Scale a border radius value by the border radius scale factor.
+ */
+export function scaledRadius(value: number, ui: ThemeUi): number {
+  return Math.round(value * ui.borderRadiusScale);
+}
+
+/**
+ * Scale a font size value by the font scale factor.
+ */
+export function scaledFont(value: number, ui: ThemeUi): number {
+  return Math.round(value * ui.fontScale);
+}
+
+/**
  * Hook to get current theme colors based on system preference
  */
 export function useThemeColors(): ThemeColors {

@@ -3,6 +3,7 @@ import type { InstitutionPack } from "../config/loader";
 import { ScheduleResponseSchema } from "@campus/shared";
 import { fetchPublicSchedule } from "../connectors/public/publicSchedule";
 import { parseQueryParams, parseScheduleFilter } from "../utils/queryParams";
+import { applySearch, applyDateRange, applyPagination } from "../utils/filterHelpers";
 import { createJsonRoute } from "./createJsonRoute";
 
 export const handleSchedule = createJsonRoute(
@@ -17,44 +18,13 @@ export const handleSchedule = createJsonRoute(
     // Apply filters from query parameters
     const params = parseQueryParams(req);
     const filter = parseScheduleFilter(params);
-    
-    let filteredSchedule = schedule;
-    
-    // Date range filters
-    if (filter.fromDate) {
-      filteredSchedule = filteredSchedule.filter(item => 
-        new Date(item.startsAt) >= filter.fromDate!
-      );
-    }
-    if (filter.toDate) {
-      filteredSchedule = filteredSchedule.filter(item => 
-        new Date(item.startsAt) <= filter.toDate!
-      );
-    }
-    
-    // Campus filter
+
+    let filteredSchedule = applyDateRange(schedule, filter.fromDate, filter.toDate, (item) => item.startsAt);
     if (filter.campusId) {
-      filteredSchedule = filteredSchedule.filter(item => 
-        item.campusId === filter.campusId
-      );
+      filteredSchedule = filteredSchedule.filter((item) => item.campusId === filter.campusId);
     }
-    
-    // Search filter (case-insensitive partial match on title)
-    if (filter.search) {
-      const searchLower = filter.search.toLowerCase();
-      filteredSchedule = filteredSchedule.filter(item => 
-        item.title.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    // Pagination
-    const offset = filter.offset ?? 0;
-    const limit = filter.limit;
-    if (limit !== undefined) {
-      filteredSchedule = filteredSchedule.slice(offset, offset + limit);
-    } else if (offset > 0) {
-      filteredSchedule = filteredSchedule.slice(offset);
-    }
+    filteredSchedule = applySearch(filteredSchedule, filter.search, (item) => item.title);
+    filteredSchedule = applyPagination(filteredSchedule, filter.offset ?? 0, filter.limit);
     
     return {
       schedule: filteredSchedule,

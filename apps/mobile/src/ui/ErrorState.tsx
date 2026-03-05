@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "expo-router";
-import { spacing, typography } from "./theme";
+import { scaled, scaledFont, spacing, typography } from "./theme";
 import { useTheme } from "./ThemeContext";
 
 export type ErrorType = "network" | "notFound" | "generic";
@@ -53,14 +53,14 @@ export function ErrorState({
   const navigation = useNavigation();
   const errorConfig = getErrorConfig(errorType);
 
-  const titleSize = Math.round(typography.subheading.fontSize * ui.fontScale);
-  const titleLineHeight = Math.round(typography.subheading.lineHeight * ui.fontScale);
-  const bodySize = Math.round(typography.body.fontSize * ui.fontScale);
-  const bodyLineHeight = Math.round(typography.body.lineHeight * ui.fontScale);
-  const retryPaddingHorizontal = Math.round(spacing.lg * ui.controlScale);
-  const retryPaddingVertical = Math.round(spacing.sm * ui.controlScale);
-  const buttonRadius = Math.round(8 * ui.borderRadiusScale);
-  const iconCircleSize = Math.round(80 * ui.controlScale);
+  const titleSize = scaledFont(typography.subheading.fontSize, ui);
+  const titleLineHeight = scaledFont(typography.subheading.lineHeight, ui);
+  const bodySize = scaledFont(typography.body.fontSize, ui);
+  const bodyLineHeight = scaledFont(typography.body.lineHeight, ui);
+  const retryPaddingHorizontal = scaled(spacing.lg, ui);
+  const retryPaddingVertical = scaled(spacing.sm, ui);
+  const buttonRadius = scaled(8, ui);
+  const iconCircleSize = scaled(80, ui);
 
   const handleGoBack = () => {
     if (onGoBack) {

@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { shadows, spacing, typography, withOpacity } from "./theme";
+import { scaled, scaledFont, scaledRadius, shadows, spacing, typography, withOpacity } from "./theme";
 import { useTheme } from "./ThemeContext";
 
 export function Card({
@@ -14,16 +14,14 @@ export function Card({
   const theme = useTheme();
   const ui = theme.ui;
 
-  // 2026: More generous border radius for fluid aesthetics
-  const cardRadius = Math.round(20 * ui.borderRadiusScale);
-  // 2026: Extra padding for airy, editorial feel
-  const cardPadding = Math.round(spacing.xl * ui.controlScale);
-  const titleFontSize = Math.round(typography.body.fontSize * ui.fontScale);
-  const titleLineHeight = Math.round(typography.body.lineHeight * ui.fontScale);
-  const subtitleFontSize = Math.round(typography.caption.fontSize * ui.fontScale);
-  const subtitleLineHeight = Math.round(typography.caption.lineHeight * ui.fontScale);
+  const cardRadius = scaledRadius(20, ui);
+  const cardPadding = scaled(spacing.xl, ui);
+  const titleFontSize = scaledFont(typography.body.fontSize, ui);
+  const titleLineHeight = scaledFont(typography.body.lineHeight, ui);
+  const subtitleFontSize = scaledFont(typography.caption.fontSize, ui);
+  const subtitleLineHeight = scaledFont(typography.caption.lineHeight, ui);
 
-  const isDark = theme.colors.background === "#000000";
+  const isDark = theme.isDark;
 
   return (
     <Animated.View

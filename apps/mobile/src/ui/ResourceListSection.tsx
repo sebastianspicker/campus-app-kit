@@ -16,6 +16,7 @@ export type ResourceListSectionProps<T> = {
   renderCard: (item: T) => { title: string; subtitle?: string };
   accessibilityLabel: (item: T) => string;
   onRetry?: () => void;
+  emptyIcon?: string;
 };
 
 export function ResourceListSection<T>({
@@ -28,7 +29,8 @@ export function ResourceListSection<T>({
   href,
   renderCard,
   accessibilityLabel,
-  onRetry
+  onRetry,
+  emptyIcon
 }: ResourceListSectionProps<T>): JSX.Element {
   return (
     <Section title={title}>
@@ -46,7 +48,7 @@ export function ResourceListSection<T>({
           ))
         : null}
       {!loading && !error && items.length === 0 ? (
-        <EmptyState message={emptyMessage} />
+        <EmptyState message={emptyMessage} icon={emptyIcon} />
       ) : null}
     </Section>
   );

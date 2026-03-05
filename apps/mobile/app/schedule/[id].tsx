@@ -3,10 +3,11 @@ import React from "react";
 import { useSchedule } from "@/hooks/useSchedule";
 import { MetaRow } from "@/ui/MetaRow";
 import { ResourceDetailScreen } from "@/ui/ResourceDetailScreen";
+import { formatEventDate, formatScheduleTime } from "@/utils/dateFormat";
 
 export default function ScheduleDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, loading, error } = useSchedule();
+  const { data, loading, error, refreshing, refresh } = useSchedule();
   const item = data?.schedule.find((entry) => entry.id === id);
 
   return (
@@ -19,7 +20,7 @@ export default function ScheduleDetailScreen(): JSX.Element {
       cardTitle={item ? item.title : "Schedule item"}
       cardSubtitle={
         item
-          ? new Date(item.startsAt).toLocaleString()
+          ? formatScheduleTime(item.startsAt)
           : `Schedule ID: ${id}`
       }
       renderMeta={
@@ -28,11 +29,11 @@ export default function ScheduleDetailScreen(): JSX.Element {
               <>
                 <MetaRow
                   label="Starts"
-                  value={new Date(item.startsAt).toLocaleString()}
+                  value={formatEventDate(item.startsAt)}
                 />
                 <MetaRow
                   label="Ends"
-                  value={item.endsAt ? new Date(item.endsAt).toLocaleString() : "TBA"}
+                  value={item.endsAt ? formatEventDate(item.endsAt) : "TBA"}
                 />
                 <MetaRow label="Location" value={item.location ?? "TBA"} />
                 {item.campusId ? (
@@ -43,6 +44,8 @@ export default function ScheduleDetailScreen(): JSX.Element {
           : undefined
       }
       footnote="Connect a private schedule feed to enrich this view."
+      refreshing={refreshing}
+      onRefresh={refresh}
     />
   );
 }

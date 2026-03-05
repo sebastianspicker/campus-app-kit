@@ -6,7 +6,7 @@ import { ResourceDetailScreen } from "@/ui/ResourceDetailScreen";
 
 export default function RoomDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, loading, error } = useRooms();
+  const { data, loading, error, refreshing, refresh } = useRooms();
   const room = data?.rooms.find((entry) => entry.id === id);
 
   return (
@@ -29,6 +29,8 @@ export default function RoomDetailScreen(): JSX.Element {
           : undefined
       }
       footnote="Availability comes from private connectors."
+      refreshing={refreshing}
+      onRefresh={refresh}
     />
   );
 }

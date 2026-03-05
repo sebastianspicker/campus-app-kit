@@ -1,13 +1,26 @@
 import { useLocalSearchParams } from "expo-router";
-import React from "react";
+import React, { useCallback } from "react";
+import { Pressable, Share, StyleSheet, Text } from "react-native";
 import { useEvents } from "@/hooks/useEvents";
 import { MetaRow } from "@/ui/MetaRow";
 import { ResourceDetailScreen } from "@/ui/ResourceDetailScreen";
+import { spacing, typography } from "@/ui/theme";
+import { useTheme } from "@/ui/ThemeContext";
+import { formatEventDate } from "@/utils/dateFormat";
 
 export default function EventDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, loading, error } = useEvents();
+  const { data, loading, error, refreshing, refresh } = useEvents();
   const event = data?.events.find((entry) => entry.id === id);
+  const theme = useTheme();
+
+  const handleShare = useCallback(async () => {
+    if (!event) return;
+    await Share.share({
+      message: `${event.title} - ${formatEventDate(event.date)}`,
+      url: event.sourceUrl,
+    });
+  }, [event]);
 
   return (
     <ResourceDetailScreen
@@ -17,21 +30,56 @@ export default function EventDetailScreen(): JSX.Element {
       item={event ?? null}
       notFoundMessage="Event not found."
       cardTitle={event ? event.title : `Event ID: ${id}`}
-      cardSubtitle={event ? new Date(event.date).toLocaleString() : undefined}
+      cardSubtitle={event ? formatEventDate(event.date) : undefined}
       renderMeta={
         event
           ? () => (
               <>
                 <MetaRow
                   label="Date"
-                  value={new Date(event.date).toLocaleString()}
+                  value={formatEventDate(event.date)}
                 />
                 <MetaRow label="Source" value={event.sourceUrl} />
+                <Pressable
+                  onPress={handleShare}
+                  style={({ pressed }) => [
+                    styles.shareButton,
+                    {
+                      backgroundColor: theme.colors.accent,
+                      borderRadius: 8,
+                    },
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share this event"
+                >
+                  <Text style={[styles.shareText, { color: theme.colors.accentText }]}>
+                    Share
+                  </Text>
+                </Pressable>
               </>
             )
           : undefined
       }
       footnote="This detail view uses public data only."
+      refreshing={refreshing}
+      onRefresh={refresh}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  shareButton: {
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  shareText: {
+    ...typography.body,
+    fontWeight: "600",
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+});

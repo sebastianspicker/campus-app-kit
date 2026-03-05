@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View, ViewStyle } from "react-native";
-import { spacing } from "./theme";
+import { scaled, scaledRadius, spacing } from "./theme";
 import { useTheme } from "./ThemeContext";
 
 export type SkeletonProps = {
@@ -21,8 +21,8 @@ export function Skeleton({
 }: SkeletonProps): JSX.Element {
   const theme = useTheme();
   const ui = theme.ui;
-  const scaledHeight = Math.max(2, Math.round(height * ui.controlScale));
-  const scaledRadius = Math.round(borderRadius * ui.borderRadiusScale);
+  const skeletonHeight = Math.max(2, scaled(height, ui));
+  const skeletonRadius = scaledRadius(borderRadius, ui);
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -59,8 +59,8 @@ export function Skeleton({
   const animatedStyle: Animated.WithAnimatedValue<ViewStyle> = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     width: width as any,
-    height: scaledHeight,
-    borderRadius: scaledRadius,
+    height: skeletonHeight,
+    borderRadius: skeletonRadius,
     opacity,
     backgroundColor: theme.colors.muted,
     transform: [{ scaleX: scale }],
@@ -84,8 +84,8 @@ export function SkeletonCard(): JSX.Element {
           backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
           borderWidth: ui.borderWidth,
-          borderRadius: Math.round(12 * ui.borderRadiusScale),
-          padding: Math.round(spacing.md * ui.controlScale),
+          borderRadius: scaledRadius(12, ui),
+          padding: scaled(spacing.md, ui),
         },
       ]}
     >
@@ -133,8 +133,8 @@ export function SkeletonDetail(): JSX.Element {
     backgroundColor: theme.colors.surface,
     borderColor: theme.colors.border,
     borderWidth: ui.borderWidth,
-    borderRadius: Math.round(12 * ui.borderRadiusScale),
-    padding: Math.round(spacing.md * ui.controlScale),
+    borderRadius: scaledRadius(12, ui),
+    padding: scaled(spacing.md, ui),
   };
 
   return (
@@ -200,8 +200,8 @@ export function SkeletonScheduleItem(): JSX.Element {
           backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
           borderWidth: ui.borderWidth,
-          borderRadius: Math.round(12 * ui.borderRadiusScale),
-          padding: Math.round(spacing.md * ui.controlScale),
+          borderRadius: scaledRadius(12, ui),
+          padding: scaled(spacing.md, ui),
         },
       ]}
     >

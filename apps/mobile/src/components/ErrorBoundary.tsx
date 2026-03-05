@@ -1,5 +1,7 @@
 import React, { Component, type ReactNode } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import { spacing, typography } from "../ui/theme";
+import { useTheme } from "../ui/ThemeContext";
 
 interface Props {
     children: ReactNode;
@@ -8,6 +10,39 @@ interface Props {
 interface State {
     hasError: boolean;
     error: Error | null;
+}
+
+function ErrorFallback({
+    error,
+    onReset,
+}: {
+    error: Error | null;
+    onReset: () => void;
+}): JSX.Element {
+    const theme = useTheme();
+
+    return (
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+                Oops! Something went wrong.
+            </Text>
+            <Text style={[styles.message, { color: theme.colors.muted }]}>
+                {error?.message || "An unexpected error occurred."}
+            </Text>
+            <Pressable
+                style={({ pressed }) => [
+                    styles.button,
+                    { backgroundColor: theme.colors.accent },
+                    pressed && styles.buttonPressed,
+                ]}
+                onPress={onReset}
+            >
+                <Text style={[styles.buttonText, { color: theme.colors.accentText }]}>
+                    Try Again
+                </Text>
+            </Pressable>
+        </View>
+    );
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -36,15 +71,10 @@ export class ErrorBoundary extends Component<Props, State> {
     render(): ReactNode {
         if (this.state.hasError) {
             return (
-                <View style={styles.container}>
-                    <Text style={styles.title}>Oops! Something went wrong.</Text>
-                    <Text style={styles.message}>
-                        {this.state.error?.message || "An unexpected error occurred."}
-                    </Text>
-                    <TouchableOpacity style={styles.button} onPress={this.handleReset}>
-                        <Text style={styles.buttonText}>Try Again</Text>
-                    </TouchableOpacity>
-                </View>
+                <ErrorFallback
+                    error={this.state.error}
+                    onReset={this.handleReset}
+                />
             );
         }
 
@@ -57,30 +87,28 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        padding: 20,
-        backgroundColor: "#fff"
+        padding: spacing.lg,
     },
     title: {
-        fontSize: 20,
+        ...typography.subheading,
         fontWeight: "bold",
-        marginBottom: 10,
-        color: "#000"
+        marginBottom: spacing.sm,
     },
     message: {
-        fontSize: 14,
-        color: "#666",
+        ...typography.body,
         textAlign: "center",
-        marginBottom: 20
+        marginBottom: spacing.lg,
     },
     button: {
-        backgroundColor: "#007AFF",
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 8
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.sm,
+        borderRadius: 8,
+    },
+    buttonPressed: {
+        opacity: 0.7,
     },
     buttonText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "600"
-    }
+        ...typography.body,
+        fontWeight: "600",
+    },
 });

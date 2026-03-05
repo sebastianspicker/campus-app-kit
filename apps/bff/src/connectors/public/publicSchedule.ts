@@ -6,9 +6,20 @@ import type { ScheduleItem } from "@campus/shared";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-import { parseIcs } from "./icsParser";
+import { parseIcs, type ParsedIcsEvent } from "./icsParser";
 
 import { BFF_ENV } from "../../config/env";
+
+function toScheduleItem(p: ParsedIcsEvent): ScheduleItem {
+  return {
+    id: p.id,
+    title: p.title,
+    startsAt: p.startsAt,
+    endsAt: p.endsAt,
+    location: p.location,
+    campusId: p.campusId,
+  };
+}
 
 export async function fetchPublicSchedule(
   institution: InstitutionPack
@@ -27,14 +38,7 @@ export async function fetchPublicSchedule(
           const fixturePath = join(__dirname, "../../__fixtures__/mockuni-schedule.ics");
           const icsContent = readFileSync(fixturePath, "utf-8");
           const parsed = parseIcs(icsContent, { rruleHorizonDays: BFF_ENV.rruleExpansionHorizonDays });
-          return parsed.map((p: any) => ({
-            id: p.id,
-            title: p.title,
-            startsAt: p.startsAt,
-            endsAt: p.endsAt,
-            location: p.location,
-            campusId: p.campusId
-          }));
+          return parsed.map(toScheduleItem);
         } catch (err) {
           log("warn", "mock_schedule_load_failed", {
             reason: err instanceof Error ? err.message : String(err)
@@ -58,16 +62,9 @@ export async function fetchPublicSchedule(
         })
       );
 
-      settlement.forEach((result: PromiseSettledResult<any[]>, index: number) => {
+      settlement.forEach((result: PromiseSettledResult<ParsedIcsEvent[]>, index: number) => {
         if (result.status === "fulfilled") {
-          results.push(...result.value.map((p: any) => ({
-            id: p.id,
-            title: p.title,
-            startsAt: p.startsAt,
-            endsAt: p.endsAt,
-            location: p.location,
-            campusId: p.campusId
-          })));
+          results.push(...result.value.map(toScheduleItem));
         } else {
           log("warn", "public_schedule_source_failed", {
             sourceUrl: sources[index].url,

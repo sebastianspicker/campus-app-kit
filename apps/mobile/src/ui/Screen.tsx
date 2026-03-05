@@ -5,7 +5,7 @@ import {
   StyleSheet,
   View
 } from "react-native";
-import { spacing } from "./theme";
+import { scaled, spacing } from "./theme";
 import { useTheme } from "./ThemeContext";
 
 export function Screen({
@@ -33,8 +33,8 @@ export function Screen({
   ) : undefined;
 
   // 2026: Hyper-generous negative space for breathing room
-  const contentPadding = Math.round(spacing.xxl * ui.controlScale);
-  const contentGap = Math.round(spacing.xl * ui.controlScale);
+  const contentPadding = scaled(spacing.xxl, ui);
+  const contentGap = scaled(spacing.xl, ui);
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>

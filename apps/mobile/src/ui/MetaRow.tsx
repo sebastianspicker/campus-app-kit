@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { spacing, typography } from "./theme";
+import { scaled, scaledFont, spacing, typography } from "./theme";
 import { useTheme } from "./ThemeContext";
 
 export function MetaRow({
@@ -13,10 +13,10 @@ export function MetaRow({
   const theme = useTheme();
   const ui = theme.ui;
 
-  const captionSize = Math.round(typography.caption.fontSize * ui.fontScale);
-  const captionLineHeight = Math.round(typography.caption.lineHeight * ui.fontScale);
-  const bodySize = Math.round(typography.body.fontSize * ui.fontScale);
-  const bodyLineHeight = Math.round(typography.body.lineHeight * ui.fontScale);
+  const captionSize = scaledFont(typography.caption.fontSize, ui);
+  const captionLineHeight = scaledFont(typography.caption.lineHeight, ui);
+  const bodySize = scaledFont(typography.body.fontSize, ui);
+  const bodyLineHeight = scaledFont(typography.body.lineHeight, ui);
 
   return (
     <View
@@ -25,7 +25,7 @@ export function MetaRow({
         {
           borderBottomColor: theme.colors.border,
           borderBottomWidth: ui.borderWidth,
-          paddingVertical: Math.round(spacing.xs * ui.controlScale),
+          paddingVertical: scaled(spacing.xs, ui),
         },
       ]}
     >

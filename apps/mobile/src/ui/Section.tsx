@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { spacing, typography } from "./theme";
+import { scaled, scaledFont, spacing, typography } from "./theme";
 import { useTheme } from "./ThemeContext";
 
 export function Section({
@@ -14,14 +14,14 @@ export function Section({
   const ui = theme.ui;
 
   return (
-    <View style={[styles.section, { marginBottom: Math.round(spacing.xl * ui.controlScale) }]}>
+    <View style={[styles.section, { marginBottom: scaled(spacing.xl, ui) }]}>
       <Text
         style={[
           styles.title,
           {
             color: theme.colors.muted,
-            marginBottom: Math.round(spacing.md * ui.controlScale),
-            fontSize: Math.round(typography.small.fontSize * ui.fontScale),
+            marginBottom: scaled(spacing.md, ui),
+            fontSize: scaledFont(typography.small.fontSize, ui),
             letterSpacing: typography.small.letterSpacing,
             textTransform: "uppercase",
             fontWeight: "700",

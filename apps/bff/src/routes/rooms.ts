@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { InstitutionPack } from "../config/loader";
 import { RoomsResponseSchema } from "@campus/shared";
 import { parseQueryParams, parseRoomsFilter } from "../utils/queryParams";
+import { applySearch, applyPagination } from "../utils/filterHelpers";
 import { createJsonRoute } from "./createJsonRoute";
 
 export const handleRooms = createJsonRoute(
@@ -16,28 +17,11 @@ export const handleRooms = createJsonRoute(
     const filter = parseRoomsFilter(params);
     
     let filteredRooms = rooms;
-    
-    // Campus filter
     if (filter.campus) {
-      filteredRooms = filteredRooms.filter(r => r.campusId === filter.campus);
+      filteredRooms = filteredRooms.filter((r) => r.campusId === filter.campus);
     }
-    
-    // Search filter (case-insensitive partial match on name)
-    if (filter.search) {
-      const searchLower = filter.search.toLowerCase();
-      filteredRooms = filteredRooms.filter(r => 
-        r.name.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    // Pagination
-    const offset = filter.offset ?? 0;
-    const limit = filter.limit;
-    if (limit !== undefined) {
-      filteredRooms = filteredRooms.slice(offset, offset + limit);
-    } else if (offset > 0) {
-      filteredRooms = filteredRooms.slice(offset);
-    }
+    filteredRooms = applySearch(filteredRooms, filter.search, (r) => r.name);
+    filteredRooms = applyPagination(filteredRooms, filter.offset ?? 0, filter.limit);
     
     return {
       rooms: filteredRooms,

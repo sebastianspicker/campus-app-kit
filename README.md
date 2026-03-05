@@ -99,9 +99,20 @@ Additional options: `BFF_PORT`, `CORS_ORIGINS`, `BFF_TRUST_PROXY`. See [Runbook 
 ## Status
 
 - **Version:** 1.0.0
-- **Bugs:** All known issues resolved ✅
-- **Features:** ICS RRULE (recurring events) supported ✅
 - **Changelog:** See [CHANGELOG.md](CHANGELOG.md)
+
+---
+
+## Troubleshooting
+
+| Symptom | Typical Cause | Fix |
+|--------|---------------|-----|
+| Generic 500 on data routes | Connector or Zod throw | Check BFF logs for details |
+| BFF fails at startup | Missing `INSTITUTION_ID` | Set `INSTITUTION_ID=hfmt` |
+| Mobile "Missing BFF base URL" | Wrong env variable | Set `EXPO_PUBLIC_BFF_BASE_URL` |
+| Empty events/rooms/schedule | Missing config or upstream failure | Check `publicSources` / `publicRooms` |
+| Rate limit issues | trustProxy / forwarded headers | See runbook for proxy setup |
+| Events/schedule wrong time | Timezone/date parsing | Check TZID in ICS source |
 
 ---
 

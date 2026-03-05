@@ -163,7 +163,22 @@ If `/events`, `/rooms`, or `/schedule` return 200 with empty arrays, check:
 - **Environment:** `INSTITUTION_ID` must match a pack that defines those sources.
 - **Upstream:** Public connectors fetch from external URLs; if those fail, the BFF may return partial or empty data. Check BFF logs for fetch/parse errors.
 
-See also the quick reference in `BUGS_AND_FIXES.md` (root).
+## NativeWind / Tailwind CSS
+
+The mobile app uses **Tailwind CSS v4** with **NativeWind v5** and **react-native-css** for optional utility-based styling alongside the existing theme and StyleSheet components.
+
+- Import CSS-wrapped components from `@/tw` (View, Text, ScrollView, Pressable, etc.) and use `className`.
+- Screens in `src/ui/` still use the theme and StyleSheet from `@/ui/theme`. You can mix both approaches.
+- Config: `metro.config.js` (withNativewind), `postcss.config.mjs` (@tailwindcss/postcss), `src/global.css` (Tailwind layers + platform fonts).
+
+## OTA Code Signing (EAS Update)
+
+If you use EAS Update, enable code signing and keep private keys out of this repo:
+
+1. Generate code signing keys locally.
+2. Store private keys in a secret manager (GitHub Actions Secrets, 1Password, Vault).
+3. Configure EAS Update to use signing.
+4. Rotate keys if they ever leak.
 
 ## Troubleshooting
 
