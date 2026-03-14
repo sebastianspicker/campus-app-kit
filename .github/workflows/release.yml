@@ -5,21 +5,22 @@ on:
     tags:
       - "v*"
 
-permissions:
-  contents: write
-  packages: write
-  actions: write
+permissions: {}
 
 jobs:
   validate:
     name: Validate Release
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
@@ -37,26 +38,33 @@ jobs:
     name: Create GitHub Release
     needs: validate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Get version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
       - name: Generate release notes
         id: notes
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
           sed -n "/## \[$VERSION\]/,/## \[/p" CHANGELOG.md | head -n -2 > release-notes.md
-          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
-          cat release-notes.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "RELEASE_NOTES<<EOF"
+            cat release-notes.md
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
           body_path: release-notes.md
           draft: false
@@ -67,14 +75,20 @@ jobs:
     name: Build BFF Docker Image
     needs: validate
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -82,10 +96,10 @@ jobs:
 
       - name: Get version
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         with:
           context: ./apps/bff
           file: ./apps/bff/Dockerfile.prod
@@ -98,13 +112,21 @@ jobs:
     name: Notify on Release
     needs: [create-release, build-bff-docker]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
     steps:
       - name: Release Summary
+        env:
+          TAG_REF: ${{ github.ref }}
+          REPO: ${{ github.repository }}
         run: |
-          echo "## Release Created!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Version: ${GITHUB_REF#refs/tags/v}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- GitHub Release: Published" >> $GITHUB_STEP_SUMMARY
-          echo "- Docker Image: ghcr.io/${{ github.repository }}/bff:${GITHUB_REF#refs/tags/v}" >> $GITHUB_STEP_SUMMARY
+          VERSION="${TAG_REF#refs/tags/v}"
+          {
+            echo "## Release Created!"
+            echo ""
+            echo "Version: ${VERSION}"
+            echo ""
+            echo "### Artifacts"
+            echo "- GitHub Release: Published"
+            echo "- Docker Image: ghcr.io/${REPO}/bff:${VERSION}"
+          } >> "$GITHUB_STEP_SUMMARY"

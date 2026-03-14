@@ -19,21 +19,26 @@ RUN pnpm prune --prod
 
 FROM node:20-alpine AS runner
 
+RUN apk add --no-cache dumb-init \
+ && addgroup -S appgroup \
+ && adduser -S appuser -G appgroup
+
 WORKDIR /repo
 ENV NODE_ENV=production
 
-COPY --from=builder /repo/package.json /repo/pnpm-workspace.yaml /repo/pnpm-lock.yaml /repo/
-COPY --from=builder /repo/node_modules /repo/node_modules
+COPY --from=builder --chown=appuser:appgroup /repo/package.json /repo/pnpm-workspace.yaml /repo/pnpm-lock.yaml /repo/
+COPY --from=builder --chown=appuser:appgroup /repo/node_modules /repo/node_modules
 
-COPY --from=builder /repo/apps/bff/package.json /repo/apps/bff/package.json
-COPY --from=builder /repo/apps/bff/dist /repo/apps/bff/dist
+COPY --from=builder --chown=appuser:appgroup /repo/apps/bff/package.json /repo/apps/bff/package.json
+COPY --from=builder --chown=appuser:appgroup /repo/apps/bff/dist /repo/apps/bff/dist
 
-COPY --from=builder /repo/packages/shared/package.json /repo/packages/shared/package.json
-COPY --from=builder /repo/packages/shared/dist /repo/packages/shared/dist
+COPY --from=builder --chown=appuser:appgroup /repo/packages/shared/package.json /repo/packages/shared/package.json
+COPY --from=builder --chown=appuser:appgroup /repo/packages/shared/dist /repo/packages/shared/dist
 
-COPY --from=builder /repo/packages/institutions/package.json /repo/packages/institutions/package.json
-COPY --from=builder /repo/packages/institutions/dist /repo/packages/institutions/dist
+COPY --from=builder --chown=appuser:appgroup /repo/packages/institutions/package.json /repo/packages/institutions/package.json
+COPY --from=builder --chown=appuser:appgroup /repo/packages/institutions/dist /repo/packages/institutions/dist
 
+USER appuser
 EXPOSE 4000
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "apps/bff/dist/server.js"]
-
