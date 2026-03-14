@@ -80,7 +80,7 @@ jobs:
         run: pnpm test:e2e:ios --record-videos failing --record-logs all
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         if: failure()
         with:
           name: ios-test-artifacts
@@ -156,7 +156,7 @@ jobs:
           script: cd apps/mobile && pnpm test:e2e:android --record-videos failing --record-logs all
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         if: failure()
         with:
           name: android-test-artifacts
