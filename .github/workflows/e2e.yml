@@ -49,7 +49,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@eae0cfeb286e66ffb5155f1a79b90583a127a68b # v2
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v2
         with:
           version: 8
 
@@ -113,7 +113,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@eae0cfeb286e66ffb5155f1a79b90583a127a68b # v2
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v2
         with:
           version: 8
 
