@@ -20,7 +20,7 @@ vi.mock("../ErrorState", () => ({
 
 vi.mock("../Skeleton", () => ({
   SkeletonList: ({ count }: { count: number }) => (
-    <div data-testid="skeleton-list">Loading {count} items</div>
+    <div data-testid="skeleton-list">{`Loading ${count} items`}</div>
   ),
 }));
 

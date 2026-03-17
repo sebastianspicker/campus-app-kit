@@ -14,34 +14,19 @@ export type ErrorStateProps = {
   showGoBack?: boolean;
 };
 
-/**
- * Get error icon and title based on error type
- */
-function getErrorConfig(errorType: ErrorType): { icon: string; title: string } {
+function getErrorConfig(errorType: ErrorType): { title: string } {
   switch (errorType) {
     case "network":
-      return {
-        icon: "wifi-off",
-        title: "Connection Error",
-      };
+      return { title: "Connection Error" };
     case "notFound":
-      return {
-        icon: "search-off",
-        title: "Not Found",
-      };
+      return { title: "Not Found" };
     case "generic":
     default:
-      return {
-        icon: "error-outline",
-        title: "Something Went Wrong",
-      };
+      return { title: "Something Went Wrong" };
   }
 }
 
-/**
- * Improved error state component with retry and go back options
- */
-export function ErrorState({ 
+export function ErrorState({
   message, 
   errorType = "generic",
   onRetry, 
@@ -193,10 +178,7 @@ export function ErrorState({
   );
 }
 
-/**
- * Network error state component - convenience wrapper
- */
-export function NetworkError({ 
+export function NetworkError({
   message = "Please check your internet connection and try again.",
   onRetry 
 }: { 
@@ -212,10 +194,7 @@ export function NetworkError({
   );
 }
 
-/**
- * Not found error state component - convenience wrapper
- */
-export function NotFoundError({ 
+export function NotFoundError({
   message = "The item you're looking for doesn't exist or has been removed.",
   showGoBack = true 
 }: { 
@@ -231,10 +210,7 @@ export function NotFoundError({
   );
 }
 
-/**
- * Generic error state component - convenience wrapper
- */
-export function GenericError({ 
+export function GenericError({
   message = "An unexpected error occurred. Please try again.",
   onRetry 
 }: { 
@@ -260,19 +236,12 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginBottom: spacing.md,
   },
-  iconWrapper: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
   iconCircle: {
     alignItems: "center",
     justifyContent: "center",
   },
   iconText: {
     fontSize: 36,
-  },
-  iconEmoji: {
-    fontSize: 32,
   },
   title: {
     ...typography.subheading,

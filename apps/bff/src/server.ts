@@ -15,6 +15,7 @@ import { checkRateLimit } from "./utils/rateLimit";
 import { sendError } from "./utils/errors";
 import { log } from "./utils/logger";
 import { getRequestId, setRequestIdHeader } from "./utils/requestId";
+import { BFF_ENV } from "./config/env";
 
 const DATA_ROUTES: Record<string, (req: IncomingMessage, res: ServerResponse, institution: InstitutionPack) => Promise<void>> = {
   "/events": handleEvents,
@@ -22,8 +23,6 @@ const DATA_ROUTES: Record<string, (req: IncomingMessage, res: ServerResponse, in
   "/schedule": handleSchedule,
   "/today": handleToday
 };
-
-import { BFF_ENV } from "./config/env";
 
 export function createRequestListener(): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   return async (req, res): Promise<void> => {

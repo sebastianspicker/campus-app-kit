@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-Please do not open public issues for security reports. 
+Use GitHub's private [Security Advisories](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/creating-a-repository-security-advisory) to report vulnerabilities privately. Do not open public issues for security reports.
 
 ## Scope
 

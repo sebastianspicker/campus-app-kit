@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Design tokens in theme system (spacing, typography, shadows)
 
 #### Infrastructure
-- Comprehensive Makefile with development targets
+- Makefile with development targets
 - VS Code settings for consistent development experience
 - Husky pre-commit hooks with lint-staged
 - Release readiness plan documentation
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improved `ResourceListSection` component with loading and error states
 - Updated ESLint configuration
-- Enhanced documentation structure
+- Reorganized documentation structure
 
 ### Fixed
 

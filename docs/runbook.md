@@ -38,7 +38,12 @@ BFF:
 - `INSTITUTION_ID` (required; available ids live in `packages/institutions/src/packs/`)
 - `BFF_PORT` (optional; default `4000`)
 - `CORS_ORIGINS` (optional; comma-separated; use `*` for development)
-- `BFF_TRUST_PROXY` (optional; default `auto`). Controls whether the BFF uses `X-Forwarded-For` / `Forwarded` for the client IP (rate limiting, logs). **`auto`**: trust forwarded headers only when the direct peer is private/loopback (e.g. reverse proxy on same host). **`always`**: always use forwarded client IP (use only when the BFF is strictly behind a trusted proxy that sets these headers). **`never`**: ignore forwarded headers; use `socket.remoteAddress` only. Forwarded values are validated as IPv4/IPv6; invalid values fall back to the direct peer address.
+- `BFF_TRUST_PROXY` (optional; default `auto`). Controls which source the BFF uses for the client IP (rate limiting, logs):
+  - `auto`: trust `X-Forwarded-For`/`Forwarded` only when the direct peer is a private/loopback address (e.g. a reverse proxy on the same host)
+  - `always`: always use the forwarded client IP — only use this when the BFF is behind a trusted proxy
+  - `never`: ignore forwarded headers; use `socket.remoteAddress` only
+
+  Forwarded values are validated as IPv4/IPv6; invalid values fall back to the direct peer address.
 
 Mobile:
 - `EXPO_PUBLIC_BFF_BASE_URL` (required for production builds; defaults to `http://localhost:4000` in development)

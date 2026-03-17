@@ -31,6 +31,8 @@ describe("fetchPublicEvents", () => {
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: () => null },
+      body: null,
       text: async () => html
     }));
   });
@@ -59,6 +61,8 @@ describe("fetchPublicEvents", () => {
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: () => null },
+      body: null,
       text: async () => html
     }));
 

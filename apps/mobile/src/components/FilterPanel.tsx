@@ -9,17 +9,12 @@ export type FilterOption = {
 };
 
 export type FilterPanelProps = {
-  /** Title for the filter section */
   title?: string;
-  /** Available filter options */
   options: FilterOption[];
-  /** Currently selected option ID */
   selectedId?: string;
-  /** Callback when an option is selected */
   onSelect: (optionId: string) => void;
-  /** Whether to allow clearing selection (selecting the same option deselects) */
+  /** Tapping the active option deselects it when true (default). */
   allowClear?: boolean;
-  /** Whether the panel is in a loading state */
   loading?: boolean;
 };
 

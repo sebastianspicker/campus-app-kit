@@ -1,5 +1,3 @@
-/** Placeholder: Strukturiertes Logging für BFF */
-
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export function log(

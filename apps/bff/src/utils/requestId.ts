@@ -10,7 +10,7 @@ function normalizeRequestId(value: unknown): string | null {
 }
 
 export function getRequestId(req: IncomingMessage): string {
-  const header = req.headers["x-request-id"];
+  const header = req.headers?.["x-request-id"];
   const candidate = Array.isArray(header) ? header[0] : header;
   return normalizeRequestId(candidate) ?? randomUUID();
 }

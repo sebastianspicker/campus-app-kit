@@ -1,8 +1,9 @@
 import type { InstitutionPack } from "../../config/loader";
 import { getCached } from "../../utils/cache";
-import { fetchWithTimeout } from "../../utils/fetch";
+import { fetchTextWithTimeout } from "../../utils/fetch";
 import { log } from "../../utils/logger";
 import { buildEventId } from "./eventId";
+import { BFF_ENV } from "../../config/env";
 
 // Import mock fixtures for mock mode
 import mockuniEventsFixture from "../../__fixtures__/mockuni-events.json";
@@ -15,8 +16,6 @@ export type PublicEvent = {
 };
 
 export type FetchPublicEventsResult = { events: PublicEvent[]; degraded: boolean };
-
-import { BFF_ENV } from "../../config/env";
 
 export async function fetchPublicEvents(
   institution: InstitutionPack
@@ -54,11 +53,7 @@ export async function fetchPublicEvents(
       let anyFailed = false;
       const settlement = await Promise.allSettled(
         sources.map(async (source: { url: string; label: string }) => {
-          const response = await fetchWithTimeout(source.url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-          const html = await response.text();
+          const html = await fetchTextWithTimeout(source.url);
           return extractEventsFromHtml(html, source.url);
         })
       );

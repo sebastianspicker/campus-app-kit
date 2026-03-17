@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for contributing to Campus App Kit. This repository is kept **safe to publish**: no secrets, no private endpoints.
+This repository is kept safe to publish: no secrets, no private endpoints.
 
 ## Prerequisites
 

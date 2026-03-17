@@ -1,5 +1,3 @@
-/** Placeholder für API-Fetch-Helpers */
-
 export type BffError = {
   code: string;
   message: string;

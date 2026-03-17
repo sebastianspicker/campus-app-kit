@@ -1,10 +1,10 @@
 # E2E Testing with Detox
 
-This directory contains end-to-end (E2E) tests for the Campus Mobile app using [Detox](https://wix.github.io/Detox/).
+E2E tests for the Campus Mobile app using [Detox](https://wix.github.io/Detox/).
 
 ## Prerequisites
 
-Before running E2E tests, ensure you have the following installed:
+Required:
 
 ### iOS (macOS only)
 - Xcode 14+ with iOS Simulator
@@ -172,9 +172,8 @@ detox test -c ios -t "should display events list"
 
 ## Best Practices
 
-1. **Use testID props** - Always add testID to interactive elements
-2. **Wait for elements** - Use `waitFor` for async operations
-3. **Clean state** - Use `launchAppFresh` for tests requiring clean state
-4. **Avoid hardcoded delays** - Use `waitFor` instead of `setTimeout`
-5. **Test user flows** - Focus on critical user journeys
-6. **Keep tests independent** - Each test should work in isolation
+- Add `testID` to interactive elements so Detox can find them.
+- Use `waitFor` for async operations — avoid hardcoded `setTimeout` delays.
+- Use `launchAppFresh` when a test needs a clean state.
+- Each test should work in isolation; don't rely on state from a previous test.
+- Focus tests on critical user flows, not implementation details.

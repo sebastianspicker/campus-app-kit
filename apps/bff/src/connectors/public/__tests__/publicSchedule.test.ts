@@ -29,6 +29,8 @@ describe("fetchPublicSchedule", () => {
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: () => null },
+      body: null,
       text: async () => ics
     }));
   });

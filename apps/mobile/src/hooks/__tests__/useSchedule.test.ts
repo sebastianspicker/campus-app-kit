@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook } from "./testUtils";
 import { useSchedule } from "../useSchedule";
 import { clearCache } from "../../data/cache";
+import { _resetBffBaseUrlMemoForTests } from "../../utils/bffConfig";
 
 const mockSchedule = {
   schedule: [
@@ -18,15 +19,20 @@ const mockSchedule = {
 
 describe("useSchedule", () => {
   beforeEach(() => {
+    process.env.EXPO_PUBLIC_BFF_BASE_URL = "http://localhost:4000";
+    _resetBffBaseUrlMemoForTests();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => mockSchedule
+      status: 200,
+      text: async () => JSON.stringify(mockSchedule),
+      headers: { get: () => null },
     }));
     clearCache();
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    delete process.env.EXPO_PUBLIC_BFF_BASE_URL;
   });
 
   it("loads schedule", async () => {

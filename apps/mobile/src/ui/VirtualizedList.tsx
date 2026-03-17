@@ -29,7 +29,7 @@ export function VirtualizedList<T>({
       renderItem={renderItem}
       keyExtractor={(item: T, index: number) => keyExtractor(item, index)}
       estimatedItemSize={estimatedItemSize}
-      contentContainerStyle={contentContainerStyle ?? undefined}
+      contentContainerStyle={contentContainerStyle}
       ListEmptyComponent={
         emptyText != null && emptyText !== "" ? (
           <Text style={styles.empty}>{emptyText}</Text>

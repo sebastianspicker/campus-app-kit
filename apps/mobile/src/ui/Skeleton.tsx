@@ -10,9 +10,6 @@ export type SkeletonProps = {
   style?: ViewStyle;
 };
 
-/**
- * Basic Skeleton component with shimmer animation effect
- */
 export function Skeleton({
   width = 300,
   height = 16,
@@ -69,9 +66,6 @@ export function Skeleton({
   return <Animated.View style={[animatedStyle, style]} />;
 }
 
-/**
- * Skeleton for event/room/schedule cards
- */
 export function SkeletonCard(): JSX.Element {
   const theme = useTheme();
   const ui = theme.ui;
@@ -108,9 +102,6 @@ export function SkeletonCard(): JSX.Element {
   );
 }
 
-/**
- * Skeleton for list views with multiple items
- */
 export function SkeletonList({ count = 3 }: { count?: number }): JSX.Element {
   return (
     <View style={styles.listContainer}>
@@ -123,9 +114,6 @@ export function SkeletonList({ count = 3 }: { count?: number }): JSX.Element {
   );
 }
 
-/**
- * Skeleton for detail screens
- */
 export function SkeletonDetail(): JSX.Element {
   const theme = useTheme();
   const ui = theme.ui;
@@ -185,9 +173,6 @@ export function SkeletonDetail(): JSX.Element {
   );
 }
 
-/**
- * Skeleton for schedule items
- */
 export function SkeletonScheduleItem(): JSX.Element {
   const theme = useTheme();
   const ui = theme.ui;
@@ -225,9 +210,6 @@ export function SkeletonScheduleItem(): JSX.Element {
   );
 }
 
-/**
- * Skeleton for a full schedule view
- */
 export function SkeletonSchedule({ count = 4 }: { count?: number }): JSX.Element {
   return (
     <View style={styles.listContainer}>

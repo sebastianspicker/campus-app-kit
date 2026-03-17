@@ -1,4 +1,3 @@
-import { useColorScheme } from "react-native";
 
 const expoOs = process.env.EXPO_OS;
 const isIos = expoOs === "ios";
@@ -110,13 +109,6 @@ const accessibilityUi: ThemeUi = {
   emphasisBorderWidth: 2.5,
   borderRadiusScale: 1.08,
 };
-
-// ============================================
-// Legacy Exports (for backward compatibility)
-// ============================================
-
-// Default legacy palette now follows the default product direction (dark)
-export const colors = darkColors;
 
 // Export both color schemes for dynamic switching
 export const colorSchemes: Record<ColorScheme, ThemeColors> = {
@@ -297,23 +289,14 @@ export const zIndex = {
 // Helper Functions
 // ============================================
 
-/**
- * Get theme colors based on color scheme
- */
 export function getThemeColors(colorScheme: ColorScheme): ThemeColors {
   return colorSchemes[colorScheme];
 }
 
-/**
- * Get UI scaling tokens based on color scheme
- */
 export function getThemeUi(colorScheme: ColorScheme): ThemeUi {
   return uiSchemes[colorScheme];
 }
 
-/**
- * Get contrasting text color for a given background
- */
 export function getContrastTextColor(backgroundColor: string): string {
   // Simple luminance-based contrast calculation
   const hex = backgroundColor.replace("#", "");
@@ -324,9 +307,6 @@ export function getContrastTextColor(backgroundColor: string): string {
   return luminance > 0.5 ? "#1b1a17" : "#f5f5f5";
 }
 
-/**
- * Create a semi-transparent version of a color
- */
 export function withOpacity(color: string, opacity: number): string {
   const hex = color.replace("#", "");
   const r = parseInt(hex.substr(0, 2), 16);
@@ -342,33 +322,11 @@ export function scaled(value: number, ui: ThemeUi): number {
   return Math.round(value * ui.controlScale);
 }
 
-/**
- * Scale a border radius value by the border radius scale factor.
- */
 export function scaledRadius(value: number, ui: ThemeUi): number {
   return Math.round(value * ui.borderRadiusScale);
 }
 
-/**
- * Scale a font size value by the font scale factor.
- */
 export function scaledFont(value: number, ui: ThemeUi): number {
   return Math.round(value * ui.fontScale);
 }
 
-/**
- * Hook to get current theme colors based on system preference
- */
-export function useThemeColors(): ThemeColors {
-  const systemColorScheme = useColorScheme();
-  const colorScheme: ColorScheme = systemColorScheme === "light" ? "light" : "dark";
-  return colorSchemes[colorScheme];
-}
-
-/**
- * Hook to get current color scheme
- */
-export function useColorSchemeTheme(): ColorScheme {
-  const systemColorScheme = useColorScheme();
-  return systemColorScheme === "light" ? "light" : "dark";
-}

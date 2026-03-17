@@ -1,13 +1,7 @@
 import { AccessibilityInfo, AccessibilityRole, Platform } from "react-native";
 
-/**
- * Accessibility role types for React Native
- */
 export type A11yRole = AccessibilityRole;
 
-/**
- * Accessibility props for components
- */
 export type A11yProps = {
   accessibilityLabel?: string;
   accessibilityHint?: string;
@@ -34,16 +28,10 @@ export type A11yProps = {
   accessibilityLiveRegion?: "none" | "polite" | "assertive";
 };
 
-/**
- * Create accessibility label props
- */
 export function a11yLabel(label: string): Pick<A11yProps, "accessibilityLabel"> {
   return { accessibilityLabel: label };
 }
 
-/**
- * Create accessibility props for a button
- */
 export function a11yButton(
   label: string,
   hint?: string
@@ -55,9 +43,6 @@ export function a11yButton(
   };
 }
 
-/**
- * Create accessibility props for a link
- */
 export function a11yLink(
   label: string,
   hint?: string
@@ -69,9 +54,6 @@ export function a11yLink(
   };
 }
 
-/**
- * Create accessibility props for an image
- */
 export function a11yImage(
   label: string
 ): Pick<A11yProps, "accessibilityLabel" | "accessibilityRole"> {
@@ -81,9 +63,6 @@ export function a11yImage(
   };
 }
 
-/**
- * Create accessibility props for a header
- */
 export function a11yHeader(
   label: string
 ): Pick<A11yProps, "accessibilityLabel" | "accessibilityRole"> {
@@ -93,9 +72,6 @@ export function a11yHeader(
   };
 }
 
-/**
- * Create accessibility props for a text element
- */
 export function a11yText(
   label: string
 ): Pick<A11yProps, "accessibilityLabel" | "accessibilityRole"> {
@@ -105,9 +81,6 @@ export function a11yText(
   };
 }
 
-/**
- * Create accessibility props for a search field
- */
 export function a11ySearch(
   label: string,
   hint?: string
@@ -119,9 +92,6 @@ export function a11ySearch(
   };
 }
 
-/**
- * Create accessibility props for a tab
- */
 export function a11yTab(
   label: string,
   isSelected: boolean,
@@ -135,9 +105,6 @@ export function a11yTab(
   };
 }
 
-/**
- * Create accessibility props for a checkbox
- */
 export function a11yCheckbox(
   label: string,
   isChecked: boolean,
@@ -151,9 +118,6 @@ export function a11yCheckbox(
   };
 }
 
-/**
- * Create accessibility props for a toggle switch
- */
 export function a11ySwitch(
   label: string,
   isOn: boolean,
@@ -167,9 +131,6 @@ export function a11ySwitch(
   };
 }
 
-/**
- * Create accessibility props for a menu item
- */
 export function a11yMenuItem(
   label: string,
   hint?: string
@@ -181,9 +142,6 @@ export function a11yMenuItem(
   };
 }
 
-/**
- * Create accessibility props for a list
- */
 export function a11yList(
   label?: string
 ): Pick<A11yProps, "accessibilityLabel" | "accessibilityRole"> {
@@ -193,9 +151,6 @@ export function a11yList(
   };
 }
 
-/**
- * Create accessibility props for a list item
- */
 export function a11yListItem(
   label: string,
   hint?: string
@@ -207,9 +162,6 @@ export function a11yListItem(
   };
 }
 
-/**
- * Create accessibility props for a progress bar
- */
 export function a11yProgress(
   label: string,
   value: number,
@@ -228,9 +180,6 @@ export function a11yProgress(
   };
 }
 
-/**
- * Create accessibility props for an adjustable element (slider)
- */
 export function a11yAdjustable(
   label: string,
   value: number,
@@ -244,9 +193,6 @@ export function a11yAdjustable(
   };
 }
 
-/**
- * Create accessibility props for a disabled element
- */
 export function a11yDisabled(
   baseProps: A11yProps
 ): A11yProps {
@@ -259,9 +205,6 @@ export function a11yDisabled(
   };
 }
 
-/**
- * Create accessibility props for an expanded element
- */
 export function a11yExpanded(
   baseProps: A11yProps,
   isExpanded: boolean
@@ -275,9 +218,7 @@ export function a11yExpanded(
   };
 }
 
-/**
- * Create accessibility props for a live region (announces changes)
- */
+/** Announces changes to screen readers via the live region mechanism. */
 export function a11yLiveRegion(
   politeness: "polite" | "assertive" = "polite"
 ): Pick<A11yProps, "accessibilityLiveRegion"> {
@@ -286,9 +227,6 @@ export function a11yLiveRegion(
   };
 }
 
-/**
- * Create accessibility props to hide element from screen readers
- */
 export function a11yHidden(): Pick<A11yProps, "importantForAccessibility"> {
   return {
     importantForAccessibility: "no-hide-descendants",
@@ -296,8 +234,7 @@ export function a11yHidden(): Pick<A11yProps, "importantForAccessibility"> {
 }
 
 /**
- * Create accessibility props to make element focusable but not visible
- * Useful for skip links
+ * Makes an element focusable but visually hidden. Useful for skip links.
  */
 export function a11yFocusable(
   label: string
@@ -308,16 +245,11 @@ export function a11yFocusable(
   };
 }
 
-/**
- * Announce a message to screen readers
- */
 export function announceForAccessibility(message: string): void {
   AccessibilityInfo.announceForAccessibility(message);
 }
 
-/**
- * Announce a message with polite priority (iOS only)
- */
+/** iOS only: queues the announcement rather than interrupting the current one. Falls back to immediate announcement on Android. */
 export function announceForAccessibilityPolite(message: string): void {
   if (Platform.OS === "ios") {
     AccessibilityInfo.announceForAccessibilityWithOptions(message, { queue: true });
@@ -326,27 +258,19 @@ export function announceForAccessibilityPolite(message: string): void {
   }
 }
 
-/**
- * Check if screen reader is enabled
- */
 export function isScreenReaderEnabled(): Promise<boolean> {
   return new Promise((resolve) => {
     AccessibilityInfo.isScreenReaderEnabled().then(resolve);
   });
 }
 
-/**
- * Check if reduce motion is enabled
- */
 export function isReduceMotionEnabled(): Promise<boolean> {
   return new Promise((resolve) => {
     AccessibilityInfo.isReduceMotionEnabled().then(resolve);
   });
 }
 
-/**
- * Check if bold text is enabled (iOS only)
- */
+/** iOS only: always resolves to false on Android. */
 export function isBoldTextEnabled(): Promise<boolean> {
   if (Platform.OS === "ios") {
     return new Promise((resolve) => {
@@ -356,9 +280,6 @@ export function isBoldTextEnabled(): Promise<boolean> {
   return Promise.resolve(false);
 }
 
-/**
- * Check if larger text is enabled
- */
 export function isGrayscaleEnabled(): Promise<boolean> {
   return new Promise((resolve) => {
     AccessibilityInfo.isGrayscaleEnabled().then(resolve);
@@ -366,12 +287,8 @@ export function isGrayscaleEnabled(): Promise<boolean> {
 }
 
 /**
- * Focus management helpers
- */
-
-/**
- * Set accessibility focus to an element
- * Note: Requires the element ref to have a native tag
+ * Moves accessibility focus to an element.
+ * Requires the ref to expose a native tag via `_nativeTag`.
  */
 export function setAccessibilityFocus(ref: { current: { _nativeTag?: number } | null }): void {
   if (ref.current?._nativeTag) {
@@ -379,9 +296,6 @@ export function setAccessibilityFocus(ref: { current: { _nativeTag?: number } | 
   }
 }
 
-/**
- * Create accessibility props for a focusable element
- */
 export function a11yFocusableElement(
   label: string,
   hint?: string
@@ -393,9 +307,6 @@ export function a11yFocusableElement(
   };
 }
 
-/**
- * Combine multiple accessibility props
- */
 export function mergeA11yProps(...props: A11yProps[]): A11yProps {
   return props.reduce((merged, current) => ({
     ...merged,
@@ -411,9 +322,6 @@ export function mergeA11yProps(...props: A11yProps[]): A11yProps {
   }), {});
 }
 
-/**
- * Accessibility action helpers for custom actions
- */
 export function a11yActions(
   actions: Array<{ name: string; label: string }>
 ): Pick<A11yProps, "accessibilityActions"> {
@@ -422,9 +330,6 @@ export function a11yActions(
   };
 }
 
-/**
- * Common accessibility hints
- */
 export const A11yHints = {
   tap: "Double tap to activate",
   select: "Double tap to select",
@@ -443,9 +348,6 @@ export const A11yHints = {
   adjust: "Swipe up or down to adjust the value",
 } as const;
 
-/**
- * Accessibility role constants
- */
 export const A11yRoles = {
   none: "none" as A11yRole,
   button: "button" as A11yRole,

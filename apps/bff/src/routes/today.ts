@@ -16,8 +16,11 @@ export const handleToday = createJsonRoute(
 
     const { events, degraded } = await fetchPublicEvents(institution);
 
-    // Date scoping: Filter events to only show those for today
-    const todayStr = new Date().toISOString().split("T")[0];
+    // Date scoping: Filter events to only show those for today.
+    // Respect PUBLIC_EVENTS_DATE so test fixtures can pin a reference date.
+    const envDate = process.env.PUBLIC_EVENTS_DATE;
+    const now = envDate ? new Date(envDate) : new Date();
+    const todayStr = now.toISOString().split("T")[0];
     const todayEvents = events.filter(e => e.date.startsWith(todayStr));
 
     return {

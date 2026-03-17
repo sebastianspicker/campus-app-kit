@@ -35,7 +35,7 @@ export function ResourceListSection<T>({
   return (
     <Section title={title}>
       {loading ? <SkeletonList count={3} /> : null}
-      {error ? <ErrorState message={error} onRetry={onRetry} /> : null}
+      {!loading && error ? <ErrorState message={error} onRetry={onRetry} /> : null}
       {!loading && !error
         ? items.map((item) => (
             <ResourceListItem

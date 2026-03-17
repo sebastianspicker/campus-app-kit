@@ -2,8 +2,6 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { sendError } from "../utils/errors";
 import { setRequestIdHeader } from "../utils/requestId";
 
-// Placeholder: Allow only GET/OPTIONS for public endpoints
-
 export function guardMethods(
   req: IncomingMessage,
   res: ServerResponse,

@@ -18,5 +18,7 @@
       "name": "Auditorium",
       "campusId": "cologne"
     }
-  ]
+  ],
+  "_degraded": false,
+  "_sourcesConfigured": true
 }

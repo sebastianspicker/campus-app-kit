@@ -5,7 +5,7 @@ import type { IncomingMessage } from "node:http";
  */
 export function parseQueryParams(req: IncomingMessage): URLSearchParams {
   const url = req.url ?? "";
-  const host = req.headers.host ?? "localhost";
+  const host = req.headers?.host ?? "localhost";
   try {
     const fullUrl = new URL(url, `http://${host}`);
     return fullUrl.searchParams;
@@ -76,12 +76,13 @@ export interface EventsFilterOptions {
  * Parse filter options from query parameters for events endpoint.
  */
 export function parseEventsFilter(params: URLSearchParams): EventsFilterOptions {
+  const limit = getNumberParam(params, "limit");
   return {
-    search: getStringParam(params, "search"),
+    search: getStringParam(params, "search")?.slice(0, 200),
     fromDate: getDateParam(params, "from"),
     toDate: getDateParam(params, "to"),
-    limit: getNumberParam(params, "limit"),
-    offset: getNumberParam(params, "offset") ?? 0
+    limit: limit !== undefined ? Math.min(Math.max(0, Math.floor(limit)), 1000) : undefined,
+    offset: Math.max(0, Math.floor(getNumberParam(params, "offset") ?? 0))
   };
 }
 
@@ -107,13 +108,14 @@ export interface ScheduleFilterOptions {
  * Parse filter options from query parameters for schedule endpoint.
  */
 export function parseScheduleFilter(params: URLSearchParams): ScheduleFilterOptions {
+  const limit = getNumberParam(params, "limit");
   return {
-    search: getStringParam(params, "search"),
+    search: getStringParam(params, "search")?.slice(0, 200),
     fromDate: getDateParam(params, "from"),
     toDate: getDateParam(params, "to"),
     campusId: getStringParam(params, "campus"),
-    limit: getNumberParam(params, "limit"),
-    offset: getNumberParam(params, "offset") ?? 0
+    limit: limit !== undefined ? Math.min(Math.max(0, Math.floor(limit)), 1000) : undefined,
+    offset: Math.max(0, Math.floor(getNumberParam(params, "offset") ?? 0))
   };
 }
 
@@ -135,10 +137,11 @@ export interface RoomsFilterOptions {
  * Parse filter options from query parameters for rooms endpoint.
  */
 export function parseRoomsFilter(params: URLSearchParams): RoomsFilterOptions {
+  const limit = getNumberParam(params, "limit");
   return {
     campus: getStringParam(params, "campus"),
-    search: getStringParam(params, "search"),
-    limit: getNumberParam(params, "limit"),
-    offset: getNumberParam(params, "offset") ?? 0
+    search: getStringParam(params, "search")?.slice(0, 200),
+    limit: limit !== undefined ? Math.min(Math.max(0, Math.floor(limit)), 1000) : undefined,
+    offset: Math.max(0, Math.floor(getNumberParam(params, "offset") ?? 0))
   };
 }

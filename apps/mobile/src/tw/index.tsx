@@ -10,8 +10,6 @@ import {
   StyleSheet,
   TouchableHighlight as RNTouchableHighlight
 } from "react-native";
-import Animated from "react-native-reanimated";
-
 type LinkProps = React.ComponentProps<typeof RouterLink> & { className?: string };
 
 cssInterop(RouterLink, { className: "style" });
@@ -45,16 +43,6 @@ export const Pressable = RNPressable as unknown as React.ComponentType<React.Com
 cssInterop(RNTextInput, { className: "style" });
 export const TextInput = RNTextInput as unknown as React.ComponentType<React.ComponentProps<typeof RNTextInput> & { className?: string }>;
 
-cssInterop(Animated.ScrollView, {
-  className: "style",
-  contentClassName: "contentContainerStyle",
-  contentContainerClassName: "contentContainerStyle"
-});
-export const AnimatedScrollView = Animated.ScrollView as unknown as React.ComponentType<React.ComponentProps<typeof Animated.ScrollView> & {
-  className?: string;
-  contentClassName?: string;
-  contentContainerClassName?: string;
-}>;
 
 function TouchableHighlightInner(
   props: React.ComponentProps<typeof RNTouchableHighlight>

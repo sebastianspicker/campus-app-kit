@@ -17,7 +17,6 @@ export type CachedEntry<T> = {
   isOffline?: boolean;
 };
 
-/** Maximum age for offline cache to be considered usable (24 hours) */
 export const OFFLINE_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 async function getStorage(): Promise<StorageLike> {
@@ -117,9 +116,6 @@ export async function clearPersistedCache(key?: string): Promise<void> {
   await Promise.all(ours.map((k) => storage.removeItem(k)));
 }
 
-/**
- * Result type for offline-first fetch operations
- */
 export type OfflineFetchResult<T> = {
   data: T;
   fromCache: boolean;
@@ -135,15 +131,11 @@ export type OfflineFetchResult<T> = {
  */
 export async function fetchWithOfflineSupport<T>(
   key: string,
-  loader: () => Promise<T>,
-  maxAgeMs: number = OFFLINE_CACHE_MAX_AGE_MS
+  loader: () => Promise<T>
 ): Promise<OfflineFetchResult<T>> {
   const cachedEntry = await getPersistedCacheEntry<T>(key);
   const now = Date.now();
-  
-  // Check if we have valid cached data (used for potential future optimizations)
-  const _hasValidCache = cachedEntry && (now - cachedEntry.timestamp) < maxAgeMs;
-  
+
   try {
     // Try to fetch fresh data
     const freshData = await loader();
@@ -176,9 +168,6 @@ export async function fetchWithOfflineSupport<T>(
   }
 }
 
-/**
- * Check if cached data is from an offline state
- */
 export async function isOfflineData(key: string): Promise<boolean> {
   const entry = await getPersistedCacheEntry<unknown>(key);
   return entry?.isOffline ?? false;

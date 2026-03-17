@@ -48,7 +48,7 @@ export function ResourceDetailScreen<T>({
             style={[
               styles.error,
               {
-                color: theme.colors.accent,
+                color: theme.colors.error,
                 fontSize: scaledFont(typography.body.fontSize, ui),
                 lineHeight: scaledFont(typography.body.lineHeight, ui),
               },

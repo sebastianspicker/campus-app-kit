@@ -16,10 +16,6 @@ export const BFF_ENV: BffEnv = {
   rruleExpansionHorizonDays: parseInt(process.env.RRULE_EXPANSION_HORIZON_DAYS ?? "90", 10)
 };
 
-export function getBffEnv(): BffEnv {
-  return BFF_ENV;
-}
-
 export type TrustProxyMode = "never" | "auto" | "always";
 
 function parsePort(raw: string | undefined): number {

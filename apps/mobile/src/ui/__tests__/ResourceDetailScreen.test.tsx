@@ -31,6 +31,23 @@ vi.mock("../ThemeContext", () => ({
   }),
 }));
 
+// Mock react-native to avoid loading Flow-typed index.js through Vite SSR
+vi.mock("react-native", () => ({
+  StyleSheet: {
+    create: (styles: Record<string, unknown>) => styles,
+  },
+  Text: ({ children, selectable, style }: {
+    children: React.ReactNode;
+    selectable?: boolean;
+    style?: Record<string, unknown>;
+  }) => (
+    <span data-testid="text" data-selectable={selectable} style={style}>{children}</span>
+  ),
+  View: ({ children, style }: { children: React.ReactNode; style?: Record<string, unknown> }) => (
+    <div data-testid="view" style={style}>{children}</div>
+  ),
+}));
+
 // Mock dependencies
 vi.mock("../Screen", () => ({
   Screen: ({ children }: { children: React.ReactNode }) => (
@@ -179,9 +196,9 @@ describe("ResourceDetailScreen", () => {
     
     const instance = tree.root;
     
-    // Find footnote text
-    const texts = instance.findAllByType("div");
-    const footnoteElement = texts.find(el => 
+    // Find footnote text (Text mock renders as span)
+    const spans = instance.findAllByType("span");
+    const footnoteElement = spans.find(el =>
       el.props.children === "Last updated: 2024-01-15"
     );
     expect(footnoteElement).toBeDefined();

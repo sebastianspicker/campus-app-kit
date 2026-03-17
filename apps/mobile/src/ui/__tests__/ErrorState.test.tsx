@@ -40,7 +40,7 @@ vi.mock("../ThemeContext", () => ({
 // Mock expo-router
 vi.mock("expo-router", () => ({
   useNavigation: () => ({
-    canGoBack: vi.fn().mockReturnValue(true),
+    canGoBack: vi.fn().mockReturnValue(false),
     goBack: vi.fn(),
   }),
 }));

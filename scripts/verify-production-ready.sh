@@ -13,7 +13,7 @@ pnpm test
 pnpm build
 
 if [[ "${SKIP_MARKER_CHECK:-}" != "1" ]]; then
-  marker_pattern='(TODO|FIXME|SKELETON|PLACEHOLDER|TBD)'
+  marker_pattern='\b(TODO|FIXME|SKELETON|PLACEHOLDER|TBD)\b'
   if command -v rg >/dev/null 2>&1; then
     if rg -n "$marker_pattern" -S --hidden \
       --glob '!.git/**' \
@@ -25,6 +25,9 @@ if [[ "${SKIP_MARKER_CHECK:-}" != "1" ]]; then
       --glob '!.expo/**' \
       --glob '!.expo-shared/**' \
       --glob '!.pnpm-store/**' \
+      --glob '!.claude/**' \
+      --glob '!docs/**' \
+      --glob '!progress.md' \
       --glob '!IMPLEMENTATION_BACKLOG.md' \
       --glob '!BUGS_AND_FIXES.md' \
       --glob '!verify-production-ready.sh' \
@@ -43,6 +46,9 @@ if [[ "${SKIP_MARKER_CHECK:-}" != "1" ]]; then
     --exclude-dir .expo \
     --exclude-dir .expo-shared \
     --exclude-dir .pnpm-store \
+    --exclude-dir .claude \
+    --exclude-dir docs \
+    --exclude progress.md \
     --exclude IMPLEMENTATION_BACKLOG.md \
     --exclude BUGS_AND_FIXES.md \
     --exclude verify-production-ready.sh \

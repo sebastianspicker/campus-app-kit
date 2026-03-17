@@ -1,19 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { resolveBffBaseUrl } from "../bffConfig";
+import { resolveBffBaseUrl, _resetBffBaseUrlMemoForTests } from "../bffConfig";
 
 type EnvSnapshot = {
   expoPublic?: string;
-  legacy?: string;
   nodeEnv?: string;
 };
 
 function setEnv(value: string | undefined, key: keyof EnvSnapshot): void {
-  const envKey =
-    key === "expoPublic"
-      ? "EXPO_PUBLIC_BFF_BASE_URL"
-      : key === "legacy"
-        ? "MOBILE_PUBLIC_BFF_URL"
-        : "NODE_ENV";
+  const envKey = key === "expoPublic" ? "EXPO_PUBLIC_BFF_BASE_URL" : "NODE_ENV";
   if (value === undefined) {
     delete process.env[envKey];
   } else {
@@ -27,10 +21,10 @@ describe("resolveBffBaseUrl", () => {
   let hadDev: boolean;
 
   beforeEach(() => {
+    _resetBffBaseUrlMemoForTests();
     originalEnv = {
       expoPublic: process.env.EXPO_PUBLIC_BFF_BASE_URL,
-      legacy: process.env.MOBILE_PUBLIC_BFF_URL,
-      nodeEnv: process.env.NODE_ENV
+      nodeEnv: process.env.NODE_ENV,
     };
     hadDev = Object.prototype.hasOwnProperty.call(globalThis, "__DEV__");
     originalDev = (globalThis as { __DEV__?: unknown }).__DEV__;
@@ -38,7 +32,6 @@ describe("resolveBffBaseUrl", () => {
 
   afterEach(() => {
     setEnv(originalEnv.expoPublic, "expoPublic");
-    setEnv(originalEnv.legacy, "legacy");
     setEnv(originalEnv.nodeEnv, "nodeEnv");
 
     if (hadDev) {
@@ -50,18 +43,9 @@ describe("resolveBffBaseUrl", () => {
 
   it("prefers EXPO_PUBLIC_BFF_BASE_URL and normalizes trailing slashes", () => {
     setEnv("https://api.example.com/", "expoPublic");
-    setEnv("https://legacy.example.com", "legacy");
     (globalThis as { __DEV__?: unknown }).__DEV__ = false;
 
     expect(resolveBffBaseUrl()).toBe("https://api.example.com");
-  });
-
-  it("falls back to MOBILE_PUBLIC_BFF_URL when expo public is unset", () => {
-    setEnv(undefined, "expoPublic");
-    setEnv("https://legacy.example.com/", "legacy");
-    (globalThis as { __DEV__?: unknown }).__DEV__ = false;
-
-    expect(resolveBffBaseUrl()).toBe("https://legacy.example.com");
   });
 
   it("rejects invalid protocols", () => {
@@ -73,7 +57,6 @@ describe("resolveBffBaseUrl", () => {
 
   it("defaults to localhost in development", () => {
     setEnv(undefined, "expoPublic");
-    setEnv(undefined, "legacy");
     (globalThis as { __DEV__?: unknown }).__DEV__ = true;
 
     expect(resolveBffBaseUrl()).toBe("http://localhost:4000");
@@ -81,7 +64,6 @@ describe("resolveBffBaseUrl", () => {
 
   it("throws in production without a base URL", () => {
     setEnv(undefined, "expoPublic");
-    setEnv(undefined, "legacy");
     setEnv("production", "nodeEnv");
     (globalThis as { __DEV__?: unknown }).__DEV__ = false;
 

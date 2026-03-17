@@ -1,10 +1,10 @@
 import type { InstitutionPack } from "../../config/loader";
 import { getCached } from "../../utils/cache";
-import { fetchWithTimeout } from "../../utils/fetch";
+import { fetchTextWithTimeout } from "../../utils/fetch";
 import { log } from "../../utils/logger";
 import type { ScheduleItem } from "@campus/shared";
-import { readFileSync } from "fs";
-import { join } from "path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { parseIcs, type ParsedIcsEvent } from "./icsParser";
 
@@ -51,13 +51,7 @@ export async function fetchPublicSchedule(
 
       const settlement = await Promise.allSettled(
         sources.map(async (source: { url: string }) => {
-          const response = await fetchWithTimeout(source.url);
-
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-
-          const text = await response.text();
+          const text = await fetchTextWithTimeout(source.url);
           return parseIcs(text, { rruleHorizonDays: BFF_ENV.rruleExpansionHorizonDays });
         })
       );

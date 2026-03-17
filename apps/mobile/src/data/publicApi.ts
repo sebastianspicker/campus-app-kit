@@ -51,16 +51,6 @@ function safeParse<T>(data: unknown, schema: z.ZodType<T>): T {
   }
 }
 
-// Add a new type for offline-aware responses
-export type OfflineAwareResponse<T> = T & {
-  _offlineMeta?: {
-    fromCache: boolean;
-    isOffline: boolean;
-    cacheAge: number | null;
-  };
-};
-
-// Modify getCachedJson to support offline mode
 async function getCachedJson<T>(
   path: string,
   schema: z.ZodType<T>,
@@ -77,15 +67,7 @@ async function getCachedJson<T>(
       cacheKey,
       () => getJson<T>(`${path}${queryString}`, (data) => safeParse(data, schema), { signal: options?.signal })
     );
-    
-    // Attach offline metadata to response
-    const response = result.data as OfflineAwareResponse<T>;
-    response._offlineMeta = {
-      fromCache: result.fromCache,
-      isOffline: result.isOffline,
-      cacheAge: result.cacheAge
-    };
-    return response;
+    return result.data;
   }
   
   return getCached(

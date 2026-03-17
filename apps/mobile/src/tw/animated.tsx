@@ -33,18 +33,12 @@ export function useReduceMotion(): boolean {
   return reduceMotion;
 }
 
-/**
- * Animation configuration options
- */
 export type AnimationConfig = {
   duration?: number;
   easing?: (value: number) => number;
   delay?: number;
 };
 
-/**
- * Default easing functions
- */
 export const Easings = {
   linear: Easing.linear,
   ease: Easing.ease,
@@ -84,9 +78,6 @@ export function useAnimationConfig(config: AnimationConfig): AnimationConfig {
   return config;
 }
 
-/**
- * Hook for fade-in animation with reduce motion support
- */
 export function useFadeIn(duration: number = 300): {
   opacity: RNAnimated.SharedValue<number>;
   reduceMotion: boolean;
@@ -105,9 +96,6 @@ export function useFadeIn(duration: number = 300): {
   return { opacity, reduceMotion };
 }
 
-/**
- * Hook for scale animation with reduce motion support
- */
 export function useScaleAnimation(
   duration: number = 200,
   fromScale: number = 0.95,
@@ -130,9 +118,6 @@ export function useScaleAnimation(
   return { scale, reduceMotion };
 }
 
-/**
- * Hook for slide animation with reduce motion support
- */
 export function useSlideAnimation(
   duration: number = 300,
   fromTranslateY: number = 20,
@@ -155,9 +140,6 @@ export function useSlideAnimation(
   return { translateY, reduceMotion };
 }
 
-/**
- * Hook for combined fade and slide animation with reduce motion support
- */
 export function useFadeSlideAnimation(
   duration: number = 300,
   fromTranslateY: number = 20
@@ -200,9 +182,6 @@ export function useReducedMotionValue<T extends number>(
   return animatedValue;
 }
 
-/**
- * Animation variants for common UI patterns
- */
 export const AnimationPresets = {
   // Fast micro-interactions (button presses, toggles)
   fast: {
@@ -223,9 +202,6 @@ export const AnimationPresets = {
   },
 } as const;
 
-/**
- * Platform-specific animation recommendations
- */
 export const PlatformAnimations = {
   // iOS typically uses spring animations
   ios: {
@@ -239,28 +215,9 @@ export const PlatformAnimations = {
   },
 } as const;
 
-/**
- * Get platform-appropriate animation config
- */
 export function getPlatformAnimation(): typeof PlatformAnimations.ios | typeof PlatformAnimations.android {
   return Platform.OS === "ios" 
     ? PlatformAnimations.ios 
     : PlatformAnimations.android;
 }
 
-/**
- * Utility to conditionally apply animations
- */
-export function createAnimatedValue(
-  value: number,
-  reduceMotion: boolean
-): RNAnimated.SharedValue<number> {
-  const animatedValue = useSharedValue(value);
-  
-  if (reduceMotion) {
-    // Skip animation entirely
-    animatedValue.value = value;
-  }
-  
-  return animatedValue;
-}

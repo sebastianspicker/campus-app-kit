@@ -1,44 +1,19 @@
-/**
- * Date formatting utilities for consistent date/time display across the app.
- * Supports locale-aware formatting with optional locale overrides.
- */
-
-// Cache the relative time formatter for performance
+// Cache the relative time formatters for the default locale only
 let relativeTimeFormatter: Intl.RelativeTimeFormat | null = null;
 let shortRelativeTimeFormatter: Intl.RelativeTimeFormat | null = null;
 
-/**
- * Get or create a cached relative time formatter.
- * Uses the default locale with "auto" numeric style for natural language output.
- * 
- * @param locale - Optional locale override (e.g., "en", "de", "fr")
- * @returns Cached Intl.RelativeTimeFormat instance
- */
 function getRelativeTimeFormatter(locale?: string): Intl.RelativeTimeFormat {
-  if (!relativeTimeFormatter || locale) {
-    relativeTimeFormatter = new Intl.RelativeTimeFormat(locale, {
-      numeric: "auto",
-      style: "long",
-    });
+  if (locale) {
+    return new Intl.RelativeTimeFormat(locale, { numeric: "auto", style: "long" });
   }
-  return relativeTimeFormatter;
+  return relativeTimeFormatter ??= new Intl.RelativeTimeFormat(undefined, { numeric: "auto", style: "long" });
 }
 
-/**
- * Get or create a cached short relative time formatter.
- * Uses "short" style for abbreviated output (e.g., "2h ago", "in 3d").
- * 
- * @param locale - Optional locale override (e.g., "en", "de", "fr")
- * @returns Cached Intl.RelativeTimeFormat instance with short style
- */
 function getShortRelativeTimeFormatter(locale?: string): Intl.RelativeTimeFormat {
-  if (!shortRelativeTimeFormatter || locale) {
-    shortRelativeTimeFormatter = new Intl.RelativeTimeFormat(locale, {
-      numeric: "always",
-      style: "short",
-    });
+  if (locale) {
+    return new Intl.RelativeTimeFormat(locale, { numeric: "always", style: "short" });
   }
-  return shortRelativeTimeFormatter;
+  return shortRelativeTimeFormatter ??= new Intl.RelativeTimeFormat(undefined, { numeric: "always", style: "short" });
 }
 
 /**
@@ -187,12 +162,6 @@ export function formatShortRelativeTime(date: string, locale?: string): string {
   return formatter.format(value, unit);
 }
 
-/**
- * Check if a date is today.
- * 
- * @param date - ISO date string
- * @returns true if the date is today
- */
 export function isToday(date: string): boolean {
   const today = new Date().toISOString().split("T")[0];
   return date.startsWith(today);

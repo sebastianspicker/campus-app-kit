@@ -13,7 +13,11 @@ COPY packages/institutions/src ./packages/institutions/src
 
 RUN pnpm install --frozen-lockfile
 
+RUN pnpm --filter @campus/shared build && \
+    pnpm --filter @campus/institutions build && \
+    pnpm --filter @campus/bff build
+
 WORKDIR /repo/apps/bff
 EXPOSE 4000
 
-CMD ["pnpm", "dev"]
+CMD ["node", "dist/server.js"]

@@ -39,7 +39,7 @@ function unfoldLines(input: string): string[] {
   for (const line of lines) {
     if (line.startsWith(" ") || line.startsWith("\t")) {
       const prev = unfolded.pop() ?? "";
-      unfolded.push(prev + line.trimStart());
+      unfolded.push(prev + line.slice(1));
       continue;
     }
     unfolded.push(line);
@@ -110,7 +110,7 @@ function expandRecurringEvent(
     // Parse the RRULE string
     // rrulestr expects the rule to start with "RRULE:"
     const ruleString = rruleValue.startsWith("RRULE:") ? rruleValue : `RRULE:${rruleValue}`;
-    
+
     let rrule: RRule;
     try {
       rrule = rrulestr(ruleString, { dtstart: startDate });
@@ -119,8 +119,13 @@ function expandRecurringEvent(
       return [baseEvent];
     }
 
-    // Get all occurrences between now and the horizon
-    const occurrences = rrule.between(now, horizonDate, true);
+    // For COUNT/UNTIL-constrained rules, use the event's own start date as the lower
+    // bound so all declared instances are returned (even if some are in the past).
+    // For open-ended rules, use now so we only fetch upcoming occurrences.
+    // Route-level applyDateRange handles further filtering in both cases.
+    const hasFiniteConstraint = rrule.options.count != null || rrule.options.until != null;
+    const fromDate = hasFiniteConstraint ? startDate : now;
+    const occurrences = rrule.between(fromDate, horizonDate, true);
     
     // Limit the number of instances
     const limitedOccurrences = occurrences.slice(0, maxInstances);

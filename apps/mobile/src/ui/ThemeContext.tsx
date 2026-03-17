@@ -110,9 +110,6 @@ export function ThemeProvider({ children }: { children: ReactNode }): JSX.Elemen
 // Theme Hooks
 // ============================================
 
-/**
- * Hook to access the current theme
- */
 export function useTheme(): Theme {
   const context = useContext(ThemeContext);
   if (!context) {
@@ -121,9 +118,6 @@ export function useTheme(): Theme {
   return context.theme;
 }
 
-/**
- * Hook to access theme preference controls
- */
 export function useThemePreference(): {
   preference: ThemePreference;
   setPreference: (preference: ThemePreference) => void;
@@ -140,33 +134,22 @@ export function useThemePreference(): {
   };
 }
 
-/**
- * Hook to get theme colors directly
- */
 export function useThemeColors(): ThemeColors {
   const theme = useTheme();
   return theme.colors;
 }
 
-/**
- * Hook to get theme UI tokens directly
- */
 export function useThemeUi(): ThemeUi {
   const theme = useTheme();
   return theme.ui;
 }
 
-/**
- * Hook to check if dark mode is active
- */
 export function useIsDarkMode(): boolean {
   const theme = useTheme();
   return theme.isDark;
 }
 
-/**
- * Hook to get theme data from system color scheme only
- */
+/** Returns theme for the system color scheme, ignoring the user's app-level preference. */
 export function useSystemTheme(): Theme {
   const systemColorScheme = useColorScheme();
   const colorScheme: ColorScheme =
