@@ -22,8 +22,8 @@ export function useOfflineCache(): OfflineCacheState {
       if (stats.offlineKeys.length > 0 && stats.newestEntry) {
         setCacheAge(Date.now() - stats.newestEntry);
       }
-    } catch (error) {
-      console.error("Failed to check offline status:", error);
+    } catch {
+      // Silently ignore — cache stats are non-critical
     }
   }, []);
   

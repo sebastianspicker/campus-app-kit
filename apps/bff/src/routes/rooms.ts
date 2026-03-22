@@ -1,5 +1,3 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
-import type { InstitutionPack } from "../config/loader";
 import { RoomsResponseSchema } from "@campus/shared";
 import { parseQueryParams, parseRoomsFilter } from "../utils/queryParams";
 import { applySearch, applyPagination } from "../utils/filterHelpers";
@@ -11,18 +9,17 @@ export const handleRooms = createJsonRoute(
     if (rooms.length === 0) {
       throw new Error("NO_CONFIG_SOURCES: No rooms configured");
     }
-    
-    // Apply filters from query parameters
+
     const params = parseQueryParams(req);
     const filter = parseRoomsFilter(params);
-    
+
     let filteredRooms = rooms;
     if (filter.campus) {
       filteredRooms = filteredRooms.filter((r) => r.campusId === filter.campus);
     }
     filteredRooms = applySearch(filteredRooms, filter.search, (r) => r.name);
     filteredRooms = applyPagination(filteredRooms, filter.offset ?? 0, filter.limit);
-    
+
     return {
       rooms: filteredRooms,
       _sourcesConfigured: true
@@ -30,4 +27,4 @@ export const handleRooms = createJsonRoute(
   },
   RoomsResponseSchema,
   { maxAgeSeconds: 300 }
-) as (req: IncomingMessage, res: ServerResponse, institution: InstitutionPack) => Promise<void>;
+);

@@ -15,16 +15,16 @@ export default function EventsScreen(): JSX.Element {
   const [search, setSearch] = useState("");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const { data, error, loading, refreshing, refresh } = useEvents({ search: search || undefined });
-  const events = data?.events ?? [];
   const theme = useTheme();
 
   const sortedEvents = useMemo(() => {
+    const events = data?.events ?? [];
     return [...events].sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
       return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
     });
-  }, [events, sortDirection]);
+  }, [data?.events, sortDirection]);
 
   const toggleSort = useCallback(() => {
     setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));

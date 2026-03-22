@@ -1,5 +1,3 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
-import type { InstitutionPack } from "../config/loader";
 import { ScheduleResponseSchema } from "@campus/shared";
 import { fetchPublicSchedule } from "../connectors/public/publicSchedule";
 import { parseQueryParams, parseScheduleFilter } from "../utils/queryParams";
@@ -12,10 +10,9 @@ export const handleSchedule = createJsonRoute(
     if (schedules.length === 0) {
       throw new Error("NO_CONFIG_SOURCES: No schedules configured");
     }
-    
+
     const schedule = await fetchPublicSchedule(institution);
-    
-    // Apply filters from query parameters
+
     const params = parseQueryParams(req);
     const filter = parseScheduleFilter(params);
 
@@ -25,7 +22,7 @@ export const handleSchedule = createJsonRoute(
     }
     filteredSchedule = applySearch(filteredSchedule, filter.search, (item) => item.title);
     filteredSchedule = applyPagination(filteredSchedule, filter.offset ?? 0, filter.limit);
-    
+
     return {
       schedule: filteredSchedule,
       _sourcesConfigured: true
@@ -33,4 +30,4 @@ export const handleSchedule = createJsonRoute(
   },
   ScheduleResponseSchema,
   { maxAgeSeconds: 300 }
-) as (req: IncomingMessage, res: ServerResponse, institution: InstitutionPack) => Promise<void>;
+);

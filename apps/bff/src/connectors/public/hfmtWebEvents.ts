@@ -1,4 +1,5 @@
 import type { InstitutionPack } from "../../config/loader";
+import type { PublicEvent } from "@campus/shared";
 import { getCached } from "../../utils/cache";
 import { fetchTextWithTimeout } from "../../utils/fetch";
 import { log } from "../../utils/logger";
@@ -7,13 +8,6 @@ import { BFF_ENV } from "../../config/env";
 
 // Import mock fixtures for mock mode
 import mockuniEventsFixture from "../../__fixtures__/mockuni-events.json";
-
-export type PublicEvent = {
-  id: string;
-  title: string;
-  date: string;
-  sourceUrl: string;
-};
 
 export type FetchPublicEventsResult = { events: PublicEvent[]; degraded: boolean };
 

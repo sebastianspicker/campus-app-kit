@@ -7,6 +7,7 @@ export type Room = {
 };
 
 export async function fetchRooms(): Promise<Room[]> {
+  log("warn", "stub_called", { connector: "studiservice.rooms" });
   return [];
 }
 

@@ -15,23 +15,26 @@ type SortDirection = "asc" | "desc";
 export default function TodayScreen(): JSX.Element {
   const { data, error, loading, refreshing, refresh } = useToday();
   const scheduleState = useSchedule();
-  const events = data?.events ?? [];
-  const scheduleItems = scheduleState.data?.schedule ?? [];
   const [scheduleSortDirection, setScheduleSortDirection] = useState<SortDirection>("asc");
   const theme = useTheme();
 
   const refreshingAll = refreshing || scheduleState.refreshing;
+  const scheduleRefresh = scheduleState.refresh;
   const refreshAll = useCallback(async () => {
-    await Promise.all([refresh(), scheduleState.refresh()]);
-  }, [refresh, scheduleState.refresh]);
+    await Promise.all([refresh(), scheduleRefresh()]);
+  }, [refresh, scheduleRefresh]);
+
+  const rawEvents = data?.events;
+  const events = useMemo(() => rawEvents ?? [], [rawEvents]);
 
   const sortedSchedule = useMemo(() => {
-    return [...scheduleItems].sort((a, b) => {
+    const items = scheduleState.data?.schedule ?? [];
+    return [...items].sort((a, b) => {
       const dateA = new Date(a.startsAt).getTime();
       const dateB = new Date(b.startsAt).getTime();
       return scheduleSortDirection === "asc" ? dateA - dateB : dateB - dateA;
     });
-  }, [scheduleItems, scheduleSortDirection]);
+  }, [scheduleState.data?.schedule, scheduleSortDirection]);
 
   const toggleScheduleSort = useCallback(() => {
     setScheduleSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));

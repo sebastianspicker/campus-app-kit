@@ -1,5 +1,3 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
-import type { InstitutionPack } from "../config/loader";
 import type { TodayResponse } from "@campus/shared";
 import { TodayResponseSchema } from "@campus/shared";
 import { fetchPublicEvents } from "../connectors/public/hfmtWebEvents";
@@ -16,8 +14,7 @@ export const handleToday = createJsonRoute(
 
     const { events, degraded } = await fetchPublicEvents(institution);
 
-    // Date scoping: Filter events to only show those for today.
-    // Respect PUBLIC_EVENTS_DATE so test fixtures can pin a reference date.
+    // Date scoping: filter to today. Respect PUBLIC_EVENTS_DATE for test fixtures.
     const envDate = process.env.PUBLIC_EVENTS_DATE;
     const now = envDate ? new Date(envDate) : new Date();
     const todayStr = now.toISOString().split("T")[0];
@@ -38,4 +35,4 @@ export const handleToday = createJsonRoute(
       ...(process.env.PUBLIC_EVENTS_MODE === "mock" ? { "x-data-mode": "mock" } : {})
     })
   }
-) as (req: IncomingMessage, res: ServerResponse, institution: InstitutionPack) => Promise<void>;
+);

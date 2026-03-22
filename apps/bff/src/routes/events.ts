@@ -1,5 +1,3 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
-import type { InstitutionPack } from "../config/loader";
 import type { EventsResponse } from "@campus/shared";
 import { EventsResponseSchema } from "@campus/shared";
 import { fetchPublicEvents } from "../connectors/public/hfmtWebEvents";
@@ -13,17 +11,16 @@ export const handleEvents = createJsonRoute(
     if (sources.length === 0) {
       throw new Error("NO_CONFIG_SOURCES: No event sources configured");
     }
-    
+
     const { events, degraded } = await fetchPublicEvents(institution);
-    
-    // Apply filters from query parameters
+
     const params = parseQueryParams(req);
     const filter = parseEventsFilter(params);
 
     let filteredEvents = applySearch(events, filter.search, (e) => e.title);
     filteredEvents = applyDateRange(filteredEvents, filter.fromDate, filter.toDate, (e) => e.date);
     filteredEvents = applyPagination(filteredEvents, filter.offset ?? 0, filter.limit);
-    
+
     return {
       events: filteredEvents,
       _degraded: degraded,
@@ -38,4 +35,4 @@ export const handleEvents = createJsonRoute(
       ...(process.env.PUBLIC_EVENTS_MODE === "mock" ? { "x-data-mode": "mock" } : {})
     })
   }
-) as (req: IncomingMessage, res: ServerResponse, institution: InstitutionPack) => Promise<void>;
+);

@@ -1,5 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "INSTITUTION_ID",
+    "BFF_PORT",
+    "CORS_ORIGINS",
+    "BFF_TRUST_PROXY",
+    "EXPO_PUBLIC_BFF_BASE_URL",
+    "PUBLIC_EVENTS_MODE",
+    "PUBLIC_EVENTS_DATE"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -7,7 +16,8 @@
     },
     "dev": {
       "cache": false,
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "persistent": true
     },
     "lint": {},
     "typecheck": {
