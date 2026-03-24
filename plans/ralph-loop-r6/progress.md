@@ -16,6 +16,17 @@ Verification: `pnpm lint && pnpm typecheck && pnpm test` — PASSED (186 tests, 
 
 ## PHASE A COMPLETE
 
+## Phase B: Test Depth
+- B.1: BFF route negative-path tests — 27 new tests (schedule.negative 7, events.negative 7, rooms.negative 7, today.negative 6)
+- B.2: Mobile hook edge-case tests — 16 new tests (useEvents.edge 4, useSchedule.edge 4, useRooms.edge 4, useToday.edge 4)
+- B.3: Institution pack data validation — 25 new tests (packData.test: required fields, URL validation, unique IDs, schema validation, referential integrity, load safety, campus completeness)
+- B.4: BFF server lifecycle tests — 6 new tests (dynamic port binding, health check, graceful close, connection refusal after close, data route serving, 404 for unknown routes)
+
+Total new tests: 74
+Verification: `pnpm test` — PASSED (all tests green, no warnings)
+
+## PHASE B COMPLETE
+
 ## Phase C: Resilience & Performance
 - C.1: BFF fetch timeout with AbortController — added `TimeoutError` class extending `Error` with `name: "TimeoutError"`; updated `fetchWithTimeout` to catch `AbortError` from timeout controller and rethrow as `TimeoutError`; changed default timeout from 8000ms to 10_000ms; preserved caller-provided `AbortSignal` composability via `AbortSignal.any`; added 6 tests
 - C.2: Mobile exponential backoff with jitter — updated `backoffWithJitter` formula to `baseDelay * multiplier^attempt` with +-25% jitter `(Math.random() - 0.5) * 0.5 * calculated`; added `multiplier` (default 2) and `maxDelayMs` (default 30_000) options to `withRetry`; capped delays at `maxDelayMs`; backward compatible API; added 7 new tests (exponential progression, max cap, jitter bounds, Retry-After override, 4xx rejection, TypeError retry, exhaustion)
