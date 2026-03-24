@@ -76,7 +76,7 @@ describe("GET /today — negative paths", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("DNS resolution failed")));
 
     const req = createMockRequest("/today");
-    const { response, getStatus, getBody } = createMockResponse();
+    const { response, getStatus } = createMockResponse();
 
     await handleToday(req, response, institution);
 

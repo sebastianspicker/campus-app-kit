@@ -99,7 +99,7 @@ describe("GET /events — negative paths", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Connection refused")));
 
     const req = createMockRequest("/events");
-    const { response, getStatus, getBody } = createMockResponse();
+    const { response, getStatus } = createMockResponse();
 
     await handleEvents(req, response, institution);
 

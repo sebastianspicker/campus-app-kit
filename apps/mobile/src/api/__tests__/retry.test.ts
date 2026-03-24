@@ -157,8 +157,7 @@ describe("withRetry — exponential backoff", () => {
     const delays: number[] = [];
     mockSetTimeoutImmediate(delays);
 
-    const err = new TypeError("rate limited");
-    (err as unknown as { retryAfterInSeconds: number }).retryAfterInSeconds = 5;
+    const err = Object.assign(new Error("rate limited"), { status: 429, retryAfterInSeconds: 5 });
     const fn = vi.fn()
       .mockRejectedValueOnce(err)
       .mockResolvedValueOnce("ok");
