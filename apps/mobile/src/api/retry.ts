@@ -1,9 +1,11 @@
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  options?: { retries?: number; baseDelayMs?: number }
+  options?: { retries?: number; baseDelayMs?: number; multiplier?: number; maxDelayMs?: number }
 ): Promise<T> {
   const retries = options?.retries ?? 2;
   const baseDelayMs = options?.baseDelayMs ?? 250;
+  const multiplier = options?.multiplier ?? 2;
+  const maxDelayMs = options?.maxDelayMs ?? 30_000;
 
   let attempt = 0;
   // eslint-disable-next-line no-constant-condition
@@ -19,7 +21,7 @@ export async function withRetry<T>(
       const retryAfterSeconds = isHttpLikeError(err) ? err.retryAfterInSeconds : undefined;
       const delay = typeof retryAfterSeconds === "number"
         ? retryAfterSeconds * 1000
-        : backoffWithJitter(baseDelayMs, attempt);
+        : backoffWithJitter(baseDelayMs, attempt, multiplier, maxDelayMs);
       await sleep(delay);
     }
   }
@@ -46,10 +48,18 @@ function shouldRetry(err: unknown): boolean {
   return err instanceof TypeError;
 }
 
-function backoffWithJitter(baseDelayMs: number, attempt: number): number {
+function backoffWithJitter(
+  baseDelayMs: number,
+  attempt: number,
+  multiplier: number,
+  maxDelayMs: number
+): number {
   const exp = Math.min(6, attempt);
-  const max = baseDelayMs * Math.pow(2, exp);
-  return Math.floor(Math.random() * max);
+  const calculated = baseDelayMs * Math.pow(multiplier, exp);
+  // +-25% jitter: random in [-0.25, +0.25]
+  const jitterFactor = (Math.random() - 0.5) * 0.5;
+  const withJitter = calculated + jitterFactor * calculated;
+  return Math.min(Math.floor(withJitter), maxDelayMs);
 }
 
 function sleep(ms: number): Promise<void> {

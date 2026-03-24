@@ -1,10 +1,17 @@
 import type { InstitutionPack } from "../../config/loader";
 import type { PublicEvent } from "@campus/shared";
 import { getCached } from "../../utils/cache";
+import { createCircuitBreaker } from "../../utils/circuitBreaker";
 import { fetchTextWithTimeout } from "../../utils/fetch";
 import { log } from "../../utils/logger";
 import { buildEventId } from "./eventId";
 import { BFF_ENV } from "../../config/env";
+
+const eventsBreaker = createCircuitBreaker({
+  name: "public-events",
+  failureThreshold: 5,
+  cooldownMs: 30_000,
+});
 
 // Import mock fixtures for mock mode
 import mockuniEventsFixture from "../../__fixtures__/mockuni-events.json";
@@ -47,7 +54,7 @@ export async function fetchPublicEvents(
       let anyFailed = false;
       const settlement = await Promise.allSettled(
         sources.map(async (source: { url: string; label: string }) => {
-          const html = await fetchTextWithTimeout(source.url);
+          const html = await eventsBreaker.call(() => fetchTextWithTimeout(source.url));
           return extractEventsFromHtml(html, source.url);
         })
       );
