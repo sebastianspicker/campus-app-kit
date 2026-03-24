@@ -49,6 +49,13 @@ describe("sendError", () => {
     expect(res.getHeaders()["content-type"]).toBe("application/json");
   });
 
+  it("sets cache-control no-store on error responses", () => {
+    const res = createMockResponse();
+    sendError(res as never, 400, "bad_request", "Invalid input");
+
+    expect(res.getHeaders()["cache-control"]).toBe("no-store");
+  });
+
   it("handles already-sent headers gracefully", () => {
     const res = createMockResponse({ headersSent: true });
     sendError(res as never, 500, "internal_error", "Unexpected error");

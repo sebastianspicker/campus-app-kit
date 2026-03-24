@@ -9,4 +9,6 @@ export function guardSecurityHeaders(
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; sandbox");
+  res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
 }

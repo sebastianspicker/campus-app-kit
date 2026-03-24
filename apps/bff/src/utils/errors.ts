@@ -31,6 +31,9 @@ export function sendError(
     }
   };
 
-  res.writeHead(status, { "content-type": "application/json" });
+  res.writeHead(status, {
+    "content-type": "application/json",
+    "cache-control": "no-store"
+  });
   res.end(JSON.stringify(body));
 }
