@@ -27,9 +27,11 @@ if [[ "${SKIP_MARKER_CHECK:-}" != "1" ]]; then
       --glob '!.pnpm-store/**' \
       --glob '!.claude/**' \
       --glob '!docs/**' \
+      --glob '!plans/**' \
       --glob '!progress.md' \
       --glob '!IMPLEMENTATION_BACKLOG.md' \
       --glob '!BUGS_AND_FIXES.md' \
+      --glob '!CLAUDE.md' \
       --glob '!verify-production-ready.sh' \
       .; then
       echo
@@ -48,9 +50,11 @@ if [[ "${SKIP_MARKER_CHECK:-}" != "1" ]]; then
     --exclude-dir .pnpm-store \
     --exclude-dir .claude \
     --exclude-dir docs \
+    --exclude-dir plans \
     --exclude progress.md \
     --exclude IMPLEMENTATION_BACKLOG.md \
     --exclude BUGS_AND_FIXES.md \
+    --exclude CLAUDE.md \
     --exclude verify-production-ready.sh \
     .; then
     echo

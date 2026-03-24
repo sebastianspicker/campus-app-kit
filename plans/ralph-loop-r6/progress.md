@@ -36,3 +36,24 @@ Verification: `pnpm test` — PASSED (all tests green, no warnings)
 Verification: `pnpm lint && pnpm typecheck && pnpm test` — PASSED (207 BFF tests in 25 files + 156 mobile tests in 16 files)
 
 ## PHASE C COMPLETE
+
+## Phase D: Security Hardening
+- D.1: Input validation — clamped campus/campusId query params to 100 chars max
+- D.2: Security headers — added Permissions-Policy and X-Permitted-Cross-Domain-Policies headers
+- D.3: Dependency audit — 28 vulns in Expo build toolchain only, no server exposure
+- D.4: Rate limit audit — fixed Retry-After returning 0 at window boundary; added Cache-Control: no-store to error responses
+
+Verification: `pnpm lint && pnpm typecheck && pnpm test` — PASSED
+
+## PHASE D COMPLETE
+
+## Phase E: DX & Final Review
+- E.1: Created CLAUDE.md — 54-line concise project guide with quick commands, architecture, conventions, testing, and common pitfalls
+- E.2: Documentation sweep — updated architecture.md (added circuit breaker, security headers, error types), ci.md (added e2e and release workflows), README.md (added circuit breaker to BFF features)
+- E.3: Final adversarial review — all checks clean: zero TODO/FIXME/HACK in source, no `as any`, no `@ts-ignore`, no `.skip`/`.only`, no console.log in non-test/non-logger source, no hardcoded secrets, no files >800 lines, all functions <50 lines; fixed verify script to exclude plans/ and CLAUDE.md from marker scan
+
+Final verification: `pnpm lint && pnpm typecheck && pnpm test` — PASSED
+Test count: 446 tests in 53 files (up from 339 baseline, +31.6%)
+
+## PHASE E COMPLETE
+## ALL PHASES COMPLETE

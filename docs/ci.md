@@ -13,6 +13,10 @@ This repo uses GitHub Actions with a deterministic, least-privilege CI setup foc
   - Secret scanning with `gitleaks` using `.gitleaks.toml`.
 - `codeql` (push to `main`, all PRs, weekly schedule)
   - Static analysis for JavaScript/TypeScript.
+- `e2e` (push to `main`, PRs — only when `apps/mobile/` changes; also `workflow_dispatch`)
+  - Detox E2E tests for the mobile app.
+- `release` (push tags matching `v*`)
+  - Validates a release build on tag push.
 
 Each workflow has:
 - Minimal `permissions`

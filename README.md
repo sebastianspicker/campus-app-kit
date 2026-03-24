@@ -27,7 +27,7 @@ Then open the mobile app with Expo Go or a dev client.
 ## Features
 
 - **Mobile app** – Expo SDK 51 with Expo Router; Today, Events, Rooms, Schedule screens
-- **BFF** – Optional Node.js API with public connectors, rate limiting, HTTP caching, CORS
+- **BFF** – Optional Node.js API with public connectors, rate limiting, HTTP caching, CORS, circuit breaker
 - **Institution packs** – Public config per institution; easy to add more
 - **Shared types** – Zod schemas used by both BFF and mobile
 

@@ -37,8 +37,8 @@ flowchart LR
 ## Core pieces
 
 - **Mobile app** – Expo + Expo Router (tabs, events, rooms, schedule).
-- **BFF** – Public connectors + private stubs; rate limiting, caching, CORS.
-- **Shared** – Domain types and Zod schemas (`packages/shared`).
+- **BFF** – Public connectors + private stubs; rate limiting, caching, CORS, circuit breaker, security headers.
+- **Shared** – Domain types, Zod schemas, and discriminated union error types (`packages/shared`).
 - **Institution packs** – Public data only (`packages/institutions`).
 
 ## Public vs private
