@@ -42,11 +42,11 @@ export async function handleHealth(
   try {
     await loadInstitutionPack(BFF_ENV.institutionId);
     checks.institutionPack = { status: "ok" };
-  } catch (err) {
+  } catch (err: unknown) {
     overallStatus = "error";
-    checks.institutionPack = { 
-      status: "error", 
-      message: "Failed to load institution pack" 
+    checks.institutionPack = {
+      status: "error",
+      message: "Failed to load institution pack"
     };
     log("error", "health_institution_failed", {
       message: err instanceof Error ? err.message : String(err)

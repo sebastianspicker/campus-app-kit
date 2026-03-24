@@ -50,7 +50,7 @@ export function ThemeProvider({ children }: { children: ReactNode }): JSX.Elemen
           setPreferenceState(saved as ThemePreference);
         }
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         if (__DEV__) console.warn("Failed to load theme preference:", error);
       })
       .finally(() => {
@@ -75,7 +75,7 @@ export function ThemeProvider({ children }: { children: ReactNode }): JSX.Elemen
     setPreferenceState(newPreference);
     try {
       await AsyncStorage.setItem(THEME_STORAGE_KEY, newPreference);
-    } catch (error) {
+    } catch (error: unknown) {
       if (__DEV__) console.warn("Failed to save theme preference:", error);
     }
   };

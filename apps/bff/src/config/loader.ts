@@ -1,7 +1,7 @@
-import { InstitutionPackSchema } from "@campus/shared";
+import type { InstitutionPack } from "@campus/shared";
 import { getInstitutionPack } from "@campus/institutions";
 
-export type InstitutionPack = ReturnType<typeof InstitutionPackSchema.parse>;
+export type { InstitutionPack };
 
 let cachedPack: InstitutionPack | null = null;
 

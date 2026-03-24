@@ -31,10 +31,9 @@ export function usePublicResource<T>(
       if (!mountedRef.current || controllerRef.current !== controller) return;
       setData(result);
       setError(null);
-    } catch (err) {
+    } catch (err: unknown) {
       if (!mountedRef.current || controllerRef.current !== controller) return;
-      const anyErr = err as { name?: unknown; message?: unknown };
-      if (anyErr?.name === "AbortError") return;
+      if (err instanceof Error && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Unknown error");
     }
   }, []);

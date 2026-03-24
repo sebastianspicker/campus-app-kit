@@ -1,10 +1,5 @@
+import type { Room } from "@campus/shared";
 import { log } from "../../utils/logger";
-
-export type Room = {
-  id: string;
-  name: string;
-  campusId: string;
-};
 
 export async function fetchRooms(): Promise<Room[]> {
   log("warn", "stub_called", { connector: "studiservice.rooms" });

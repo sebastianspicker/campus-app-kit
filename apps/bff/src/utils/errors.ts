@@ -1,4 +1,6 @@
 import type { ServerResponse } from "node:http";
+import type { AppError, ErrorKindValue } from "@campus/shared";
+import { httpStatusForKind, createAppError } from "@campus/shared";
 import { log } from "./logger";
 
 export type ErrorBody = {
@@ -33,4 +35,14 @@ export function sendError(
 
   res.writeHead(status, { "content-type": "application/json" });
   res.end(JSON.stringify(body));
+}
+
+export function sendTypedError(
+  res: ServerResponse,
+  kind: ErrorKindValue,
+  code: string,
+  message: string
+): void {
+  const appError: AppError = createAppError(kind, code, message);
+  sendError(res, httpStatusForKind(kind), appError.code, appError.message);
 }

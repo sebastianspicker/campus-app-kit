@@ -12,12 +12,20 @@ export async function getJson<T>(
   const data = await withRetry(async () => {
     try {
       return await fetchJsonWithTimeout<unknown>(url, { signal: options?.signal });
-    } catch (err) {
-      const anyErr = err as { status?: number; code?: string };
-      if (typeof anyErr?.status === "number") {
+    } catch (err: unknown) {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "status" in err &&
+        typeof (err as Record<string, unknown>).status === "number"
+      ) {
+        const status = (err as Record<string, unknown>).status as number;
+        const code = typeof (err as Record<string, unknown>).code === "string"
+          ? (err as Record<string, unknown>).code as string
+          : "unknown_error";
         throw new ApiErrorException({
-          status: anyErr.status,
-          code: typeof anyErr.code === "string" ? anyErr.code : "unknown_error",
+          status,
+          code,
           message: err instanceof Error ? err.message : "Request failed"
         });
       }

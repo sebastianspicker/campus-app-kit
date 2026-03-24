@@ -1,9 +1,10 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { z } from "zod";
 import { ZodError } from "zod";
+import { ErrorKind } from "@campus/shared";
 import type { InstitutionPack } from "../config/loader";
 import { sendJsonWithCache } from "../utils/httpCache";
-import { sendError } from "../utils/errors";
+import { sendTypedError } from "../utils/errors";
 import { log } from "../utils/logger";
 import { getRequestId } from "../utils/requestId";
 
@@ -33,14 +34,14 @@ export function createJsonRoute<T>(
     } catch (err: unknown) {
       if (err instanceof ZodError) {
         log("warn", "validation_error", { requestId, issues: err.issues });
-        sendError(res, 500, "validation_error", "Response validation failed");
+        sendTypedError(res, ErrorKind.INTERNAL, "validation_error", "Response validation failed");
         return;
       }
       const error = err instanceof Error ? err : new Error(String(err));
 
       if (error.message.startsWith("NO_CONFIG_SOURCES:")) {
         log("warn", "no_config_sources", { requestId, message: error.message });
-        sendError(res, 404, "not_found", error.message.replace("NO_CONFIG_SOURCES:", "").trim());
+        sendTypedError(res, ErrorKind.NOT_FOUND, "not_found", error.message.replace("NO_CONFIG_SOURCES:", "").trim());
         return;
       }
 
@@ -49,7 +50,7 @@ export function createJsonRoute<T>(
         message: error.message,
         stack: error.stack
       });
-      sendError(res, 500, "internal_error", "Unexpected server error");
+      sendTypedError(res, ErrorKind.INTERNAL, "internal_error", "Unexpected server error");
     }
   };
 }

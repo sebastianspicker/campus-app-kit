@@ -39,7 +39,7 @@ function getPublicCacheKey(suffix: string, queryParams?: Record<string, string>)
 function safeParse<T>(data: unknown, schema: z.ZodType<T>): T {
   try {
     return schema.parse(data) as T;
-  } catch (err) {
+  } catch (err: unknown) {
     if (err instanceof ZodError) {
       throw new ApiErrorException({
         status: 502,

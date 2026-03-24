@@ -3,6 +3,32 @@ export type BffError = {
   message: string;
 };
 
+export class HttpError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly retryAfterInSeconds: number | undefined;
+
+  constructor(opts: { message: string; status: number; code: string; retryAfterInSeconds?: number }) {
+    super(opts.message);
+    this.name = "HttpError";
+    this.status = opts.status;
+    this.code = opts.code;
+    this.retryAfterInSeconds = opts.retryAfterInSeconds;
+  }
+}
+
+function parseRetryAfterSeconds(retryAfter: string | null): number | undefined {
+  if (!retryAfter) return undefined;
+  // #62: Support both seconds and HTTP-date
+  const seconds = parseInt(retryAfter, 10);
+  if (!isNaN(seconds)) return seconds;
+  const date = new Date(retryAfter);
+  if (!isNaN(date.getTime())) {
+    return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 1000));
+  }
+  return undefined;
+}
+
 export async function fetchJsonWithTimeout<T>(
   url: string,
   init?: RequestInit,
@@ -24,24 +50,12 @@ export async function fetchJsonWithTimeout<T>(
         bffError.code === "unknown_error"
           ? `Request failed (${response.status})`
           : bffError.message;
-      const retryAfter = response.headers.get("retry-after");
-      const err = new Error(message);
-      (err as { status?: number; code?: string; retryAfterInSeconds?: number }).status = response.status;
-      (err as { status?: number; code?: string; retryAfterInSeconds?: number }).code = bffError.code;
-      if (retryAfter) {
-        // #62: Support both seconds and HTTP-date
-        const seconds = parseInt(retryAfter, 10);
-        if (!isNaN(seconds)) {
-          (err as { retryAfterInSeconds?: number }).retryAfterInSeconds = seconds;
-        } else {
-          const date = new Date(retryAfter);
-          if (!isNaN(date.getTime())) {
-            const diff = Math.max(0, Math.ceil((date.getTime() - Date.now()) / 1000));
-            (err as { retryAfterInSeconds?: number }).retryAfterInSeconds = diff;
-          }
-        }
-      }
-      throw err;
+      throw new HttpError({
+        message,
+        status: response.status,
+        code: bffError.code,
+        retryAfterInSeconds: parseRetryAfterSeconds(response.headers.get("retry-after"))
+      });
     }
 
     // #61: Handle 204 No Content or empty bodies
@@ -61,20 +75,23 @@ export async function fetchJsonWithTimeout<T>(
   }
 }
 
+function isErrorBody(body: unknown): body is { error: Record<string, unknown> } {
+  return (
+    typeof body === "object" &&
+    body !== null &&
+    "error" in body &&
+    typeof (body as Record<string, unknown>).error === "object" &&
+    (body as Record<string, unknown>).error !== null
+  );
+}
+
 export async function parseBffError(response: Response): Promise<BffError> {
   try {
-    const body = (await response.json()) as unknown;
-    if (
-      body &&
-      typeof body === "object" &&
-      "error" in body &&
-      typeof (body as { error?: unknown }).error === "object" &&
-      (body as { error?: unknown }).error !== null
-    ) {
-      const error = (body as { error: { code?: unknown; message?: unknown } }).error;
-      const code = typeof error.code === "string" ? error.code : "unknown_error";
+    const body: unknown = await response.json();
+    if (isErrorBody(body)) {
+      const code = typeof body.error.code === "string" ? body.error.code : "unknown_error";
       const message =
-        typeof error.message === "string" ? error.message : "Unknown error";
+        typeof body.error.message === "string" ? body.error.message : "Unknown error";
       return { code, message };
     }
   } catch {

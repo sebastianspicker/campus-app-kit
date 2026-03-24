@@ -10,13 +10,13 @@ export async function withRetry<T>(
   while (true) {
     try {
       return await fn();
-    } catch (err) {
+    } catch (err: unknown) {
       attempt += 1;
       if (attempt > retries || !shouldRetry(err)) {
         throw err;
       }
 
-      const retryAfterSeconds = (err as { retryAfterInSeconds?: number }).retryAfterInSeconds;
+      const retryAfterSeconds = isHttpLikeError(err) ? err.retryAfterInSeconds : undefined;
       const delay = typeof retryAfterSeconds === "number"
         ? retryAfterSeconds * 1000
         : backoffWithJitter(baseDelayMs, attempt);
@@ -25,13 +25,22 @@ export async function withRetry<T>(
   }
 }
 
-function shouldRetry(err: unknown): boolean {
-  const anyErr = err as { name?: unknown; status?: unknown };
-  if (anyErr && anyErr.name === "AbortError") return false;
+function isHttpLikeError(err: unknown): err is { status: number; retryAfterInSeconds?: number } {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "status" in err &&
+    typeof (err as Record<string, unknown>).status === "number"
+  );
+}
 
-  const status = typeof anyErr?.status === "number" ? anyErr.status : null;
-  if (status === 429) return true;
-  if (status !== null) return status >= 500;
+function shouldRetry(err: unknown): boolean {
+  if (err instanceof Error && err.name === "AbortError") return false;
+
+  if (isHttpLikeError(err)) {
+    if (err.status === 429) return true;
+    return err.status >= 500;
+  }
 
   // Network errors often surface as TypeError in fetch.
   return err instanceof TypeError;

@@ -54,8 +54,7 @@ export function Skeleton({
   });
 
   const animatedStyle: Animated.WithAnimatedValue<ViewStyle> = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    width: width as any,
+    width: width as Animated.WithAnimatedValue<ViewStyle>["width"],
     height: skeletonHeight,
     borderRadius: skeletonRadius,
     opacity,

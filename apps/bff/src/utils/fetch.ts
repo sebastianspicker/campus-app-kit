@@ -57,7 +57,7 @@ export async function fetchTextWithTimeout(
       }
       chunks.push(value);
     }
-  } catch (err) {
+  } catch (err: unknown) {
     void reader.cancel();
     throw err;
   }

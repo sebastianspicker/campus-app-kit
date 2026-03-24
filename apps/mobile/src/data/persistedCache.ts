@@ -149,7 +149,7 @@ export async function fetchWithOfflineSupport<T>(
       isOffline: false,
       cacheAge: null
     };
-  } catch (error) {
+  } catch (error: unknown) {
     // Network failed - use cache if available
     if (cachedEntry) {
       // Mark as offline data

@@ -39,7 +39,7 @@ export async function fetchPublicSchedule(
           const icsContent = readFileSync(fixturePath, "utf-8");
           const parsed = parseIcs(icsContent, { rruleHorizonDays: BFF_ENV.rruleExpansionHorizonDays });
           return parsed.map(toScheduleItem);
-        } catch (err) {
+        } catch (err: unknown) {
           log("warn", "mock_schedule_load_failed", {
             reason: err instanceof Error ? err.message : String(err)
           });
