@@ -51,3 +51,15 @@ Phase 6.1–6.3 — COMPLETE
 
 ## PHASE 6 COMPLETE
 ## ALL PHASES COMPLETE
+
+---
+
+## Phase D: Security Hardening
+- D.1: Route input validation audit — added length clamping (100 chars) to `campus`/`campusId` query params in `parseScheduleFilter` and `parseRoomsFilter`; all other inputs already validated (search truncated to 200, limit clamped [0,1000], offset non-negative, dates validated)
+- D.2: HTTP security headers — added `X-Permitted-Cross-Domain-Policies: none` and `Permissions-Policy: camera=(), microphone=(), geolocation=()` headers; added `Cache-Control: no-store` to all error responses to prevent proxy caching of error payloads
+- D.3: Dependency vulnerability audit — `pnpm audit` reports 28 vulnerabilities, all in transitive dependencies of Expo/React Native build tooling (fast-xml-parser, minimatch, tar, send); BFF production deps (zod, rrule) are clean; no action needed for server runtime
+- D.4: Rate limiting edge cases — fixed `retryAfter` to always return at least 1 second when rate-limited (previously could return 0 at window boundary via `Math.ceil(0/1000)`); added boundary tests
+
+Verification: `pnpm lint && pnpm typecheck && pnpm test` — PASSED (40 test files, 344 tests, 0 errors)
+
+## PHASE D COMPLETE

@@ -42,7 +42,7 @@ export function checkRateLimit(
 
   const currentCount = existing.count;
   if (currentCount >= limit) {
-    const retryAfter = Math.ceil((existing.resetAt - now) / 1000);
+    const retryAfter = Math.max(1, Math.ceil((existing.resetAt - now) / 1000));
     return { allowed: false, retryAfter };
   }
 

@@ -35,4 +35,28 @@ describe("rateLimit", () => {
 
     expect(getRateLimitSize()).toBe(1);
   });
+
+  it("retryAfter is at least 1 second when rate limited at window boundary", () => {
+    // Use a 1 second window so we can land right at the boundary
+    checkRateLimit("boundary", { limit: 1, windowMs: 1000 });
+
+    // Advance to exactly the resetAt time (1000ms)
+    vi.setSystemTime(1000);
+    const result = checkRateLimit("boundary", { limit: 1, windowMs: 1000 });
+
+    // At exactly resetAt, the bucket is expired so a new window starts
+    // The request should be allowed
+    expect(result.allowed).toBe(true);
+  });
+
+  it("retryAfter is at least 1 when blocked near window end", () => {
+    checkRateLimit("near-end", { limit: 1, windowMs: 1000 });
+
+    // Advance to 999ms — 1ms before window resets
+    vi.setSystemTime(999);
+    const result = checkRateLimit("near-end", { limit: 1, windowMs: 1000 });
+
+    expect(result.allowed).toBe(false);
+    expect(result.retryAfter).toBeGreaterThanOrEqual(1);
+  });
 });

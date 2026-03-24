@@ -113,7 +113,7 @@ export function parseScheduleFilter(params: URLSearchParams): ScheduleFilterOpti
     search: getStringParam(params, "search")?.slice(0, 200),
     fromDate: getDateParam(params, "from"),
     toDate: getDateParam(params, "to"),
-    campusId: getStringParam(params, "campus"),
+    campusId: getStringParam(params, "campus")?.slice(0, 100),
     limit: limit !== undefined ? Math.min(Math.max(0, Math.floor(limit)), 1000) : undefined,
     offset: Math.max(0, Math.floor(getNumberParam(params, "offset") ?? 0))
   };
@@ -139,7 +139,7 @@ export interface RoomsFilterOptions {
 export function parseRoomsFilter(params: URLSearchParams): RoomsFilterOptions {
   const limit = getNumberParam(params, "limit");
   return {
-    campus: getStringParam(params, "campus"),
+    campus: getStringParam(params, "campus")?.slice(0, 100),
     search: getStringParam(params, "search")?.slice(0, 200),
     limit: limit !== undefined ? Math.min(Math.max(0, Math.floor(limit)), 1000) : undefined,
     offset: Math.max(0, Math.floor(getNumberParam(params, "offset") ?? 0))

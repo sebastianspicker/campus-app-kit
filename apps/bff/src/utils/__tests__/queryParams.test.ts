@@ -122,11 +122,21 @@ describe("parseRoomsFilter", () => {
     const params = new URLSearchParams("campus=main");
     expect(parseRoomsFilter(params).campus).toBe("main");
   });
+
+  it("truncates campus to 100 chars", () => {
+    const params = new URLSearchParams(`campus=${"c".repeat(200)}`);
+    expect(parseRoomsFilter(params).campus?.length).toBe(100);
+  });
 });
 
 describe("parseScheduleFilter", () => {
   it("extracts campus filter as campusId", () => {
     const params = new URLSearchParams("campus=south");
     expect(parseScheduleFilter(params).campusId).toBe("south");
+  });
+
+  it("truncates campusId to 100 chars", () => {
+    const params = new URLSearchParams(`campus=${"c".repeat(200)}`);
+    expect(parseScheduleFilter(params).campusId?.length).toBe(100);
   });
 });

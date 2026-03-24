@@ -23,5 +23,7 @@ describe("guardSecurityHeaders", () => {
     expect(res.headers["Referrer-Policy"]).toBe("strict-origin-when-cross-origin");
     expect(res.headers["Strict-Transport-Security"]).toBe("max-age=31536000; includeSubDomains; preload");
     expect(res.headers["Content-Security-Policy"]).toBe("default-src 'none'; frame-ancestors 'none'; sandbox");
+    expect(res.headers["X-Permitted-Cross-Domain-Policies"]).toBe("none");
+    expect(res.headers["Permissions-Policy"]).toBe("camera=(), microphone=(), geolocation=()");
   });
 });
