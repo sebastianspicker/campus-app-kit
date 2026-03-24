@@ -1,7 +1,14 @@
+export class TimeoutError extends Error {
+  constructor(url: string, timeoutMs: number) {
+    super(`Request to ${url} timed out after ${timeoutMs}ms`);
+    this.name = "TimeoutError";
+  }
+}
+
 export async function fetchWithTimeout(
   url: string,
   options?: RequestInit,
-  timeoutMs = 8000
+  timeoutMs = 10_000
 ): Promise<Response> {
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
@@ -11,6 +18,15 @@ export async function fetchWithTimeout(
 
   try {
     return await fetch(url, { ...options, signal });
+  } catch (err: unknown) {
+    if (
+      err instanceof DOMException &&
+      err.name === "AbortError" &&
+      timeoutController.signal.aborted
+    ) {
+      throw new TimeoutError(url, timeoutMs);
+    }
+    throw err;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -26,7 +42,7 @@ const MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10 MB
 export async function fetchTextWithTimeout(
   url: string,
   options?: RequestInit,
-  timeoutMs = 8000
+  timeoutMs = 10_000
 ): Promise<string> {
   const response = await fetchWithTimeout(url, options, timeoutMs);
 

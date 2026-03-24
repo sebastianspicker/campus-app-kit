@@ -1,5 +1,6 @@
 import type { InstitutionPack } from "../../config/loader";
 import { getCached } from "../../utils/cache";
+import { createCircuitBreaker } from "../../utils/circuitBreaker";
 import { fetchTextWithTimeout } from "../../utils/fetch";
 import { log } from "../../utils/logger";
 import type { ScheduleItem } from "@campus/shared";
@@ -9,6 +10,12 @@ import { join } from "node:path";
 import { parseIcs, type ParsedIcsEvent } from "./icsParser";
 
 import { BFF_ENV } from "../../config/env";
+
+const scheduleBreaker = createCircuitBreaker({
+  name: "public-schedule",
+  failureThreshold: 5,
+  cooldownMs: 30_000,
+});
 
 function toScheduleItem(p: ParsedIcsEvent): ScheduleItem {
   return {
@@ -51,7 +58,7 @@ export async function fetchPublicSchedule(
 
       const settlement = await Promise.allSettled(
         sources.map(async (source: { url: string }) => {
-          const text = await fetchTextWithTimeout(source.url);
+          const text = await scheduleBreaker.call(() => fetchTextWithTimeout(source.url));
           return parseIcs(text, { rruleHorizonDays: BFF_ENV.rruleExpansionHorizonDays });
         })
       );

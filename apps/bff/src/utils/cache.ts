@@ -3,6 +3,14 @@ import { log } from "./logger";
 type CacheEntry<T> = {
   value: T;
   expiresAt: number;
+  lastAccessedAt: number;
+};
+
+export type CacheStats = {
+  readonly size: number;
+  readonly hits: number;
+  readonly misses: number;
+  readonly evictions: number;
 };
 
 const cache = new Map<string, CacheEntry<unknown>>();
@@ -13,39 +21,53 @@ const MAX_CACHE_ENTRIES = 1000;
 const MAX_IN_FLIGHT = 500; // #65: Hard limit for memory safety
 const CLEANUP_INTERVAL_MS = 60_000;
 
-let lastCleanup = Date.now();
+let hits = 0;
+let misses = 0;
+let evictions = 0;
 
-function evictIfOverCap(): void {
-  if (cache.size <= MAX_CACHE_ENTRIES) return;
+// Periodic sweep via setInterval
+let sweepInterval: ReturnType<typeof setInterval> | null = setInterval(() => {
   const now = Date.now();
-  // Simple strategy: remove expired first, then oldest entries if still over cap
   for (const [key, entry] of cache.entries()) {
     if (entry.expiresAt <= now) {
       cache.delete(key);
+      evictions += 1;
     }
-    if (cache.size <= MAX_CACHE_ENTRIES * 0.8) break;
-  }
-
-  if (cache.size > MAX_CACHE_ENTRIES) {
-    // If still over cap, just clear everything (simple and safe for memory)
-    cache.clear();
-  }
-}
-
-function periodicCleanup(): void {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
-  lastCleanup = now;
-  for (const [key, entry] of cache.entries()) {
-    if (entry.expiresAt <= now) cache.delete(key);
   }
 
   // Safety check for stuck in-flight promises (leaked or hung upstream)
-  if (inFlight.size > 0) {
-    // If inFlight has 10x the max concurrent capacity, we might have a leak
-    if (inFlight.size > 200) {
-      log("warn", "cache_inflight_potentially_leaked", { count: inFlight.size });
+  if (inFlight.size > 200) {
+    log("warn", "cache_inflight_potentially_leaked", { count: inFlight.size });
+  }
+}, CLEANUP_INTERVAL_MS);
+
+function evictLru(): void {
+  // Find the entry with the oldest lastAccessedAt
+  let oldestKey: string | null = null;
+  let oldestAccess = Infinity;
+
+  for (const [key, entry] of cache.entries()) {
+    // Evict expired entries first
+    if (entry.expiresAt <= Date.now()) {
+      cache.delete(key);
+      evictions += 1;
+      return;
     }
+    if (entry.lastAccessedAt < oldestAccess) {
+      oldestAccess = entry.lastAccessedAt;
+      oldestKey = key;
+    }
+  }
+
+  if (oldestKey !== null) {
+    cache.delete(oldestKey);
+    evictions += 1;
+  }
+}
+
+function evictIfOverCap(): void {
+  while (cache.size > MAX_CACHE_ENTRIES) {
+    evictLru();
   }
 }
 
@@ -61,14 +83,20 @@ export async function getCached<T>(
   ttlMs: number,
   options?: { inFlightTimeoutMs?: number }
 ): Promise<T> {
-  periodicCleanup();
   const now = Date.now();
   const entry = cache.get(key) as CacheEntry<T> | undefined;
 
   if (entry) {
-    if (entry.expiresAt > now) return entry.value;
+    if (entry.expiresAt > now) {
+      hits += 1;
+      // Update lastAccessedAt for LRU (new entry object for immutability)
+      cache.set(key, { ...entry, lastAccessedAt: now });
+      return entry.value;
+    }
     cache.delete(key);
   }
+
+  misses += 1;
 
   const existing = inFlight.get(key);
   if (existing) {
@@ -89,8 +117,8 @@ export async function getCached<T>(
         loader(),
         timeoutPromise(inFlightTimeoutMs)
       ]);
+      cache.set(key, { value, expiresAt: Date.now() + ttlMs, lastAccessedAt: Date.now() });
       evictIfOverCap();
-      cache.set(key, { value, expiresAt: Date.now() + ttlMs });
       return value;
     } finally {
       if (inFlight.get(key) === promiseRef.current) inFlight.delete(key);
@@ -110,4 +138,24 @@ export function clearCache(key?: string): void {
 
   cache.clear();
   inFlight.clear();
+  hits = 0;
+  misses = 0;
+  evictions = 0;
+}
+
+export function cacheStats(): CacheStats {
+  return {
+    size: cache.size,
+    hits,
+    misses,
+    evictions,
+  };
+}
+
+export function destroyCache(): void {
+  if (sweepInterval !== null) {
+    clearInterval(sweepInterval);
+    sweepInterval = null;
+  }
+  clearCache();
 }
