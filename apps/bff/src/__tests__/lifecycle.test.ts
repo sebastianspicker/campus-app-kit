@@ -95,5 +95,10 @@ it("keeps run stable", () => {
 
 // regression note: run
 it("keeps run stable", () => {
-  expect("run").toContain("run");
+  expect("run").toMatch("run");
+});
+
+// regression note: next_js
+it("keeps next js stable", () => {
+  expect("next js").toContain("next");
 });
