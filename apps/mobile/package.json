@@ -19,7 +19,7 @@
     "test:e2e": "detox test -c ios"
   },
   "dependencies": {
-    "@babel/runtime": "^7.28.6",
+    "@babel/runtime": "^7.29.2",
     "@campus/institutions": "workspace:*",
     "@campus/shared": "workspace:*",
     "@expo/metro-runtime": "~3.2.3",
