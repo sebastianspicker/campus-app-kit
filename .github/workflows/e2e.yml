@@ -134,7 +134,7 @@ jobs:
             ${{ runner.os }}-detox-android-
 
       - name: Create Android Emulator
-        uses: reactivecircus/android-emulator-runner@5d6e86df22ab11632167a1a6b0c9ab0dc3469586 # v2
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2
         with:
           api-level: 33
           arch: x86_64
@@ -147,7 +147,7 @@ jobs:
         run: pnpm test:e2e:build:android
 
       - name: Run Android E2E tests
-        uses: reactivecircus/android-emulator-runner@5d6e86df22ab11632167a1a6b0c9ab0dc3469586 # v2
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2
         with:
           api-level: 33
           arch: x86_64
