@@ -6,6 +6,7 @@ import { ResourceListSection } from "@/ui/ResourceListSection";
 import { Screen } from "@/ui/Screen";
 import { typography } from "@/ui/theme";
 import { useTheme } from "@/ui/ThemeContext";
+import { serializeRouteItem } from "@/utils/routeItem";
 import type { Room } from "@campus/shared";
 
 export default function RoomsScreen(): JSX.Element {
@@ -16,7 +17,7 @@ export default function RoomsScreen(): JSX.Element {
 
   const keyExtractor = useCallback((r: Room) => r.id, []);
   const href = useCallback(
-    (r: Room) => ({ pathname: "/rooms/[id]" as const, params: { id: r.id } }),
+    (r: Room) => ({ pathname: "/rooms/[id]" as const, params: { id: r.id, item: serializeRouteItem(r) } }),
     []
   );
   const renderCard = useCallback(

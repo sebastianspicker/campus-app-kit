@@ -1,6 +1,6 @@
 import type { InstitutionPack } from "../../config/loader";
 import { getCached } from "../../utils/cache";
-import { createCircuitBreaker } from "../../utils/circuitBreaker";
+import { createCircuitBreaker, type CircuitBreaker } from "../../utils/circuitBreaker";
 import { fetchTextWithTimeout } from "../../utils/fetch";
 import { log } from "../../utils/logger";
 import type { ScheduleItem } from "@campus/shared";
@@ -11,11 +11,22 @@ import { parseIcs, type ParsedIcsEvent } from "./icsParser";
 
 import { BFF_ENV } from "../../config/env";
 
-const scheduleBreaker = createCircuitBreaker({
-  name: "public-schedule",
-  failureThreshold: 5,
-  cooldownMs: 30_000,
-});
+const scheduleBreakers = new Map<string, CircuitBreaker>();
+
+function getScheduleBreaker(sourceUrl: string): CircuitBreaker {
+  const existing = scheduleBreakers.get(sourceUrl);
+  if (existing) {
+    return existing;
+  }
+
+  const breaker = createCircuitBreaker({
+    name: `public-schedule:${sourceUrl}`,
+    failureThreshold: 5,
+    cooldownMs: 30_000,
+  });
+  scheduleBreakers.set(sourceUrl, breaker);
+  return breaker;
+}
 
 function resolveFixturePath(filename: string): string {
   const candidates = [
@@ -35,6 +46,7 @@ function toScheduleItem(p: ParsedIcsEvent): ScheduleItem {
     endsAt: p.endsAt,
     location: p.location,
     campusId: p.campusId,
+    description: p.description,
   };
 }
 
@@ -68,7 +80,7 @@ export async function fetchPublicSchedule(
 
       const settlement = await Promise.allSettled(
         sources.map(async (source: { url: string }) => {
-          const text = await scheduleBreaker.call(() => fetchTextWithTimeout(source.url));
+          const text = await getScheduleBreaker(source.url).call(() => fetchTextWithTimeout(source.url));
           return parseIcs(text, { rruleHorizonDays: BFF_ENV.rruleExpansionHorizonDays });
         })
       );

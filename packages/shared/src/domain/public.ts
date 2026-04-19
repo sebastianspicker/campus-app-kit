@@ -19,6 +19,7 @@ export type Room = z.infer<typeof RoomSchema>;
 
 export const EventsResponseSchema = z.object({
   events: z.array(PublicEventSchema),
+  _total: z.number().int().optional(),
   _degraded: z.boolean().optional(),
   _sourcesConfigured: z.boolean().optional()
 });
@@ -27,6 +28,7 @@ export type EventsResponse = z.infer<typeof EventsResponseSchema>;
 
 export const RoomsResponseSchema = z.object({
   rooms: z.array(RoomSchema),
+  _total: z.number().int().optional(),
   _sourcesConfigured: z.boolean().optional()
 });
 
@@ -47,13 +49,15 @@ export const ScheduleItemSchema = z.object({
   startsAt: z.string(),
   endsAt: z.string().optional(),
   location: z.string().optional(),
-  campusId: z.string().optional()
+  campusId: z.string().optional(),
+  description: z.string().optional()
 });
 
 export type ScheduleItem = z.infer<typeof ScheduleItemSchema>;
 
 export const ScheduleResponseSchema = z.object({
   schedule: z.array(ScheduleItemSchema),
+  _total: z.number().int().optional(),
   _sourcesConfigured: z.boolean().optional()
 });
 
@@ -92,7 +96,8 @@ export const InstitutionPackSchema = z.object({
         .optional()
     })
     .optional(),
-  publicRooms: z.array(RoomSchema).optional()
+  publicRooms: z.array(RoomSchema).optional(),
+  timezone: z.string().optional()
 });
 
 export type InstitutionPack = z.infer<typeof InstitutionPackSchema>;
