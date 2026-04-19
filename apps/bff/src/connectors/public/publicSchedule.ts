@@ -4,7 +4,7 @@ import { createCircuitBreaker, type CircuitBreaker } from "../../utils/circuitBr
 import { fetchTextWithTimeout } from "../../utils/fetch";
 import { log } from "../../utils/logger";
 import type { ScheduleItem } from "@campus/shared";
-import { existsSync, readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { parseIcs, type ParsedIcsEvent } from "./icsParser";
@@ -28,14 +28,21 @@ function getScheduleBreaker(sourceUrl: string): CircuitBreaker {
   return breaker;
 }
 
-function resolveFixturePath(filename: string): string {
+async function resolveFixturePath(filename: string): Promise<string> {
   const candidates = [
     resolve(process.cwd(), "src/__fixtures__", filename),
     resolve(process.cwd(), "apps/bff/src/__fixtures__", filename),
   ];
 
-  const match = candidates.find((candidate) => existsSync(candidate));
-  return match ?? candidates[0];
+  for (const candidate of candidates) {
+    try {
+      await readFile(candidate);
+      return candidate;
+    } catch {
+      // try next candidate
+    }
+  }
+  return candidates[0];
 }
 
 function toScheduleItem(p: ParsedIcsEvent): ScheduleItem {
@@ -64,8 +71,8 @@ export async function fetchPublicSchedule(
       // Mock mode: load from fixture file for mockuni
       if (mode === "mock" && institution.id === "mockuni") {
         try {
-          const fixturePath = resolveFixturePath("mockuni-schedule.ics");
-          const icsContent = readFileSync(fixturePath, "utf-8");
+          const fixturePath = await resolveFixturePath("mockuni-schedule.ics");
+          const icsContent = await readFile(fixturePath, "utf-8");
           const parsed = parseIcs(icsContent, { rruleHorizonDays: BFF_ENV.rruleExpansionHorizonDays });
           return parsed.map(toScheduleItem);
         } catch (err: unknown) {

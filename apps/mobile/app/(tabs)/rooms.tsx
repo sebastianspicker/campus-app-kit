@@ -7,6 +7,7 @@ import { Screen } from "@/ui/Screen";
 import { typography } from "@/ui/theme";
 import { useTheme } from "@/ui/ThemeContext";
 import { serializeRouteItem } from "@/utils/routeItem";
+import { formatCampusId } from "@/utils/dateFormat";
 import type { Room } from "@campus/shared";
 
 export default function RoomsScreen(): JSX.Element {
@@ -23,7 +24,7 @@ export default function RoomsScreen(): JSX.Element {
   const renderCard = useCallback(
     (r: Room) => ({
       title: r.name,
-      subtitle: r.campusId ? `Campus ${r.campusId}` : undefined,
+      subtitle: r.campusId ? formatCampusId(r.campusId) : undefined,
     }),
     []
   );

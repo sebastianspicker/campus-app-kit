@@ -53,7 +53,10 @@ function getFormattedDate(): string {
 
 export default function TodayScreen(): JSX.Element {
   const { data, error, loading, refreshing, refresh } = useToday();
-  const scheduleFilter = useMemo(() => getLocalDayRange(), []);
+  // Re-compute at midnight: key on the current calendar day
+  const today = new Date().toDateString();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const scheduleFilter = useMemo(() => getLocalDayRange(), [today]);
   const scheduleState = useSchedule(scheduleFilter);
   const [scheduleSortDirection, setScheduleSortDirection] = useState<SortDirection>("asc");
   const theme = useTheme();

@@ -3,7 +3,7 @@ import { z } from "zod";
 export const PublicEventSchema = z.object({
   id: z.string(),
   title: z.string(),
-  date: z.string(),
+  date: z.string().datetime({ offset: true }),
   sourceUrl: z.string().url()
 });
 
@@ -46,8 +46,8 @@ export type TodayResponse = z.infer<typeof TodayResponseSchema>;
 export const ScheduleItemSchema = z.object({
   id: z.string(),
   title: z.string(),
-  startsAt: z.string(),
-  endsAt: z.string().optional(),
+  startsAt: z.string().datetime({ offset: true }),
+  endsAt: z.string().datetime({ offset: true }).optional(),
   location: z.string().optional(),
   campusId: z.string().optional(),
   description: z.string().optional()

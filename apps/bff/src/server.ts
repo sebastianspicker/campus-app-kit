@@ -96,7 +96,7 @@ export function createRequestListener(): (req: IncomingMessage, res: ServerRespo
       if (dataHandler) {
         let institution: InstitutionPack;
         try {
-          institution = await loadInstitutionPack(BFF_ENV.institutionId);
+          institution = loadInstitutionPack(BFF_ENV.institutionId);
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           log("error", "institution_load_failed", {
@@ -143,8 +143,7 @@ async function startServer(): Promise<void> {
   });
 
   try {
-    // #55: Startup validation dry-run
-    await loadInstitutionPack(BFF_ENV.institutionId);
+    loadInstitutionPack(BFF_ENV.institutionId);
     log("info", "startup_validation_ok");
   } catch (err: unknown) {
     log("error", "startup_validation_failed", {
