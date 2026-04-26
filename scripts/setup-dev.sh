@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Campus App Kit - Development Setup Script
 # Run this script to set up the development environment
 
-set -e
+set -euo pipefail
 
 echo "🚀 Campus App Kit - Development Setup"
 echo "======================================"
@@ -23,11 +23,19 @@ if [ "$NODE_VERSION" -lt 20 ]; then
 fi
 echo "✅ Node.js $(node -v)"
 
-if ! command -v pnpm &>/dev/null; then
-  echo "❌ pnpm is not installed. Installing..."
-  npm install -g pnpm@9
+if command -v pnpm &>/dev/null; then
+  echo "✅ pnpm $(pnpm -v)"
+else
+  if command -v corepack &>/dev/null; then
+    echo "ℹ️ pnpm not found. Installing via corepack..."
+    corepack enable
+    corepack prepare pnpm@9 --activate
+    echo "✅ pnpm $(pnpm -v)"
+  else
+    echo "❌ pnpm is not installed and corepack is unavailable. Install pnpm 9.x manually."
+    exit 1
+  fi
 fi
-echo "✅ pnpm $(pnpm -v)"
 
 # Install dependencies
 echo ""

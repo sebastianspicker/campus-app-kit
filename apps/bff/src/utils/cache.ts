@@ -50,10 +50,11 @@ function evictLru(): void {
   // Find the entry with the oldest lastAccessedAt
   let oldestKey: string | null = null;
   let oldestAccess = Infinity;
+  const now = Date.now();
 
   for (const [key, entry] of cache.entries()) {
     // Evict expired entries first
-    if (entry.expiresAt <= Date.now()) {
+    if (entry.expiresAt <= now) {
       cache.delete(key);
       evictions += 1;
       return;
@@ -131,8 +132,9 @@ export async function getCached<T>(
         loader(),
         timeout
       ]).finally(() => clearTimeout(timer));
-      if (shouldCache(value)) {
-        cache.set(key, { value, expiresAt: Date.now() + ttlMs, lastAccessedAt: Date.now() });
+      if (shouldCache(value) && ttlMs > 0) {
+        const cachedAt = Date.now();
+        cache.set(key, { value, expiresAt: cachedAt + ttlMs, lastAccessedAt: cachedAt });
         evictIfOverCap();
       }
       return value;

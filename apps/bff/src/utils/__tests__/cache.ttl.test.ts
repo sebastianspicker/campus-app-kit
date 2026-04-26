@@ -94,6 +94,20 @@ describe("cache — TTL and eviction", () => {
     destroyCache();
   });
 
+
+  it("does not cache when ttl is zero or negative", async () => {
+    const loader = vi.fn<() => Promise<string>>()
+      .mockResolvedValueOnce("zero-ttl")
+      .mockResolvedValueOnce("negative-ttl");
+
+    const first = await getCached("no-cache", loader, 0);
+    const second = await getCached("no-cache", loader, -1);
+
+    expect(first).toBe("zero-ttl");
+    expect(second).toBe("negative-ttl");
+    expect(loader).toHaveBeenCalledTimes(2);
+  });
+
   it("can skip caching selected results", async () => {
     type CacheableValue = { value: string; cacheable: boolean };
     const loader = vi.fn<() => Promise<CacheableValue>>()

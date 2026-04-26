@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$repo_root/apps/mobile"
-
-npx expo start --dev-client
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+"$script_dir/run-mobile-command.sh" npx expo start --dev-client
