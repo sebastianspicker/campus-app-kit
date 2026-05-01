@@ -5,7 +5,7 @@ This repo uses GitHub Actions with a deterministic, least-privilege CI setup foc
 ## Workflows and triggers
 
 - `ci` (push to `main` or `dev`, all PRs)
-  - Runs `./scripts/verify-production-ready.sh` (lint, typecheck, tests, build, marker check).
+  - Runs `./scripts/verify-production-ready.sh` (lint, typecheck, tests, build, BFF E2E, marker check).
   - Uploads test artifacts if present (e.g., `coverage/`, `test-results/`).
 - `dependency-review` (PRs only)
   - Checks new/changed dependencies for known vulnerabilities.
@@ -13,8 +13,9 @@ This repo uses GitHub Actions with a deterministic, least-privilege CI setup foc
   - Secret scanning with `gitleaks` using `.gitleaks.toml`.
 - `codeql` (push to `main` or `dev`, all PRs, weekly schedule)
   - Static analysis for JavaScript/TypeScript.
-- `e2e` (push to `main` or `dev`, PRs against `main` or `dev` — only when `apps/mobile/` changes; also `workflow_dispatch`)
-  - Detox E2E tests for the mobile app.
+- `e2e` (push to `main` or `dev`, PRs against `main` or `dev` when app, BFF, shared package, or E2E workflow files change; also `workflow_dispatch`)
+  - Runs the default BFF process-level E2E suite.
+  - Runs Detox native mobile E2E only when generated native iOS or Android projects are checked in.
 - `release` (push tags matching `v*`)
   - Validates a release build on tag push.
 
@@ -28,7 +29,8 @@ Each workflow has:
 
 | Script | Purpose |
 |--------|---------|
-| `./scripts/verify-production-ready.sh` | Used by CI: lint, typecheck, tests, build, marker check. |
+| `./scripts/verify-production-ready.sh` | Used by CI: lint, typecheck, tests, build, BFF E2E, marker check. |
+| `pnpm test:e2e` | Starts the compiled BFF on a temporary port and verifies critical public HTTP flows. |
 | `./scripts/ci-local.sh` | Local CI equivalent: install + verify-production-ready. |
 | `./scripts/build.sh` | Convenience: runs `pnpm build` at repo root. |
 | `./scripts/generate-lockfile.sh` | Regenerates `pnpm-lock.yaml` (e.g. after adding deps). |
