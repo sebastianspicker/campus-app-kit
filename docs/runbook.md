@@ -98,11 +98,11 @@ SAST (CI-only):
 - GitHub Actions runs CodeQL in `.github/workflows/codeql.yml`.
 
 SCA / dependency review:
-- GitHub Actions runs dependency review in `.github/workflows/dependency-review.yml`.
-- Optional local audit (uses the npm registry):
+- GitHub Actions runs `pnpm audit --audit-level=moderate --prod` in `.github/workflows/dependency-review.yml`.
+- Equivalent local audit (uses the npm registry):
 
 ```bash
-pnpm audit --prod
+pnpm audit --audit-level=moderate --prod
 ```
 
 ## Quick start (one command)
