@@ -36,17 +36,18 @@ export function ResourceDetailScreen<T>(props: ResourceDetailScreenProps<T>): JS
   );
 }
 
-function ResourceDetailContent<T>({
-  loading,
-  error,
-  item,
-  notFoundMessage,
-  cardTitle,
-  cardSubtitle,
-  renderMeta,
-  footnote,
-  onRefresh
-}: ResourceDetailScreenProps<T>): JSX.Element {
+function ResourceDetailContent<T>(props: ResourceDetailScreenProps<T>): JSX.Element {
+  const {
+    loading,
+    error,
+    item,
+    notFoundMessage,
+    cardTitle,
+    cardSubtitle,
+    renderMeta,
+    footnote,
+    onRefresh
+  } = props;
   if (loading) {
     return <SkeletonDetail />;
   }
