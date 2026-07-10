@@ -19,13 +19,6 @@ import { getRequestId, setRequestIdHeader } from "./utils/requestId";
 import { BFF_ENV } from "./config/env";
 import { basename } from "node:path";
 
-const DATA_ROUTES: Record<string, (req: IncomingMessage, res: ServerResponse, institution: InstitutionPack) => Promise<void>> = {
-  "/events": handleEvents,
-  "/rooms": handleRooms,
-  "/schedule": handleSchedule,
-  "/today": handleToday
-};
-
 export function createRequestListener(): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   return async (req, res): Promise<void> => {
     const startedAt = Date.now();
@@ -93,30 +86,48 @@ export function createRequestListener(): (req: IncomingMessage, res: ServerRespo
         return;
       }
 
-      const dataHandler = DATA_ROUTES[url.pathname];
-      if (dataHandler) {
-        let institution: InstitutionPack;
-        try {
-          institution = loadInstitutionPack(BFF_ENV.institutionId);
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          log("error", "institution_load_failed", {
-            requestId,
-            message,
-            stack: err instanceof Error ? err.stack : undefined
-          });
-          setRequestIdHeader(res, requestId);
+      switch (url.pathname) {
+        case "/events":
+        case "/rooms":
+        case "/schedule":
+        case "/today": {
+          let institution: InstitutionPack;
+          try {
+            institution = loadInstitutionPack(BFF_ENV.institutionId);
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            log("error", "institution_load_failed", {
+              requestId,
+              message,
+              stack: err instanceof Error ? err.stack : undefined
+            });
+            setRequestIdHeader(res, requestId);
 
-          if (message.includes("Unknown institutionId")) {
-            sendError(res, 404, "institution_not_found", "The requested institution is not configured");
+            if (message.includes("Unknown institutionId")) {
+              sendError(res, 404, "institution_not_found", "The requested institution is not configured");
+              return;
+            }
+            sendError(res, 500, "internal_error", "An internal error occurred while loading configuration");
             return;
           }
-          sendError(res, 500, "internal_error", "An internal error occurred while loading configuration");
+
+          switch (url.pathname) {
+            case "/events":
+              await handleEvents(req, res, institution);
+              break;
+            case "/rooms":
+              await handleRooms(req, res, institution);
+              break;
+            case "/schedule":
+              await handleSchedule(req, res, institution);
+              break;
+            case "/today":
+              await handleToday(req, res, institution);
+              break;
+          }
+          log("info", "data_route_ok", { requestId, path: url.pathname, durationMs: Date.now() - startedAt });
           return;
         }
-        await dataHandler(req, res, institution);
-        log("info", "data_route_ok", { requestId, path: url.pathname, durationMs: Date.now() - startedAt });
-        return;
       }
 
       if (url.pathname === "/health") {

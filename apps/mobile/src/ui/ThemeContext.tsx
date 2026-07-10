@@ -31,7 +31,7 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const THEME_STORAGE_KEY = "@campus-app/theme-preference";
+const THEME_PREFERENCE_STORAGE_ID = "@campus-app/theme-preference";
 
 // ============================================
 // Theme Provider
@@ -44,7 +44,7 @@ export function ThemeProvider({ children }: { children: ReactNode }): JSX.Elemen
 
   // Load saved theme preference on mount
   useEffect(() => {
-      AsyncStorage.getItem(THEME_STORAGE_KEY)
+      AsyncStorage.getItem(THEME_PREFERENCE_STORAGE_ID)
       .then((saved) => {
         if (saved && ["light", "dark", "accessibility", "system"].includes(saved)) {
           setPreferenceState(saved as ThemePreference);
@@ -74,7 +74,7 @@ export function ThemeProvider({ children }: { children: ReactNode }): JSX.Elemen
   const setPreference = async (newPreference: ThemePreference) => {
     setPreferenceState(newPreference);
     try {
-      await AsyncStorage.setItem(THEME_STORAGE_KEY, newPreference);
+      await AsyncStorage.setItem(THEME_PREFERENCE_STORAGE_ID, newPreference);
     } catch (error: unknown) {
       if (__DEV__) console.warn("Failed to save theme preference:", error);
     }
