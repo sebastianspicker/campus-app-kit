@@ -1,8 +1,9 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
+import { tmpdir } from "node:os";
 import { extname, join, normalize, resolve } from "node:path";
 
-const exportRoot = resolve(process.argv[2] ?? "/private/tmp/campus-app-kit-playwright-web");
+const exportRoot = resolve(process.argv[2] ?? join(tmpdir(), "campus-app-kit-playwright-web"));
 const port = Number.parseInt(process.env.PORT ?? "8081", 10);
 const serverRoot = join(exportRoot, "server");
 const clientRoot = join(exportRoot, "client");

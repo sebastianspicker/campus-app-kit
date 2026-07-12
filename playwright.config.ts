@@ -1,10 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-const exportDirectory = "/private/tmp/campus-app-kit-playwright-web";
+const exportDirectory = join(tmpdir(), "campus-app-kit-playwright-web");
 
 export default defineConfig({
   testDir: "./apps/mobile/e2e-web",
-  outputDir: "/private/tmp/campus-app-kit-playwright-results",
+  outputDir: join(tmpdir(), "campus-app-kit-playwright-results"),
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["line"], ["html", { outputFolder: "playwright-report", open: "never" }]] : "line",
