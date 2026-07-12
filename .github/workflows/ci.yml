@@ -34,7 +34,7 @@ concurrency:
 
 jobs:
   build:
-    name: Verify (lint, typecheck, test, build, web E2E)
+    name: Verify (lint, typecheck, test, build)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
