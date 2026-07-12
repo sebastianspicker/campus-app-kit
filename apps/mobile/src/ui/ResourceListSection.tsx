@@ -32,19 +32,8 @@ export function ResourceListSection<T>(props: ResourceListSectionProps<T>): JSX.
   );
 }
 
-function ResourceListContent<T>({
-  loading,
-  error,
-  items,
-  emptyMessage,
-  keyExtractor,
-  href,
-  renderCard,
-  accessibilityLabel,
-  onRetry,
-  emptyIcon,
-  emptyHint
-}: ResourceListSectionProps<T>): JSX.Element {
+function ResourceListContent<T>(props: ResourceListSectionProps<T>): JSX.Element {
+  const { loading, error, items, emptyMessage, keyExtractor, href, renderCard, accessibilityLabel, onRetry, emptyIcon, emptyHint } = props;
   if (loading) {
     return <SkeletonList count={3} />;
   }

@@ -27,16 +27,14 @@ export function getContrastRatio(first: string, second: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-export function isAccessibleInstitutionAccent(accent: string): boolean {
-  if (!/^#[0-9a-f]{6}$/i.test(accent)) return false;
-  const canvasContrast = STANDARD_CANVASES.every(
-    (canvas) => getContrastRatio(accent, canvas) >= 3
-  );
-  const foregroundContrast = Math.max(
-    getContrastRatio(accent, "#000000"),
-    getContrastRatio(accent, "#FFFFFF")
-  );
-  return canvasContrast && foregroundContrast >= 4.5;
+function hasCanvasContrast(accent: string): boolean {
+  return STANDARD_CANVASES.every((canvas) => getContrastRatio(accent, canvas) >= 3);
+}
+
+function hasForegroundContrast(accent: string): boolean {
+  const blackContrast = getContrastRatio(accent, "#000000");
+  const whiteContrast = getContrastRatio(accent, "#FFFFFF");
+  return Math.max(blackContrast, whiteContrast) >= 4.5;
 }
 
 export const PublicEventSchema = z.object({
@@ -152,3 +150,8 @@ export const InstitutionPackSchema = z.object({
 });
 
 export type InstitutionPack = z.infer<typeof InstitutionPackSchema>;
+
+export function isAccessibleInstitutionAccent(accent: string): boolean {
+  if (!/^#[0-9a-f]{6}$/i.test(accent)) return false;
+  return hasCanvasContrast(accent) && hasForegroundContrast(accent);
+}

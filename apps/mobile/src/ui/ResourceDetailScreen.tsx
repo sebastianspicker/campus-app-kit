@@ -22,18 +22,8 @@ export type ResourceDetailScreenProps<T> = {
   onRefresh?: () => void;
 };
 
-export function ResourceDetailScreen<T>({
-  loading,
-  error,
-  item,
-  notFoundMessage,
-  cardTitle,
-  cardSubtitle,
-  renderMeta,
-  footnote,
-  refreshing,
-  onRefresh,
-}: ResourceDetailScreenProps<T>): JSX.Element {
+export function ResourceDetailScreen<T>(props: ResourceDetailScreenProps<T>): JSX.Element {
+  const { loading, error, item, notFoundMessage, cardTitle, cardSubtitle, renderMeta, footnote, refreshing, onRefresh } = props;
   const theme = useTheme();
 
   return (
