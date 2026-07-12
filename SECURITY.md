@@ -36,9 +36,7 @@ Unset, `0`, `false`, `no`, and `off` disable the guard. Any other non-empty
 
 `BFF_TRUST_PROXY` defaults to `never`, so rate limiting uses the direct peer
 address and ignores `X-Forwarded-For`/`Forwarded`. Set `auto` or `always` only
-when the BFF is reachable exclusively through a trusted reverse proxy. The
-`never` mode is the safe choice for uncertain topologies; deployments with a
-documented and reviewed proxy boundary can select `auto` or `always` instead.
+when the BFF is reachable exclusively through a trusted reverse proxy. The `never` mode is recommended for uncertain topologies unless deployment owners have documented and reviewed a trusted proxy boundary, in which case they may select `auto` or `always`.
 
 ## Coordinated Disclosure
 
