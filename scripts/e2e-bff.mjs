@@ -32,7 +32,10 @@ async function reservePort() {
 }
 
 async function requestJson(baseUrl, path) {
-  const response = await fetch(new URL(path, baseUrl));
+  const url = new URL(path, baseUrl);
+  assert(url.protocol === "http:", `E2E requests must use http, got ${url.protocol}`);
+  assert(url.hostname === "127.0.0.1", `E2E requests must target 127.0.0.1, got ${url.hostname}`);
+  const response = await fetch(url);
   const text = await response.text();
   let body;
   try {
