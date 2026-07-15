@@ -273,6 +273,42 @@ END:VCALENDAR
       expect(events[0].title).toBe("Bad RRULE");
     });
 
+    it("does not restore an occurrence removed by EXDATE", () => {
+      const ics = `
+BEGIN:VCALENDAR
+BEGIN:VEVENT
+UID:excluded-only-occurrence
+SUMMARY:Cancelled Meeting
+DTSTART:20260201T100000Z
+RRULE:FREQ=DAILY;COUNT=1
+EXDATE:20260201T100000Z
+END:VEVENT
+END:VCALENDAR
+`;
+
+      expect(parseIcs(ics, {
+        referenceDate: new Date("2026-01-01T00:00:00.000Z")
+      })).toEqual([]);
+    });
+
+    it("applies timezone-qualified EXDATE values", () => {
+      const ics = `
+BEGIN:VCALENDAR
+BEGIN:VEVENT
+UID:excluded-timezone-occurrence
+SUMMARY:Cancelled Berlin Meeting
+DTSTART;TZID=Europe/Berlin:20260201T100000
+RRULE:FREQ=DAILY;COUNT=1
+EXDATE;TZID=Europe/Berlin:20260201T100000
+END:VEVENT
+END:VCALENDAR
+`;
+
+      expect(parseIcs(ics, {
+        referenceDate: new Date("2026-01-01T00:00:00.000Z")
+      })).toEqual([]);
+    });
+
     it("handles non-recurring event without RRULE", () => {
       const ics = `
 BEGIN:VCALENDAR

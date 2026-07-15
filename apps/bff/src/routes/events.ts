@@ -7,15 +7,15 @@ import { createJsonRoute } from "./createJsonRoute";
 
 export const handleEvents = createJsonRoute(
   async (institution, req) => {
+    const params = parseQueryParams(req);
+    const filter = parseEventsFilter(params);
+
     const sources = institution.publicSources?.events ?? [];
     if (sources.length === 0) {
       throw new Error("NO_CONFIG_SOURCES: No event sources configured");
     }
 
     const { events, degraded } = await fetchPublicEvents(institution);
-
-    const params = parseQueryParams(req);
-    const filter = parseEventsFilter(params);
 
     let filteredEvents = applySearch(events, filter.search, (e) => e.title);
     filteredEvents = applyDateRange(filteredEvents, filter.fromDate, filter.toDate, (e) => e.date);

@@ -4,6 +4,10 @@ import { handleToday } from "../today";
 import institution from "../../__fixtures__/institution.public.json";
 import { clearCache } from "../../utils/cache";
 
+vi.mock("../../utils/fetch", async () => ({
+  fetchTextWithTimeout: (await import("../../__tests__/fetchTextMock")).fetchTextUsingGlobalMock
+}));
+
 function createMockResponse(): {
   response: ServerResponse;
   getBody: () => string | undefined;
@@ -43,6 +47,20 @@ function createMockRequest(url: string, method = "GET"): IncomingMessage {
 }
 
 describe("GET /today — negative paths", () => {
+  it("rejects rollover calendar dates", async () => {
+    delete process.env.PUBLIC_EVENTS_MODE;
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const req = createMockRequest("/today?date=2026-02-30");
+    const { response, getStatus, getBody } = createMockResponse();
+
+    await handleToday(req, response, institution);
+
+    expect(getStatus()).toBe(400);
+    expect(getBody()).toContain("date must be a valid YYYY-MM-DD calendar date");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     process.env.PUBLIC_EVENTS_DATE = "2020-01-01T00:00:00.000Z";
     process.env.PUBLIC_EVENTS_MODE = "mock";

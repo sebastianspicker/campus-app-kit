@@ -40,12 +40,8 @@ BFF:
 - `BFF_REQUIRE_AUTH` (optional; unset/`0`/`false`/`no`/`off` disables bearer auth, `1`/`true`/`yes`/`on` requires it; invalid non-empty values fail closed)
 - `BFF_AUTH_TOKEN` (required when `BFF_REQUIRE_AUTH` enables bearer auth; use a long random secret from private infrastructure)
 - `CORS_ORIGINS` (optional; comma-separated; use `*` for development)
-- `BFF_TRUST_PROXY` (optional; default `never`). Controls which source the BFF uses for the client IP (rate limiting, logs):
-  - `never`: ignore forwarded headers; use `socket.remoteAddress` only
-  - `auto`: trust `X-Forwarded-For`/`Forwarded` only when the direct peer is a private/loopback address (e.g. a reverse proxy on the same host)
-  - `always`: always use the forwarded client IP — only use this when the BFF is behind a trusted proxy
-
-  Forwarded values are ignored by default. When proxy trust is enabled, forwarded values are validated as IPv4/IPv6; invalid values fall back to the direct peer address.
+- `BFF_TRUSTED_PROXIES` (optional, comma-separated IP/CIDR allowlist such as `127.0.0.1,10.24.0.0/16`). When present and `BFF_TRUST_PROXY` is unset, the BFF uses `X-Forwarded-For`/`Forwarded` only if the immediate socket peer matches the allowlist. It follows a multi-proxy chain right-to-left through allowlisted hops and rate-limits the first untrusted client. Invalid headers and untrusted private peers always use the socket address. Set `BFF_TRUST_PROXY=never` to explicitly disable forwarded identities.
+- `BFF_TRUST_PROXY` (optional; default `never`). `auto` is rejected. `always` is a legacy, unsafe override that trusts headers from any direct peer; use it only for a network-isolated BFF where the edge proxy replaces forwarding headers. Prefer `BFF_TRUSTED_PROXIES`.
 
 Mobile:
 - `EXPO_PUBLIC_BFF_BASE_URL` (required in development and production; set it to the BFF URL reachable from the mobile runtime)

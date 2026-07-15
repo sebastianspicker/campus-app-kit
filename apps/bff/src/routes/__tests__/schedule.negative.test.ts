@@ -5,6 +5,10 @@ import institution from "../../__fixtures__/institution.public.json";
 import { clearCache } from "../../utils/cache";
 import { readFileSync } from "node:fs";
 
+vi.mock("../../utils/fetch", async () => ({
+  fetchTextWithTimeout: (await import("../../__tests__/fetchTextMock")).fetchTextUsingGlobalMock
+}));
+
 function createMockResponse(): {
   response: ServerResponse;
   getBody: () => string | undefined;
@@ -75,6 +79,7 @@ describe("GET /schedule — negative paths", () => {
     expect(getStatus()).toBe(400);
     const body = JSON.parse(getBody() ?? "{}");
     expect(body.error.code).toBe("bad_request");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it("handles negative offset query param", async () => {

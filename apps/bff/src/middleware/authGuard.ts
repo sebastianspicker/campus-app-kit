@@ -34,6 +34,33 @@ function sendAuthError(
 
 type AuthRequirement = "disabled" | "required" | "invalid";
 
+/**
+ * Validates the deployment-time bearer-auth configuration.
+ *
+ * The request guard intentionally repeats this validation so a process remains
+ * fail-closed if its environment is changed after startup.
+ */
+export function validateAuthConfiguration(env: NodeJS.ProcessEnv = process.env): void {
+  const authRequirement = parseAuthRequirement(env.BFF_REQUIRE_AUTH);
+  if (authRequirement === "invalid") {
+    throw new Error("BFF_REQUIRE_AUTH has an invalid value");
+  }
+
+  if (authRequirement === "required" && !env.BFF_AUTH_TOKEN?.trim()) {
+    throw new Error("BFF_AUTH_TOKEN is required when BFF_REQUIRE_AUTH enables authentication");
+  }
+}
+
+/** Whether this request should consume the invalid-credential rate-limit bucket. */
+export function isInvalidAuthAttempt(
+  req: IncomingMessage,
+  env: NodeJS.ProcessEnv = process.env
+): boolean {
+  if (parseAuthRequirement(env.BFF_REQUIRE_AUTH) !== "required") return false;
+  const expectedToken = env.BFF_AUTH_TOKEN?.trim();
+  return expectedToken ? getBearerToken(req) !== expectedToken : false;
+}
+
 export function guardAuth(
   req: IncomingMessage,
   res: ServerResponse,

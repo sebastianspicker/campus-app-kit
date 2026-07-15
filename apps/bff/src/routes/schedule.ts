@@ -7,15 +7,15 @@ import { createJsonRoute } from "./createJsonRoute";
 
 export const handleSchedule = createJsonRoute(
   async (institution, req) => {
+    const params = parseQueryParams(req);
+    const filter = parseScheduleFilter(params);
+
     const schedules = institution.publicSources?.schedules ?? [];
     if (schedules.length === 0) {
       throw new Error("NO_CONFIG_SOURCES: No schedules configured");
     }
 
     const { schedule, degraded } = await fetchPublicSchedule(institution);
-
-    const params = parseQueryParams(req);
-    const filter = parseScheduleFilter(params);
 
     let filteredSchedule = applyDateRange(schedule, filter.fromDate, filter.toDate, (item) => item.startsAt);
     if (filter.campusId) {

@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { InstitutionPack } from "./config/loader";
 import http from "node:http";
 import { loadInstitutionPack } from "./config/loader";
-import { guardAuth } from "./middleware/authGuard";
+import { guardAuth, isInvalidAuthAttempt, validateAuthConfiguration } from "./middleware/authGuard";
 import { guardMethods } from "./middleware/methodGuard";
 import { handleEvents } from "./routes/events";
 import { handleHealth } from "./routes/health";
@@ -19,7 +19,51 @@ import { getRequestId, setRequestIdHeader } from "./utils/requestId";
 import { BFF_ENV } from "./config/env";
 import { basename } from "node:path";
 
-const DATA_ROUTES: Record<string, (req: IncomingMessage, res: ServerResponse, institution: InstitutionPack) => Promise<void>> = {
+type DataRouteHandler = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  institution: InstitutionPack,
+  requestId?: string
+) => Promise<void>;
+
+type DataRouteContext = {
+  dataHandler: DataRouteHandler;
+  req: IncomingMessage;
+  res: ServerResponse;
+  requestId: string;
+  path: string;
+  startedAt: number;
+};
+
+type InstitutionLoadFailure = {
+  status: number;
+  code: string;
+  publicMessage: string;
+};
+
+function normalizeError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error));
+}
+
+function getInstitutionLoadFailure(message: string): InstitutionLoadFailure {
+  return message.includes("Unknown institutionId")
+    ? {
+        status: 404,
+        code: "institution_not_found",
+        publicMessage: "The requested institution is not configured"
+      }
+    : {
+        status: 500,
+        code: "internal_error",
+        publicMessage: "An internal error occurred while loading configuration"
+      };
+}
+
+function getDataRouteLogEvent(statusCode: number): "data_route_ok" | "data_route_complete" {
+  return statusCode >= 200 && statusCode < 400 ? "data_route_ok" : "data_route_complete";
+}
+
+const DATA_ROUTES: Record<string, DataRouteHandler> = {
   "/events": handleEvents,
   "/rooms": handleRooms,
   "/schedule": handleSchedule,
@@ -28,7 +72,7 @@ const DATA_ROUTES: Record<string, (req: IncomingMessage, res: ServerResponse, in
 
 function getDataRouteHandler(
   pathname: string
-): ((req: IncomingMessage, res: ServerResponse, institution: InstitutionPack) => Promise<void>) | undefined {
+): DataRouteHandler | undefined {
   switch (pathname) {
     case "/events":
       return DATA_ROUTES["/events"];
@@ -61,48 +105,37 @@ function parseRequestUrl(req: IncomingMessage, res: ServerResponse, requestId: s
 
 function applyCorsHeaders(req: IncomingMessage, res: ServerResponse): void {
   const cors = getCorsHeaders(req.headers.origin, BFF_ENV.corsOrigins);
-  for (const [key, value] of Object.entries(cors)) {
-    res.setHeader(key, value);
-  }
+  Object.entries(cors).forEach(([key, value]) => res.setHeader(key, value));
 }
 
 function loadInstitutionForRequest(res: ServerResponse, requestId: string): InstitutionPack | undefined {
   try {
     return loadInstitutionPack(BFF_ENV.institutionId);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
+    const error = normalizeError(err);
     log("error", "institution_load_failed", {
       requestId,
-      message,
-      stack: err instanceof Error ? err.stack : undefined
+      message: error.message,
+      stack: error.stack
     });
     setRequestIdHeader(res, requestId);
-
-    if (message.includes("Unknown institutionId")) {
-      sendError(res, 404, "institution_not_found", "The requested institution is not configured");
-      return undefined;
-    }
-    sendError(res, 500, "internal_error", "An internal error occurred while loading configuration");
+    const failure = getInstitutionLoadFailure(error.message);
+    sendError(res, failure.status, failure.code, failure.publicMessage);
     return undefined;
   }
 }
 
-async function handleDataRoute(
-  dataHandler: (req: IncomingMessage, res: ServerResponse, institution: InstitutionPack) => Promise<void>,
-  req: IncomingMessage,
-  res: ServerResponse,
-  requestId: string,
-  path: string,
-  startedAt: number
-): Promise<void> {
+async function handleDataRoute(context: DataRouteContext): Promise<void> {
+  const { dataHandler, req, res, requestId, path, startedAt } = context;
   const institution = loadInstitutionForRequest(res, requestId);
   if (!institution) {
     return;
   }
 
   res.setHeader("x-institution-id", institution.id);
-  await dataHandler(req, res, institution);
-  log("info", "data_route_ok", { requestId, path, durationMs: Date.now() - startedAt });
+  await dataHandler(req, res, institution, requestId);
+  const durationMs = Date.now() - startedAt;
+  log("info", getDataRouteLogEvent(res.statusCode), { requestId, path, durationMs, statusCode: res.statusCode });
 }
 
 function handleOptionsRequest(res: ServerResponse, requestId: string): void {
@@ -147,12 +180,41 @@ function handleListenerError(res: ServerResponse, requestId: string, handlerErr:
 
 const ALLOWED_METHODS = ["GET", "OPTIONS"];
 
-async function dispatchRequest(
-  req: IncomingMessage,
-  res: ServerResponse,
-  requestId: string,
-  startedAt: number
-): Promise<void> {
+const guardAuthAttemptRate = (req: IncomingMessage, res: ServerResponse, requestId: string, path: string, clientKey: string): boolean => {
+  if (!isInvalidAuthAttempt(req)) return true;
+
+  const authRate = checkRateLimit(`auth:${clientKey}`);
+  if (authRate.allowed) return true;
+  handleRateLimitExceeded(res, requestId, path, authRate.retryAfter);
+  return false;
+};
+
+const guardRequestAccess = (req: IncomingMessage, res: ServerResponse, requestId: string, path: string): boolean => {
+  const clientKey = getClientKey(req, {
+    trustProxy: BFF_ENV.trustProxy,
+    trustedProxyMatcher: BFF_ENV.trustedProxyMatcher
+  });
+  if (!guardAuthAttemptRate(req, res, requestId, path, clientKey)) return false;
+
+  if (!guardAuth(req, res, requestId)) {
+    log("info", "auth_required", { requestId, method: req.method, path });
+    return false;
+  }
+
+  const requestRate = checkRateLimit(`request:${clientKey}`);
+  if (!requestRate.allowed) {
+    handleRateLimitExceeded(res, requestId, path, requestRate.retryAfter);
+    return false;
+  }
+
+  if (!guardMethods(req, res, ALLOWED_METHODS, requestId)) {
+    log("info", "method_not_allowed", { requestId, method: req.method, path });
+    return false;
+  }
+  return true;
+};
+
+const dispatchRequest = async (req: IncomingMessage, res: ServerResponse, requestId: string, startedAt: number): Promise<void> => {
   const url = parseRequestUrl(req, res, requestId);
   if (!url) return;
 
@@ -164,25 +226,11 @@ async function dispatchRequest(
     return;
   }
 
-  if (!guardAuth(req, res, requestId)) {
-    log("info", "auth_required", { requestId, method: req.method, path: url.pathname });
-    return;
-  }
-
-  const rate = checkRateLimit(getClientKey(req, { trustProxy: BFF_ENV.trustProxy }));
-  if (!rate.allowed) {
-    handleRateLimitExceeded(res, requestId, url.pathname, rate.retryAfter);
-    return;
-  }
-
-  if (!guardMethods(req, res, ALLOWED_METHODS, requestId)) {
-    log("info", "method_not_allowed", { requestId, method: req.method, path: url.pathname });
-    return;
-  }
+  if (!guardRequestAccess(req, res, requestId, url.pathname)) return;
 
   const dataHandler = getDataRouteHandler(url.pathname);
   if (dataHandler) {
-    await handleDataRoute(dataHandler, req, res, requestId, url.pathname, startedAt);
+    await handleDataRoute({ dataHandler, req, res, requestId, path: url.pathname, startedAt });
     return;
   }
 
@@ -192,12 +240,13 @@ async function dispatchRequest(
   }
 
   handleNotFound(res, requestId, startedAt);
-}
+};
 
 export function createRequestListener(): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   return async (req, res): Promise<void> => {
     const startedAt = Date.now();
     const requestId = getRequestId(req);
+    setRequestIdHeader(res, requestId);
 
     try {
       await dispatchRequest(req, res, requestId, startedAt);
@@ -214,6 +263,7 @@ export async function startServer(): Promise<void> {
   });
 
   try {
+    validateAuthConfiguration();
     loadInstitutionPack(BFF_ENV.institutionId);
     log("info", "startup_validation_ok");
   } catch (err: unknown) {
@@ -225,8 +275,7 @@ export async function startServer(): Promise<void> {
 
   const server = http.createServer(createRequestListener());
   server.listen(BFF_ENV.port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`BFF listening on http://localhost:${BFF_ENV.port}`);
+    log("info", "server_listening", { port: BFF_ENV.port });
   });
 }
 

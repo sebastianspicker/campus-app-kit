@@ -13,7 +13,12 @@ const EMPTY_EVENTS_RESULT: FetchPublicEventsResult = { events: [], degraded: fal
 
 /** Validate that a string is a YYYY-MM-DD date */
 function isValidDateParam(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(value).getTime());
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return date.getUTCFullYear() === Number(match[1]) &&
+    date.getUTCMonth() + 1 === Number(match[2]) &&
+    date.getUTCDate() === Number(match[3]);
 }
 
 const NO_TODAY_SOURCES_ERROR = "NO_CONFIG_SOURCES: No event or room sources configured for today view";
@@ -41,7 +46,10 @@ function resolveEnvDate(dateValue: string, timeZone: string): string {
 function resolveTodayDate(req: IncomingMessage, timeZone: string): string {
   const params = parseQueryParams(req);
   const clientDate = getStringParam(params, DATE_QUERY_PARAM);
-  if (clientDate && isValidDateParam(clientDate)) return clientDate;
+  if (clientDate !== undefined) {
+    if (isValidDateParam(clientDate)) return clientDate;
+    throw new Error("INVALID_QUERY_PARAM: date must be a valid YYYY-MM-DD calendar date");
+  }
   if (process.env.PUBLIC_EVENTS_DATE) return resolveEnvDate(process.env.PUBLIC_EVENTS_DATE, timeZone);
   return getDateKeyInTimeZone(new Date(), timeZone);
 }
@@ -63,9 +71,9 @@ async function loadToday(institution: InstitutionPack, req: IncomingMessage): Pr
     throw new Error(NO_TODAY_SOURCES_ERROR);
   }
 
-  const { events, degraded } = await loadTodayEvents(institution);
   const timeZone = institution.timezone ?? DEFAULT_TIME_ZONE;
   const todayStr = resolveTodayDate(req, timeZone);
+  const { events, degraded } = await loadTodayEvents(institution);
 
   return {
     events: filterEventsForDate(events, todayStr, timeZone),

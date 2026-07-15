@@ -6,6 +6,10 @@ import institution from "../../__fixtures__/institution.public.json";
 import scheduleFixture from "../../__fixtures__/schedule.json";
 import { clearCache } from "../../utils/cache";
 
+vi.mock("../../utils/fetch", async () => ({
+  fetchTextWithTimeout: (await import("../../__tests__/fetchTextMock")).fetchTextUsingGlobalMock
+}));
+
 function createMockResponse(): {
   response: ServerResponse;
   getBody: () => string | undefined;
