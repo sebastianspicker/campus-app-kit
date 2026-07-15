@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { SortDirection } from "@/screens/todayScreenHelpers";
 import { scaledRadius, spacing, typography } from "@/ui/theme";
 import { useTheme } from "@/ui/ThemeContext";
+import { useLocale } from "@/i18n/LocaleContext";
 
 const styles = StyleSheet.create({
   scheduleHeader: {
@@ -31,6 +32,8 @@ export function ScheduleSortHeader({
 }): JSX.Element {
   const theme = useTheme();
   const ui = theme.ui;
+  const { t } = useLocale();
+  const direction = sortDirection === "asc" ? t("sortDescending") : t("sortAscending");
   const getSortButtonStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [
       styles.sortButton,
@@ -50,10 +53,10 @@ export function ScheduleSortHeader({
         onPress={onToggleSort}
         style={getSortButtonStyle}
         accessibilityRole="button"
-        accessibilityLabel={`Sort schedule ${sortDirection === "asc" ? "latest first" : "earliest first"}`}
+        accessibilityLabel={t("sortScheduleAccessibility", { direction })}
       >
         <Text style={[styles.sortText, { color: theme.colors.text }]}>
-          {sortDirection === "asc" ? "↑ Earliest first" : "↓ Latest first"}
+          {sortDirection === "asc" ? t("sortScheduleAscending") : t("sortScheduleDescending")}
         </Text>
       </Pressable>
     </View>

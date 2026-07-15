@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { guardAuth } from "../authGuard";
+import { guardAuth, isInvalidAuthAttempt, validateAuthConfiguration } from "../authGuard";
 
 function createMockReqRes(headers: Record<string, string> = {}) {
   const req = { headers } as unknown as IncomingMessage;
@@ -105,6 +105,7 @@ describe("guardAuth", () => {
 
     it("returns false and sends 401 for a different Bearer token", () => {
       const { req, res } = createMockReqRes({ authorization: "Bearer other-token" });
+      expect(isInvalidAuthAttempt(req)).toBe(true);
       const result = guardAuth(req, res, "req-1b");
       expect(result).toBe(false);
       expect(res.getStatusCode()).toBe(401);
@@ -138,6 +139,7 @@ describe("guardAuth", () => {
 
     it("trims whitespace around Bearer token values", () => {
       const { req, res } = createMockReqRes({ authorization: "Bearer  expected-token  " });
+      expect(isInvalidAuthAttempt(req)).toBe(false);
       expect(guardAuth(req, res, "req-trimmed-token")).toBe(true);
     });
 
@@ -153,5 +155,24 @@ describe("guardAuth", () => {
       guardAuth(req, res, "test-request-id");
       expect(res.getHeaders()["x-request-id"]).toBe("test-request-id");
     });
+  });
+});
+
+describe("validateAuthConfiguration", () => {
+  it("rejects an invalid auth mode before the server starts", () => {
+    expect(() => validateAuthConfiguration({ BFF_REQUIRE_AUTH: "enabled" })).toThrow(
+      "BFF_REQUIRE_AUTH has an invalid value"
+    );
+  });
+
+  it("rejects required auth without a bearer token before the server starts", () => {
+    expect(() => validateAuthConfiguration({ BFF_REQUIRE_AUTH: "true" })).toThrow(
+      "BFF_AUTH_TOKEN is required"
+    );
+  });
+
+  it("accepts disabled auth and required auth with a token", () => {
+    expect(() => validateAuthConfiguration({ BFF_REQUIRE_AUTH: "false" })).not.toThrow();
+    expect(() => validateAuthConfiguration({ BFF_REQUIRE_AUTH: "true", BFF_AUTH_TOKEN: "token" })).not.toThrow();
   });
 });

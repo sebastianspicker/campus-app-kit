@@ -111,4 +111,25 @@ describe("cache — TTL and eviction", () => {
     expect(second.value).toBe("second");
     expect(loader).toHaveBeenCalledTimes(2);
   });
+
+  it("keeps a timed-out loader accounted for until its underlying work settles", async () => {
+    let settle!: () => void;
+    const loader = vi.fn((signal: AbortSignal) => new Promise<string>((resolve) => {
+      signal.addEventListener("abort", () => undefined);
+      settle = () => resolve("late");
+    }));
+    const first = getCached("abortable", loader, 5000, { inFlightTimeoutMs: 10 });
+    const rejected = expect(first).rejects.toThrow("Cache loader timeout");
+    await vi.advanceTimersByTimeAsync(10);
+    await rejected;
+    expect(loader.mock.calls[0][0].aborted).toBe(true);
+
+    await expect(getCached("abortable", async () => "must-not-run", 5000)).rejects.toThrow("Cache loader timeout");
+    expect(loader).toHaveBeenCalledTimes(1);
+
+    settle();
+    await Promise.resolve();
+    await Promise.resolve();
+    await expect(getCached("abortable", async () => "retried", 5000)).resolves.toBe("retried");
+  });
 });

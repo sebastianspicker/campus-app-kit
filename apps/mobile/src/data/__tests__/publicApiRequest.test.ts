@@ -30,4 +30,12 @@ describe("resource metadata", () => {
     expect(result.cacheAge).toBeGreaterThanOrEqual(0);
     expect(result.data.value).toBe(2);
   });
+
+  it("rejects an incompatible persisted payload instead of rendering it offline", async () => {
+    await setPersistedCache(getPublicCacheKey("test"), { value: "old shape" });
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
+
+    await expect(getCachedJson("/test", z.object({ value: z.number() }), "test", { offlineMode: true }))
+      .rejects.toThrow("offline");
+  });
 });

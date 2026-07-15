@@ -19,17 +19,23 @@ import { ResourceList } from "@/ui/ResourceList";
 import { Screen } from "@/ui/Screen";
 import { StatusBanner } from "@/ui/StatusBanner";
 import { spacing } from "@/ui/theme";
+import { getInstitutionTimeZone } from "@/config/institution";
+import { selectedEventDetails } from "@/data/selectedDetailRecords";
 
 export default function EventsScreen(): JSX.Element {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
+  const timeZone = getInstitutionTimeZone();
   const [search, setSearch] = useState("");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const state = useEvents({ search: search || undefined });
   const events = sortEventsByDate(state.data?.events ?? [], sortDirection);
   const keyExtractor = useCallback((item: PublicEvent) => item.id, []);
   const href = useCallback((item: PublicEvent) => getEventHref(item), []);
-  const renderCard = useCallback((item: PublicEvent) => getEventCard(item), []);
-  const accessibilityLabel = useCallback((item: PublicEvent) => getEventAccessibilityLabel(item), []);
+  const renderCard = useCallback((item: PublicEvent) => getEventCard(item, locale, timeZone), [locale, timeZone]);
+  const accessibilityLabel = useCallback((item: PublicEvent) => getEventAccessibilityLabel(item, locale, timeZone), [locale, timeZone]);
+  const onNavigate = useCallback((item: PublicEvent) => {
+    selectedEventDetails.remember(item, { authoritative: state.source === "network" });
+  }, [state.source]);
 
   const header = (
     <View style={styles.header}>
@@ -50,12 +56,13 @@ export default function EventsScreen(): JSX.Element {
         error={state.error}
         refreshing={state.refreshing}
         onRefresh={() => void state.refresh()}
-        emptyMessage={search ? getEventsEmptyMessage(search) : t("noEvents")}
-        emptyHint={getEventsEmptyHint(search)}
+        emptyMessage={search ? getEventsEmptyMessage(search, t) : t("noEvents")}
+        emptyHint={getEventsEmptyHint(search, t)}
         keyExtractor={keyExtractor}
         href={href}
         renderCard={renderCard}
         accessibilityLabel={accessibilityLabel}
+        onNavigate={onNavigate}
       />
     </Screen>
   );

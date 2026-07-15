@@ -4,6 +4,10 @@ import { handleEvents } from "../events";
 import institution from "../../__fixtures__/institution.public.json";
 import { clearCache } from "../../utils/cache";
 
+vi.mock("../../utils/fetch", async () => ({
+  fetchTextWithTimeout: (await import("../../__tests__/fetchTextMock")).fetchTextUsingGlobalMock
+}));
+
 function createMockResponse(): {
   response: ServerResponse;
   getBody: () => string | undefined;
@@ -56,6 +60,8 @@ describe("GET /events — negative paths", () => {
   });
 
   it("handles invalid limit query param (non-numeric)", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
     const req = createMockRequest("/events?limit=abc");
     const { response, getStatus, getBody } = createMockResponse();
 
@@ -64,6 +70,7 @@ describe("GET /events — negative paths", () => {
     expect(getStatus()).toBe(400);
     const body = JSON.parse(getBody() ?? "{}");
     expect(body.error.code).toBe("bad_request");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("handles negative offset query param", async () => {

@@ -70,7 +70,7 @@ export async function fetchPublicSchedule(
 
   return getCached(
     cacheKey,
-    async () => {
+    async (signal) => {
       // Mock mode is fixture-backed so schedule tests and demos do not depend
       // on external ICS availability.
       if (mode === "mock" && institution.id === "mockuni") {
@@ -92,7 +92,7 @@ export async function fetchPublicSchedule(
 
       const settledSources = await Promise.allSettled(
         sources.map(async (source: { url: string }) => {
-          const text = await getScheduleBreaker(source.url).call(() => fetchTextWithTimeout(source.url));
+          const text = await getScheduleBreaker(source.url).call(() => fetchTextWithTimeout(source.url, { signal }));
           return parseIcs(text, { rruleHorizonDays: BFF_ENV.rruleExpansionHorizonDays });
         })
       );

@@ -10,6 +10,7 @@ import { Screen } from "@/ui/Screen";
 import { StatusBanner } from "@/ui/StatusBanner";
 import { spacing, typography } from "@/ui/theme";
 import { useTheme } from "@/ui/ThemeContext";
+import { selectedRoomDetails } from "@/data/selectedDetailRecords";
 
 export default function RoomsScreen(): JSX.Element {
   const theme = useTheme();
@@ -20,12 +21,15 @@ export default function RoomsScreen(): JSX.Element {
   const keyExtractor = useCallback((item: Room) => item.id, []);
   const href = useCallback((item: Room) => getRoomHref(item), []);
   const renderCard = useCallback((item: Room) => getRoomCard(item), []);
-  const accessibilityLabel = useCallback((item: Room) => getRoomAccessibilityLabel(item), []);
+  const accessibilityLabel = useCallback((item: Room) => getRoomAccessibilityLabel(item, t("campus")), [t]);
+  const onNavigate = useCallback((item: Room) => {
+    selectedRoomDetails.remember(item, { authoritative: state.source === "network" });
+  }, [state.source]);
 
   const header = (
     <View style={styles.header}>
       <SearchBar value={search} onChangeText={setSearch} label={t("searchRooms")} placeholder={t("searchRooms")} testID="rooms-search" />
-      {!state.loading ? <Text style={[styles.count, { color: theme.colors.muted }]}>{rooms.length} {t("rooms").toLocaleLowerCase()}</Text> : null}
+      {!state.loading ? <Text style={[styles.count, { color: theme.colors.muted }]}>{t(rooms.length === 1 ? "roomResultCountOne" : "roomResultCountOther", { count: rooms.length })}</Text> : null}
       {state.source === "persisted-cache" ? <StatusBanner kind="cached" cacheAge={state.cacheAge} /> : null}
     </View>
   );
@@ -40,12 +44,13 @@ export default function RoomsScreen(): JSX.Element {
         error={state.error}
         refreshing={state.refreshing}
         onRefresh={() => void state.refresh()}
-        emptyMessage={search ? getRoomsEmptyMessage(search) : t("noRooms")}
-        emptyHint={getRoomsEmptyHint(search)}
+        emptyMessage={search ? getRoomsEmptyMessage(search, t) : t("noRooms")}
+        emptyHint={getRoomsEmptyHint(search, t)}
         keyExtractor={keyExtractor}
         href={href}
         renderCard={renderCard}
         accessibilityLabel={accessibilityLabel}
+        onNavigate={onNavigate}
       />
     </Screen>
   );

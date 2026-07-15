@@ -1,13 +1,19 @@
+import { createTrustedProxyMatcher, validateTrustedProxyRanges } from "../utils/trustedProxy";
+import type { TrustProxyMode } from "../utils/clientKey";
+import type { TrustedProxyMatcher } from "../utils/trustedProxy";
+
+export type { TrustProxyMode } from "../utils/clientKey";
+
 export type BffEnv = {
   port: number;
   institutionId: string;
   corsOrigins: string[];
   trustProxy: TrustProxyMode;
+  trustedProxies: string[];
+  trustedProxyMatcher: TrustedProxyMatcher;
   defaultCacheTtl: number;
   rruleExpansionHorizonDays: number;
 };
-
-export type TrustProxyMode = "never" | "auto" | "always";
 
 function requireNonEmpty(value: string | undefined, name: string): string {
   const trimmed = value?.trim();
@@ -32,15 +38,8 @@ function parseIntInRange(raw: string, name: string, min: number, max: number): n
 }
 
 const TRUST_PROXY_VALUES: Record<string, TrustProxyMode> = {
-  "0": "never",
-  "1": "always",
   always: "always",
-  auto: "auto",
-  false: "never",
-  never: "never",
-  no: "never",
-  true: "always",
-  yes: "always"
+  never: "never"
 };
 
 function parseTrustProxy(value: string | undefined): TrustProxyMode {
@@ -48,7 +47,7 @@ function parseTrustProxy(value: string | undefined): TrustProxyMode {
   const normalized = value.trim().toLowerCase();
   const parsed = TRUST_PROXY_VALUES[normalized];
   if (parsed) return parsed;
-  throw new Error(`Invalid BFF_TRUST_PROXY: ${value}`);
+  throw new Error(`Invalid BFF_TRUST_PROXY: ${value}; use never, always, or BFF_TRUSTED_PROXIES`);
 }
 
 const DEFAULT_PORT = 4000;
@@ -72,11 +71,27 @@ function parseCsv(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function parseTrustedProxies(raw: string | undefined): string[] {
+  const trustedProxies = parseCsv(raw);
+  validateTrustedProxyRanges(trustedProxies);
+  return trustedProxies;
+}
+
+function resolveTrustProxyMode(rawMode: string | undefined, trustedProxies: string[]): TrustProxyMode {
+  const mode = parseTrustProxy(rawMode);
+  return rawMode === undefined && trustedProxies.length > 0 ? "trusted" : mode;
+}
+
+const TRUSTED_PROXIES = parseTrustedProxies(process.env.BFF_TRUSTED_PROXIES);
+const TRUSTED_PROXY_MATCHER = createTrustedProxyMatcher(TRUSTED_PROXIES);
+
 export const BFF_ENV: BffEnv = {
   port: parsePort(process.env.BFF_PORT),
   institutionId: requireNonEmpty(process.env.INSTITUTION_ID, "INSTITUTION_ID"),
   corsOrigins: parseCsv(process.env.CORS_ORIGINS),
-  trustProxy: parseTrustProxy(process.env.BFF_TRUST_PROXY),
+  trustProxy: resolveTrustProxyMode(process.env.BFF_TRUST_PROXY, TRUSTED_PROXIES),
+  trustedProxies: TRUSTED_PROXIES,
+  trustedProxyMatcher: TRUSTED_PROXY_MATCHER,
   defaultCacheTtl: parseIntInRange(process.env.BFF_DEFAULT_CACHE_TTL ?? "300", "BFF_DEFAULT_CACHE_TTL", 1, 86_400),
   rruleExpansionHorizonDays: parseIntInRange(process.env.RRULE_EXPANSION_HORIZON_DAYS ?? "90", "RRULE_EXPANSION_HORIZON_DAYS", 1, 366)
 };

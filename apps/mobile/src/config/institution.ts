@@ -23,3 +23,7 @@ export function getInstitutionDisplayName(pack = getConfiguredInstitution()): st
 export function getInstitutionLocale(pack = getConfiguredInstitution()): "en" | "de" {
   return pack.app?.defaultLocale ?? "en";
 }
+
+export function getInstitutionTimeZone(pack = getConfiguredInstitution()): string {
+  return pack.timezone ?? "UTC";
+}

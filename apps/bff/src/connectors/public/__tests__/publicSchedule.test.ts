@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import { fetchPublicSchedule } from "../publicSchedule";
 import { clearCache } from "../../../utils/cache";
 
+vi.mock("../../../utils/fetch", async () => ({
+  fetchTextWithTimeout: (await import("../../../__tests__/fetchTextMock")).fetchTextUsingGlobalMock
+}));
+
 const institution = {
   id: "hfmt",
   name: "HfMT",

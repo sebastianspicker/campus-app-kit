@@ -13,7 +13,8 @@ type LocaleContextValue = {
   t: (key: TranslationKey, values?: Record<string, string | number>) => string;
 };
 
-const STORAGE_KEY = "campus-app-kit:language-preference";
+const LANGUAGE_PREFERENCE_STORAGE_ID = "campus-app-kit:language-preference";
+const LANGUAGE_PREFERENCES = new Set<LanguagePreference>(["institution", "en", "de"]);
 const defaultContext: LocaleContextValue = {
   locale: "en",
   preference: "institution",
@@ -29,13 +30,17 @@ function resolveLocale(preference: LanguagePreference): Locale {
   return preference === "institution" ? getInstitutionLocale() : preference;
 }
 
+function isLanguagePreference(value: string | null): value is LanguagePreference {
+  return LANGUAGE_PREFERENCES.has(value as LanguagePreference);
+}
+
 export function LocaleProvider({ children }: { children: ReactNode }): JSX.Element {
   const [preference, setPreferenceState] = useState<LanguagePreference>("institution");
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
+    AsyncStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_ID)
       .then((saved) => {
-        if (saved === "institution" || saved === "en" || saved === "de") {
+        if (isLanguagePreference(saved)) {
           setPreferenceState(saved);
         }
       })
@@ -50,7 +55,7 @@ export function LocaleProvider({ children }: { children: ReactNode }): JSX.Eleme
       preference,
       setPreference: async (next) => {
         setPreferenceState(next);
-        await AsyncStorage.setItem(STORAGE_KEY, next);
+        await AsyncStorage.setItem(LANGUAGE_PREFERENCE_STORAGE_ID, next);
       },
       t: (key, values) => {
         const template = dictionary[key];

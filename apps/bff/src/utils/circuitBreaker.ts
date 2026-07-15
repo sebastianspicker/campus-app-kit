@@ -1,5 +1,12 @@
 type CircuitState = "closed" | "open" | "half_open";
 
+interface CircuitBreakerState {
+  currentState: CircuitState;
+  consecutiveFailures: number;
+  openedAt: number;
+  stateVersion: number;
+}
+
 export interface CircuitBreakerConfig {
   readonly name: string;
   readonly failureThreshold: number;
@@ -18,52 +25,83 @@ export interface CircuitBreaker {
   state(): CircuitState;
 }
 
+function transitionToOpen(state: CircuitBreakerState): void {
+  state.currentState = "open";
+  state.openedAt = Date.now();
+  state.stateVersion += 1;
+}
+
+function transitionToClosed(state: CircuitBreakerState): void {
+  state.currentState = "closed";
+  state.consecutiveFailures = 0;
+  state.stateVersion += 1;
+}
+
+function shouldAttemptProbe(state: CircuitBreakerState, config: CircuitBreakerConfig): boolean {
+  return state.currentState === "open" && Date.now() - state.openedAt >= config.cooldownMs;
+}
+
+function beginCall(state: CircuitBreakerState, config: CircuitBreakerConfig): { isProbe: boolean; callVersion: number } {
+  let isProbe = false;
+  if (state.currentState === "open") {
+    if (shouldAttemptProbe(state, config)) {
+      state.currentState = "half_open";
+      state.stateVersion += 1;
+      isProbe = true;
+    } else {
+      throw new CircuitOpenError(config.name);
+    }
+  }
+  if (!isProbe && state.currentState === "half_open") throw new CircuitOpenError(config.name);
+  return { isProbe, callVersion: state.stateVersion };
+}
+
+function handleSuccess(state: CircuitBreakerState, isProbe: boolean, callVersion: number): void {
+  if (state.stateVersion !== callVersion) return;
+  if (isProbe) {
+    transitionToClosed(state);
+  } else {
+    state.consecutiveFailures = 0;
+  }
+}
+
+function handleFailure(
+  state: CircuitBreakerState,
+  config: CircuitBreakerConfig,
+  isProbe: boolean,
+  callVersion: number
+): void {
+  if (state.stateVersion !== callVersion) return;
+  state.consecutiveFailures += 1;
+  if (isProbe || state.consecutiveFailures >= config.failureThreshold) transitionToOpen(state);
+}
+
+async function executeCircuitCall<T>(
+  state: CircuitBreakerState,
+  config: CircuitBreakerConfig,
+  fn: () => Promise<T>
+): Promise<T> {
+  const { isProbe, callVersion } = beginCall(state, config);
+  try {
+    const result = await fn();
+    handleSuccess(state, isProbe, callVersion);
+    return result;
+  } catch (err: unknown) {
+    handleFailure(state, config, isProbe, callVersion);
+    throw err;
+  }
+}
+
 export function createCircuitBreaker(config: CircuitBreakerConfig): CircuitBreaker {
-  let currentState: CircuitState = "closed";
-  let consecutiveFailures = 0;
-  let openedAt = 0;
-
-  function transitionToOpen(): void {
-    currentState = "open";
-    openedAt = Date.now();
-  }
-
-  function transitionToClosed(): void {
-    currentState = "closed";
-    consecutiveFailures = 0;
-  }
-
-  function shouldAttemptProbe(): boolean {
-    return currentState === "open" && Date.now() - openedAt >= config.cooldownMs;
-  }
-
-  async function call<T>(fn: () => Promise<T>): Promise<T> {
-    if (currentState === "open") {
-      if (shouldAttemptProbe()) {
-        currentState = "half_open";
-      } else {
-        throw new CircuitOpenError(config.name);
-      }
-    }
-
-    try {
-      const result = await fn();
-      transitionToClosed();
-      return result;
-    } catch (err: unknown) {
-      consecutiveFailures += 1;
-      if (
-        currentState === "half_open" ||
-        consecutiveFailures >= config.failureThreshold
-      ) {
-        transitionToOpen();
-      }
-      throw err;
-    }
-  }
+  const circuitState: CircuitBreakerState = {
+    currentState: "closed",
+    consecutiveFailures: 0,
+    openedAt: 0,
+    stateVersion: 0
+  };
 
   return {
-    call,
-    state: () => currentState,
+    call: (fn) => executeCircuitCall(circuitState, config, fn),
+    state: () => circuitState.currentState
   };
 }

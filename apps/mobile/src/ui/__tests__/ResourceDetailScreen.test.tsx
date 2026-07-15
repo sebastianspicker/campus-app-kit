@@ -34,4 +34,11 @@ describe("ResourceDetailScreen", () => {
     expect(TestRenderer.create(<ResourceDetailScreen {...base} loading={false} error="failed" item={null} />).root.findByProps({ "data-testid": "error" })).toBeDefined();
     expect(TestRenderer.create(<ResourceDetailScreen {...base} loading={false} item={null} />).root.findByProps({ "data-testid": "empty" }).props.children).toBe("Missing");
   });
+
+  it("prioritizes a valid item over a background loading or error state", () => {
+    const tree = TestRenderer.create(<ResourceDetailScreen {...base} loading error="failed" item={{ id: "1" }} />);
+    expect(tree.root.findAllByProps({ "data-testid": "loading" })).toHaveLength(0);
+    expect(tree.root.findAllByProps({ "data-testid": "error" })).toHaveLength(0);
+    expect(tree.root.findAllByType("span").map((node) => node.props.children).join(" ")).toContain("Public event");
+  });
 });

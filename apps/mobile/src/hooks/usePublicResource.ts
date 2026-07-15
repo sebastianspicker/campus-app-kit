@@ -39,34 +39,37 @@ export function usePublicResource<T>(
   const loaderRef = useRef(loader);
   loaderRef.current = loader;
 
-  const runLoad = useCallback(async (force: boolean) => {
+  const startLoad = useCallback((force: boolean) => {
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
 
-    try {
-      const result = await loaderRef.current({ force, signal: controller.signal });
-      if (!isCurrentRequest(mountedRef, controllerRef, controller)) return;
-      setData(result.data);
-      setSource(result.source);
-      setUpdatedAt(result.updatedAt);
-      setCacheAge(result.cacheAge);
-      setError(null);
-    } catch (err: unknown) {
-      if (!isCurrentRequest(mountedRef, controllerRef, controller)) return;
-      const uiError = toUiError(err);
-      if (uiError !== null) setError(uiError);
-    }
+    const promise = (async () => {
+      try {
+        const result = await loaderRef.current({ force, signal: controller.signal });
+        if (!isCurrentRequest(mountedRef, controllerRef, controller)) return;
+        setData(result.data);
+        setSource(result.source);
+        setUpdatedAt(result.updatedAt);
+        setCacheAge(result.cacheAge);
+        setError(null);
+      } catch (err: unknown) {
+        if (!isCurrentRequest(mountedRef, controllerRef, controller)) return;
+        const uiError = toUiError(err);
+        if (uiError !== null) setError(uiError);
+      }
+    })();
+    return { controller, promise };
   }, []);
 
   useEffect(() => {
     mountedRef.current = true;
     setLoading(true);
+    // A dependency-key change supersedes any refresh owned by the previous key.
+    setRefreshing(false);
 
-    const loadPromise = runLoad(false);
-    // Capture the controller that runLoad just created (set synchronously on its first line)
-    const controller = controllerRef.current;
-    loadPromise
+    const { controller, promise } = startLoad(false);
+    promise
       .catch(() => undefined)
       .finally(() => {
         if (mountedRef.current && controllerRef.current === controller) setLoading(false);
@@ -77,18 +80,19 @@ export function usePublicResource<T>(
       controllerRef.current?.abort();
       controllerRef.current = null;
     };
-    // Re-run when `key` changes (e.g. filter parameters changed)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runLoad, key]);
+  }, [startLoad, key]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
+    // A refresh owns the active request, including one started by the initial load.
+    setLoading(false);
+    const { controller, promise } = startLoad(true);
     try {
-      await runLoad(true);
+      await promise;
     } finally {
-      if (mountedRef.current) setRefreshing(false);
+      if (isCurrentRequest(mountedRef, controllerRef, controller)) setRefreshing(false);
     }
-  }, [runLoad]);
+  }, [startLoad]);
 
   return { data, error, loading, refreshing, refresh, source, updatedAt, cacheAge };
 }

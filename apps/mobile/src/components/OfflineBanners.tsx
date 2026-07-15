@@ -59,7 +59,8 @@ export function CachedDataBanner({
   cacheAge: number | null;
 }): JSX.Element {
   const theme = useTheme();
-  const ageText = cacheAge ? formatCacheAge(cacheAge) : "";
+  const { locale, t } = useLocale();
+  const ageText = cacheAge ? formatCacheAge(cacheAge, locale) : "";
 
   return (
     <View
@@ -69,7 +70,7 @@ export function CachedDataBanner({
       ]}
     >
       <Text style={[styles.text, { color: theme.colors.warning }]}>
-        Offline data{ageText ? ` (${ageText})` : ""}
+        {ageText ? t("cachedDataAge", { age: ageText }) : t("cachedData")}
       </Text>
     </View>
   );

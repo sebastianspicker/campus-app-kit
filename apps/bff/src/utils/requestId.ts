@@ -19,5 +19,5 @@ export function setRequestIdHeader(
   res: ServerResponse,
   requestId: string
 ): void {
-  res.setHeader("x-request-id", requestId);
+  if (!res.headersSent) res.setHeader("x-request-id", requestId);
 }

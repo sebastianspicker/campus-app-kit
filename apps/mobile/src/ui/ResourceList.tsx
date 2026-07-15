@@ -18,6 +18,7 @@ export type ResourceListProps<T> = {
   href: (item: T) => { pathname: string; params: Record<string, string> };
   renderCard: (item: T) => { title: string; subtitle?: string };
   accessibilityLabel: (item: T) => string;
+  onNavigate?: (item: T) => void;
   emptyMessage: string;
   emptyHint?: string;
   header?: React.ReactElement;
@@ -34,6 +35,7 @@ export function ResourceList<T>({
   href,
   renderCard,
   accessibilityLabel,
+  onNavigate,
   emptyMessage,
   emptyHint,
   header,
@@ -41,8 +43,8 @@ export function ResourceList<T>({
 }: ResourceListProps<T>): JSX.Element {
   const theme = useTheme();
   const renderItem = useCallback(({ item }: { item: T }) => (
-    <ResourceListItem item={item} href={href} renderCard={renderCard} accessibilityLabel={accessibilityLabel} />
-  ), [accessibilityLabel, href, renderCard]);
+    <ResourceListItem item={item} href={href} renderCard={renderCard} accessibilityLabel={accessibilityLabel} onNavigate={onNavigate} />
+  ), [accessibilityLabel, href, onNavigate, renderCard]);
 
   const empty = loading
     ? <SkeletonList count={6} />

@@ -43,7 +43,7 @@ export async function fetchPublicEvents(
 
   return getCached(
     cacheKey,
-    async (): Promise<FetchPublicEventsResult> => {
+    async (signal): Promise<FetchPublicEventsResult> => {
       if (mode === "mock") {
         // Mock mode is deterministic for tests and demos; real deployments
         // should keep PUBLIC_EVENTS_MODE unset so public sources are fetched.
@@ -68,7 +68,7 @@ export async function fetchPublicEvents(
       const timeZone = institution.timezone ?? DEFAULT_TIME_ZONE;
       const settledSources = await Promise.allSettled(
         sources.map(async (source: { url: string; label: string }) => {
-          const html = await getEventsBreaker(source.url).call(() => fetchTextWithTimeout(source.url));
+          const html = await getEventsBreaker(source.url).call(() => fetchTextWithTimeout(source.url, { signal }));
           return extractEventsFromHtml(html, source.url, timeZone);
         })
       );

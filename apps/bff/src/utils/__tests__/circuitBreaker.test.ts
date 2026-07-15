@@ -95,6 +95,18 @@ describe("CircuitBreaker", () => {
     expect(breaker.state()).toBe("open");
   });
 
+  it("admits exactly one half-open probe", async () => {
+    const breaker = createCircuitBreaker({ name: "test", failureThreshold: 1, cooldownMs: 5_000 });
+    await expect(breaker.call(() => Promise.reject(new Error("fail")))).rejects.toThrow();
+    vi.advanceTimersByTime(5_001);
+    let release!: () => void;
+    const probe = breaker.call(() => new Promise<string>((resolve) => { release = () => resolve("ok"); }));
+    await expect(breaker.call(() => Promise.resolve("must not run"))).rejects.toThrow(CircuitOpenError);
+    release();
+    await expect(probe).resolves.toBe("ok");
+    expect(breaker.state()).toBe("closed");
+  });
+
   it("success resets failure counter", async () => {
     const breaker = createCircuitBreaker({ name: "test", failureThreshold: 3, cooldownMs: 30_000 });
 

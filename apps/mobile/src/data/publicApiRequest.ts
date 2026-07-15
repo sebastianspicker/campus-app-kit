@@ -53,7 +53,8 @@ export async function getCachedJson<T>(
   if (options?.offlineMode) {
     const result = await fetchNetworkFirstWithFallback<T>(
       cacheKey,
-      async () => (await getJsonResult<T>(`${path}${queryString}`, (data) => safeParse(data, schema), { signal: options?.signal })).data
+      async () => (await getJsonResult<T>(`${path}${queryString}`, (data) => safeParse(data, schema), { signal: options?.signal })).data,
+      (value): value is T => schema.safeParse(value).success
     );
     return {
       data: result.data,

@@ -1,4 +1,4 @@
-type DateTimeParts = {
+export type DateTimeParts = {
   year: number;
   month: number;
   day: number;
@@ -38,7 +38,7 @@ function toPartsRecord(parts: Intl.DateTimeFormatPart[]): Record<string, string>
   }, {});
 }
 
-function getDateTimeParts(date: Date, timeZone: string): DateTimeParts {
+export function getDateTimePartsInTimeZone(date: Date, timeZone: string): DateTimeParts {
   const parts = toPartsRecord(getFormatter(timeZone).formatToParts(date));
   return {
     year: Number(parts.year),
@@ -55,16 +55,8 @@ function pad(value: number, size = 2): string {
 }
 
 function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
-  const parts = getDateTimeParts(date, timeZone);
-  const asUtc = Date.UTC(
-    parts.year,
-    parts.month - 1,
-    parts.day,
-    parts.hour,
-    parts.minute,
-    parts.second,
-    0
-  );
+  const parts = getDateTimePartsInTimeZone(date, timeZone);
+  const asUtc = utcMillisecondsFromParts(parts);
   return asUtc - date.getTime();
 }
 
@@ -74,7 +66,7 @@ export function getDateKeyInTimeZone(input: Date | string, timeZone: string): st
     throw new Error(`Invalid date value: ${String(input)}`);
   }
 
-  const parts = getDateTimeParts(date, timeZone);
+  const parts = getDateTimePartsInTimeZone(date, timeZone);
   return `${pad(parts.year, 4)}-${pad(parts.month)}-${pad(parts.day)}`;
 }
 
@@ -82,35 +74,51 @@ export function parseDateTimeInTimeZone(
   parts: DateTimeParts,
   timeZone: string
 ): string {
-  const targetUtc = Date.UTC(
-    parts.year,
-    parts.month - 1,
-    parts.day,
-    parts.hour,
-    parts.minute,
-    parts.second,
-    0
-  );
+  const targetWallTime = validatedUtcMillisecondsFromParts(parts);
+  const candidates = getLocalTimeCandidates(targetWallTime, timeZone);
+  const exactMatches = candidates
+    .filter((candidate) => candidate.wallTime === targetWallTime)
+    .sort((first, second) => first.instant - second.instant);
 
-  const candidateUtc = resolveCandidateUtc(targetUtc, timeZone);
-  const resolved = new Date(candidateUtc);
-  assertResolvedLocalTime(resolved, parts, timeZone);
-  return resolved.toISOString();
+  if (exactMatches.length > 0) {
+    // RFC 5545 requires the first occurrence when a local time is repeated
+    // during a backward offset transition.
+    return new Date(exactMatches[0].instant).toISOString();
+  }
+
+  const postGapCandidates = candidates
+    .filter((candidate) => candidate.wallTime > targetWallTime)
+    .sort((first, second) => first.wallTime - second.wallTime);
+  if (postGapCandidates.length > 0) {
+    // For a local time skipped by a forward transition, RFC 5545 applies the
+    // offset from before the gap. That candidate is the nearest wall time
+    // after the requested one.
+    return new Date(postGapCandidates[0].instant).toISOString();
+  }
+
+  throw new Error(`Invalid ${timeZone} local datetime`);
 }
 
-const MAX_TIME_ZONE_RESOLUTION_PASSES = 4;
+const OFFSET_PROBE_WINDOW_MS = 48 * 60 * 60 * 1000;
 
-function resolveCandidateUtc(targetUtc: number, timeZone: string): number {
-  let candidateUtc = targetUtc;
-  for (let i = 0; i < MAX_TIME_ZONE_RESOLUTION_PASSES; i += 1) {
-    const offsetMs = getTimeZoneOffsetMs(new Date(candidateUtc), timeZone);
-    const nextCandidateUtc = targetUtc - offsetMs;
-    if (nextCandidateUtc === candidateUtc) {
-      break;
-    }
-    candidateUtc = nextCandidateUtc;
+type LocalTimeCandidate = {
+  instant: number;
+  wallTime: number;
+};
+
+function getLocalTimeCandidates(targetWallTime: number, timeZone: string): LocalTimeCandidate[] {
+  const offsets = new Set<number>();
+  for (const delta of [-OFFSET_PROBE_WINDOW_MS, 0, OFFSET_PROBE_WINDOW_MS]) {
+    offsets.add(getTimeZoneOffsetMs(new Date(targetWallTime + delta), timeZone));
   }
-  return candidateUtc;
+
+  return [...offsets].map((offset) => {
+    const instant = targetWallTime - offset;
+    return {
+      instant,
+      wallTime: utcMillisecondsFromParts(getDateTimePartsInTimeZone(new Date(instant), timeZone))
+    };
+  });
 }
 
 function comparableParts(parts: DateTimeParts): string {
@@ -124,9 +132,26 @@ function comparableParts(parts: DateTimeParts): string {
   ].join(":");
 }
 
-function assertResolvedLocalTime(resolved: Date, parts: DateTimeParts, timeZone: string): void {
-  const resolvedParts = getDateTimeParts(resolved, timeZone);
-  if (comparableParts(resolvedParts) !== comparableParts(parts)) {
-    throw new Error(`Invalid ${timeZone} local datetime`);
+function utcMillisecondsFromParts(parts: DateTimeParts): number {
+  const date = new Date(0);
+  date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
+  date.setUTCHours(parts.hour, parts.minute, parts.second, 0);
+  return date.getTime();
+}
+
+function validatedUtcMillisecondsFromParts(parts: DateTimeParts): number {
+  const values = [parts.year, parts.month, parts.day, parts.hour, parts.minute, parts.second];
+  const date = new Date(utcMillisecondsFromParts(parts));
+  const normalized: DateTimeParts = {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    hour: date.getUTCHours(),
+    minute: date.getUTCMinutes(),
+    second: date.getUTCSeconds()
+  };
+  if (!values.every(Number.isInteger) || Number.isNaN(date.getTime()) || comparableParts(normalized) !== comparableParts(parts)) {
+    throw new Error("Invalid calendar datetime");
   }
+  return date.getTime();
 }

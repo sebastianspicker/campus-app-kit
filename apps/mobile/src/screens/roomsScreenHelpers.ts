@@ -1,12 +1,12 @@
 import { formatCampusId } from "@/utils/dateFormat";
-import { serializeRouteItem } from "@/utils/routeItem";
 import type { Room } from "@campus/shared";
+import type { TranslationKey } from "@/i18n/dictionaries";
 
 export function getRoomHref(room: Room): {
   pathname: "/rooms/[id]";
-  params: { id: string; item: string };
+  params: { id: string };
 } {
-  return { pathname: "/rooms/[id]", params: { id: room.id, item: serializeRouteItem(room) } };
+  return { pathname: "/rooms/[id]", params: { id: room.id } };
 }
 
 export function getRoomCard(room: Room): { title: string; subtitle?: string } {
@@ -16,16 +16,14 @@ export function getRoomCard(room: Room): { title: string; subtitle?: string } {
   };
 }
 
-export function getRoomAccessibilityLabel(room: Room): string {
-  return `${room.name}. ${room.campusId ? `Campus ${room.campusId}.` : ""}`;
+export function getRoomAccessibilityLabel(room: Room, campusLabel: string): string {
+  return `${room.name}. ${room.campusId ? `${campusLabel} ${room.campusId}.` : ""}`;
 }
 
-export function getRoomsEmptyMessage(search: string): string {
-  return search ? `No rooms matching "${search}"` : "No rooms available yet.";
+export function getRoomsEmptyMessage(search: string, t: (key: TranslationKey, values?: Record<string, string | number>) => string): string {
+  return search ? t("noMatchingRooms", { search }) : t("noRooms");
 }
 
-export function getRoomsEmptyHint(search: string): string {
-  return search
-    ? "Try a different search term or clear your search."
-    : "Room data is loaded from the institution config.";
+export function getRoomsEmptyHint(search: string, t: (key: TranslationKey) => string): string {
+  return t(search ? "searchEmptyHint" : "roomsEmptyHint");
 }

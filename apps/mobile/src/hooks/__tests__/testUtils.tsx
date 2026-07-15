@@ -25,6 +25,10 @@ export function renderHook<T>(hook: () => T): {
   return {
     getResult: () => current,
     flush,
-    unmount: () => renderer.unmount()
+    unmount: () => {
+      act(() => {
+        renderer.unmount();
+      });
+    }
   };
 }

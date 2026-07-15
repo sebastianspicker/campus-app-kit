@@ -3,21 +3,23 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const exportDirectory = join(tmpdir(), "campus-app-kit-playwright-web");
+const testOutputDirectory = process.env.CI
+  ? "test-results"
+  : join(tmpdir(), "campus-app-kit-playwright-results");
 
 export default defineConfig({
   testDir: "./apps/mobile/e2e-web",
-  outputDir: join(tmpdir(), "campus-app-kit-playwright-results"),
+  outputDir: testOutputDirectory,
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["line"], ["html", { outputFolder: "playwright-report", open: "never" }]] : "line",
   use: {
     baseURL: "http://127.0.0.1:8081",
-    channel: "chrome",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"], channel: "chrome" } },
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: [
     {

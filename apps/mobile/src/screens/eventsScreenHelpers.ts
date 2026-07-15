@@ -1,5 +1,6 @@
 import { formatEventDate } from "@/utils/dateFormat";
 import type { PublicEvent } from "@campus/shared";
+import type { TranslationKey } from "@/i18n/dictionaries";
 
 export type SortDirection = "asc" | "desc";
 
@@ -15,23 +16,21 @@ export function getEventHref(event: PublicEvent): { pathname: "/events/[id]"; pa
   return { pathname: "/events/[id]", params: { id: event.id } };
 }
 
-export function getEventCard(event: PublicEvent): { title: string; subtitle: string } {
+export function getEventCard(event: PublicEvent, locale: string, timeZone: string): { title: string; subtitle: string } {
   return {
     title: event.title,
-    subtitle: formatEventDate(event.date)
+    subtitle: formatEventDate(event.date, locale, timeZone)
   };
 }
 
-export function getEventAccessibilityLabel(event: PublicEvent): string {
-  return `${event.title}. ${formatEventDate(event.date)}.`;
+export function getEventAccessibilityLabel(event: PublicEvent, locale: string, timeZone: string): string {
+  return `${event.title}. ${formatEventDate(event.date, locale, timeZone)}.`;
 }
 
-export function getEventsEmptyMessage(search: string): string {
-  return search ? `No events matching "${search}"` : "No public events yet.";
+export function getEventsEmptyMessage(search: string, t: (key: TranslationKey, values?: Record<string, string | number>) => string): string {
+  return search ? t("noMatchingEvents", { search }) : t("noEvents");
 }
 
-export function getEventsEmptyHint(search: string): string {
-  return search
-    ? "Try a different search term or clear your search."
-    : "Pull down to refresh -- new events appear as they are published.";
+export function getEventsEmptyHint(search: string, t: (key: TranslationKey) => string): string {
+  return t(search ? "searchEmptyHint" : "eventsEmptyHint");
 }

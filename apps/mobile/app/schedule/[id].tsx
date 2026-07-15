@@ -1,31 +1,42 @@
 import { useLocalSearchParams } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { useSchedule } from "@/hooks/useSchedule";
 import { MetaRow } from "@/ui/MetaRow";
 import { ResourceDetailScreen } from "@/ui/ResourceDetailScreen";
 import { formatEventDate, formatScheduleTime } from "@/utils/dateFormat";
-import { parseRouteItem } from "@/utils/routeItem";
-import { ScheduleItemSchema, type ScheduleItem } from "@campus/shared";
 import { useLocale } from "@/i18n/LocaleContext";
+import { getInstitutionTimeZone } from "@/config/institution";
+import { reconcileSelectedDetailRecord, selectDetailRecord, selectedScheduleDetails } from "@/data/selectedDetailRecords";
 
 export default function ScheduleDetailScreen(): JSX.Element {
-  const { id, item } = useLocalSearchParams<{ id: string; item?: string }>();
-  const { data, loading, error, refreshing, refresh } = useSchedule();
-  const routedItem = parseRouteItem<ScheduleItem>(item, ScheduleItemSchema);
-  const scheduleItem = data?.schedule.find((entry) => entry.id === id) ?? (routedItem?.id === id ? routedItem : null);
-  const { t } = useLocale();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const state = useSchedule();
+  const collection = state.data?.schedule ?? null;
+  const scheduleItem = selectDetailRecord(
+    id,
+    collection,
+    state.source,
+    selectedScheduleDetails.get(id),
+    state.data?._degraded === true
+  );
+  const { locale, t } = useLocale();
+  const timeZone = getInstitutionTimeZone();
+
+  useEffect(() => {
+    reconcileSelectedDetailRecord(selectedScheduleDetails, id, collection, state.source, state.data?._degraded === true);
+  }, [collection, id, state.data?._degraded, state.source]);
 
   return (
     <ResourceDetailScreen
       title={t("schedule")}
-      loading={loading}
-      error={error}
+      loading={state.loading}
+      error={state.error}
       item={scheduleItem ?? null}
       notFoundMessage={t("errorNotFound")}
       cardTitle={scheduleItem ? scheduleItem.title : "Schedule item"}
       cardSubtitle={
         scheduleItem
-          ? formatScheduleTime(scheduleItem.startsAt)
+          ? formatScheduleTime(scheduleItem.startsAt, locale, timeZone)
           : `Schedule ID: ${id}`
       }
       renderMeta={
@@ -34,11 +45,11 @@ export default function ScheduleDetailScreen(): JSX.Element {
               <>
                 <MetaRow
                   label={t("starts")}
-                  value={formatEventDate(scheduleItem.startsAt)}
+                  value={formatEventDate(scheduleItem.startsAt, locale, timeZone)}
                 />
                 <MetaRow
                   label={t("ends")}
-                  value={scheduleItem.endsAt ? formatEventDate(scheduleItem.endsAt) : t("toBeAnnounced")}
+                  value={scheduleItem.endsAt ? formatEventDate(scheduleItem.endsAt, locale, timeZone) : t("toBeAnnounced")}
                 />
                 <MetaRow label={t("location")} value={scheduleItem.location ?? t("toBeAnnounced")} />
                 {scheduleItem.campusId ? (
@@ -49,8 +60,8 @@ export default function ScheduleDetailScreen(): JSX.Element {
             )
           : undefined
       }
-      refreshing={refreshing}
-      onRefresh={refresh}
+      refreshing={state.refreshing}
+      onRefresh={state.refresh}
     />
   );
 }

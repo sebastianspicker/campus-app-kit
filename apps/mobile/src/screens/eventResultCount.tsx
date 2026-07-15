@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text } from "react-native";
 import { typography } from "@/ui/theme";
 import { useTheme } from "@/ui/ThemeContext";
+import { useLocale } from "@/i18n/LocaleContext";
 
 const styles = StyleSheet.create({
   resultCount: {
@@ -20,11 +21,12 @@ export function EventResultCount({
   search: string;
 }): JSX.Element | null {
   const theme = useTheme();
+  const { t } = useLocale();
   if (loading) return null;
   return (
     <Text style={[styles.resultCount, { color: theme.colors.muted }]}>
-      {resultCount} {resultCount === 1 ? "event" : "events"}
-      {search ? ` for "${search}"` : ""}
+      {t(resultCount === 1 ? "eventResultCountOne" : "eventResultCountOther", { count: resultCount })}
+      {search ? `: ${search}` : ""}
     </Text>
   );
 }
