@@ -25,6 +25,12 @@ describe("formatScheduleTime", () => {
     const result = formatScheduleTime("2026-03-22T09:05:00.000Z", "en-GB");
     expect(result).toMatch(/\d{2}:\d{2}/);
   });
+
+  it("uses the configured campus timezone instead of the device timezone", () => {
+    const instant = "2026-07-14T07:00:00.000Z";
+    expect(formatScheduleTime(instant, "en-GB", "Europe/Berlin")).toBe("09:00");
+    expect(formatEventDate(instant, "en-GB", "Europe/Berlin")).toContain("09:00");
+  });
 });
 
 describe("formatDateOnly", () => {

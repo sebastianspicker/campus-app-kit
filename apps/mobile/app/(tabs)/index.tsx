@@ -7,6 +7,7 @@ import { useLocale } from "@/i18n/LocaleContext";
 import { TodayEventsSection } from "@/screens/todayEventsSection";
 import { ScheduleSection } from "@/screens/todayScheduleSection";
 import { getLocalDayRange, isScheduleUnavailable, sortScheduleItems, type SortDirection } from "@/screens/todayScreenHelpers";
+import { getInstitutionTimeZone } from "@/config/institution";
 import { Screen } from "@/ui/Screen";
 import { StatusBanner } from "@/ui/StatusBanner";
 import { spacing, typography } from "@/ui/theme";
@@ -17,7 +18,8 @@ export default function TodayScreen(): JSX.Element {
   const { locale } = useLocale();
   const { width } = useWindowDimensions();
   const todayState = useToday();
-  const scheduleFilter = getLocalDayRange();
+  const timeZone = getInstitutionTimeZone();
+  const scheduleFilter = getLocalDayRange(new Date(), timeZone);
   const scheduleState = useSchedule(scheduleFilter);
   const [scheduleSortDirection, setScheduleSortDirection] = useState<SortDirection>("asc");
   const scheduleUnavailable = isScheduleUnavailable(scheduleState.error);
@@ -28,6 +30,7 @@ export default function TodayScreen(): JSX.Element {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone,
   }).format(new Date());
 
   const refreshAll = useCallback(async () => {
@@ -43,17 +46,19 @@ export default function TodayScreen(): JSX.Element {
       <DegradedBanner visible={todayState.data?._degraded === true} />
       <View style={[styles.columns, width >= 900 && styles.columnsWide]}>
         <View style={styles.column}>
-          <TodayEventsSection loading={todayState.loading} error={todayState.error} events={events} onRetry={() => void refreshAll()} />
+          <TodayEventsSection loading={todayState.loading} error={todayState.error} events={events} source={todayState.source} onRetry={() => void refreshAll()} />
         </View>
         {!scheduleUnavailable ? (
           <View style={styles.column}>
             {scheduleState.source === "persisted-cache" ? <StatusBanner kind="cached" cacheAge={scheduleState.cacheAge} /> : null}
+            <DegradedBanner visible={scheduleState.data?._degraded === true} />
             <ScheduleSection
               sortDirection={scheduleSortDirection}
               onToggleSort={() => setScheduleSortDirection((value) => value === "asc" ? "desc" : "asc")}
               loading={scheduleState.loading}
               error={scheduleState.error}
               items={schedule}
+              source={scheduleState.source}
               onRetry={() => void refreshAll()}
             />
           </View>

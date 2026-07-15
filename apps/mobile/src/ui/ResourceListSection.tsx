@@ -17,6 +17,7 @@ export type ResourceListSectionProps<T> = {
   href: (item: T) => { pathname: string; params: Record<string, string> };
   renderCard: (item: T) => { title: string; subtitle?: string };
   accessibilityLabel: (item: T) => string;
+  onNavigate?: (item: T) => void;
   onRetry?: () => void;
   emptyIcon?: string;
   emptyHint?: string;
@@ -33,7 +34,7 @@ export function ResourceListSection<T>(props: ResourceListSectionProps<T>): JSX.
 }
 
 function ResourceListContent<T>(props: ResourceListSectionProps<T>): JSX.Element {
-  const { loading, error, items, emptyMessage, keyExtractor, href, renderCard, accessibilityLabel, onRetry, emptyIcon, emptyHint } = props;
+  const { loading, error, items, emptyMessage, keyExtractor, href, renderCard, accessibilityLabel, onNavigate, onRetry, emptyIcon, emptyHint } = props;
   if (loading) {
     return <SkeletonList count={3} />;
   }
@@ -61,6 +62,7 @@ function ResourceListContent<T>(props: ResourceListSectionProps<T>): JSX.Element
           href={href}
           renderCard={renderCard}
           accessibilityLabel={accessibilityLabel}
+          onNavigate={onNavigate}
         />
       ))}
     </>

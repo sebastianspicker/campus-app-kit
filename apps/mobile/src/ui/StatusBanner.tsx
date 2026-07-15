@@ -11,17 +11,30 @@ type StatusBannerProps = {
   message?: string;
 };
 
+const WARNING_BANNER_KINDS = new Set<StatusBannerProps["kind"]>(["cached", "degraded"]);
+
+type MessageContext = {
+  cacheAge: StatusBannerProps["cacheAge"];
+  locale: ReturnType<typeof useLocale>["locale"];
+  t: ReturnType<typeof useLocale>["t"];
+};
+
+function getDefaultMessage(kind: StatusBannerProps["kind"], context: MessageContext): string {
+  const messages: Record<StatusBannerProps["kind"], string> = {
+    cached: context.t("cachedDataAge", { age: formatCacheAge(context.cacheAge ?? 0, context.locale) }),
+    degraded: context.t("degradedData"),
+    info: context.t("loading")
+  };
+  return messages[kind];
+}
+
 export function StatusBanner({ kind, cacheAge, message }: StatusBannerProps): JSX.Element {
   const theme = useTheme();
-  const { t } = useLocale();
-  const isWarning = kind === "cached" || kind === "degraded";
+  const { locale, t } = useLocale();
+  const isWarning = WARNING_BANNER_KINDS.has(kind);
   const backgroundColor = isWarning ? theme.colors.warningSurface : theme.colors.infoSurface;
   const color = isWarning ? theme.colors.warning : theme.colors.info;
-  const defaultMessage = kind === "cached"
-    ? t("cachedDataAge", { age: formatCacheAge(cacheAge ?? 0) })
-    : kind === "degraded"
-      ? t("degradedData")
-      : t("loading");
+  const defaultMessage = getDefaultMessage(kind, { cacheAge, locale, t });
 
   return (
     <View

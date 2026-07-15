@@ -1,8 +1,23 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Mock AsyncStorage — it tries to access window in Node test env
+const asyncStorageMock = vi.hoisted(() => {
+  const values = new Map<string, string>();
+  return {
+    values,
+    failSet: false,
+    getItem: async (key: string) => values.get(key) ?? null,
+    setItem: async (key: string, value: string) => {
+      if (asyncStorageMock.failSet) throw new Error("storage write failed");
+      values.set(key, value);
+    },
+    removeItem: async (key: string) => { values.delete(key); },
+    getAllKeys: async () => [...values.keys()],
+    multiRemove: async (keys: readonly string[]) => { for (const key of keys) values.delete(key); }
+  };
+});
+
 vi.mock("@react-native-async-storage/async-storage", () => ({
-  default: null,
+  default: asyncStorageMock,
 }));
 
 import {
@@ -14,10 +29,12 @@ import {
   getCacheStats,
   isCacheStale,
 } from "../persistedCache";
+import { ApiErrorException } from "../../api/errors";
 
 describe("persistedCache", () => {
   afterEach(async () => {
     vi.useRealTimers();
+    asyncStorageMock.failSet = false;
     await clearPersistedCache();
   });
 
@@ -55,10 +72,20 @@ describe("persistedCache", () => {
     // Missing key is always stale
     expect(await isCacheStale("nonexistent", 3600000)).toBe(true);
   });
+
+  it("rejects entries dated beyond the permitted clock skew", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-20T12:00:00.000Z"));
+    await setPersistedCache("future-key", "data");
+
+    vi.setSystemTime(new Date("2026-04-20T00:00:00.000Z"));
+    expect(await getPersistedCache("future-key")).toBeNull();
+  });
 });
 
 describe("fetchNetworkFirstWithFallback", () => {
   afterEach(async () => {
+    asyncStorageMock.failSet = false;
     await clearPersistedCache();
   });
 
@@ -77,7 +104,7 @@ describe("fetchNetworkFirstWithFallback", () => {
     expect(cached).toBe("stored");
   });
 
-  it("falls back to cache on network failure", async () => {
+  it("falls back to cache on a transient network failure", async () => {
     // First: populate cache
     await setPersistedCache("fallback-key", { items: ["cached"] });
 
@@ -85,13 +112,25 @@ describe("fetchNetworkFirstWithFallback", () => {
     const result = await fetchNetworkFirstWithFallback<{ items: string[] }>(
       "fallback-key",
       async () => {
-        throw new Error("network error");
+        throw new TypeError("network error");
       }
     );
     expect(result.data).toEqual({ items: ["cached"] });
     expect(result.fromCache).toBe(true);
     expect(result.isOffline).toBe(true);
     expect(result.cacheAge).toBeGreaterThanOrEqual(0);
+  });
+
+  it("returns valid cached data when the offline-marker write fails", async () => {
+    await setPersistedCache("read-only-cache", { items: ["cached"] });
+    asyncStorageMock.failSet = true;
+
+    const result = await fetchNetworkFirstWithFallback("read-only-cache", async () => {
+      throw new TypeError("network error");
+    });
+
+    expect(result.data).toEqual({ items: ["cached"] });
+    expect(result.fromCache).toBe(true);
   });
 
   it("rejects stale cache on network failure", async () => {
@@ -103,7 +142,7 @@ describe("fetchNetworkFirstWithFallback", () => {
 
     await expect(
       fetchNetworkFirstWithFallback("expired-key", async () => {
-        throw new Error("offline");
+        throw new TypeError("offline");
       })
     ).rejects.toThrow("offline");
 
@@ -117,10 +156,35 @@ describe("fetchNetworkFirstWithFallback", () => {
       })
     ).rejects.toThrow("offline");
   });
+
+  it.each([
+    new ApiErrorException({ status: 409, code: "institution_mismatch", message: "wrong institution" }),
+    new ApiErrorException({ status: 502, code: "validation_error", message: "invalid response" }),
+    new ApiErrorException({ status: 404, code: "not_found", message: "missing" }),
+    Object.assign(new Error("cancelled"), { name: "AbortError" })
+  ])("never serves cached data for nonretryable failures", async (error) => {
+    await setPersistedCache("nonretryable-key", { items: ["cached"] });
+
+    await expect(fetchNetworkFirstWithFallback("nonretryable-key", async () => {
+      throw error;
+    })).rejects.toBe(error);
+  });
+
+  it("rejects and clears a structurally valid but schema-incompatible cache entry", async () => {
+    await setPersistedCache("invalid-schema-key", { value: "wrong" });
+    const schemaValidator = (value: unknown): value is { value: number } =>
+      typeof value === "object" && value !== null && typeof (value as { value?: unknown }).value === "number";
+
+    await expect(fetchNetworkFirstWithFallback("invalid-schema-key", async () => {
+      throw new TypeError("offline");
+    }, schemaValidator)).rejects.toThrow("offline");
+    expect(await getPersistedCache("invalid-schema-key")).toBeNull();
+  });
 });
 
 describe("getCacheStats", () => {
   afterEach(async () => {
+    asyncStorageMock.failSet = false;
     await clearPersistedCache();
   });
 

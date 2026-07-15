@@ -1,7 +1,7 @@
 import React from "react";
 import TestRenderer from "react-test-renderer";
 import { describe, expect, it, vi } from "vitest";
-import { ErrorState } from "../ErrorState";
+import { ErrorState, getErrorType } from "../ErrorState";
 
 vi.mock("expo-router", () => ({ useNavigation: () => ({ canGoBack: () => false, goBack: vi.fn() }) }));
 vi.mock("../ThemeContext", () => ({ useTheme: () => ({ colors: { text: "#17202A", muted: "#5C6873", accent: "#176B87", accentText: "#fff", border: "#777", error: "#A12027" }, ui: { fontScale: 1, controlScale: 1, borderWidth: 1, emphasisBorderWidth: 2 } }) }));
@@ -37,5 +37,11 @@ describe("ErrorState", () => {
     const button = tree.root.findByProps({ "aria-label": "Try again" });
     button.props.onClick();
     expect(retry).toHaveBeenCalledOnce();
+  });
+
+  it("infers headings centrally from typed UI errors", () => {
+    expect(getErrorType({ kind: "offline", messageKey: "errorOffline" })).toBe("network");
+    expect(getErrorType({ kind: "notFound", messageKey: "errorNotFound" })).toBe("notFound");
+    expect(getErrorType({ kind: "server", messageKey: "errorServer" })).toBe("generic");
   });
 });

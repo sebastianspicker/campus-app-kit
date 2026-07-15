@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act } from "react";
 import { renderHook } from "./testUtils";
 import { useToday } from "../useToday";
 import { clearCache } from "../../data/cache";
 import { clearPersistedCache } from "../../data/persistedCache";
 import { _resetBffBaseUrlMemoForTests } from "../../utils/bffConfig";
+import { getCampusDate } from "../../utils/campusTime";
+import { getInstitutionTimeZone } from "../../config/institution";
 
 const mockToday = {
   events: [
@@ -40,12 +43,7 @@ describe("useToday", () => {
 
   it("loads today", async () => {
     const { getResult, flush, unmount } = renderHook(useToday);
-    const now = new Date();
-    const expectedDate = [
-      now.getFullYear(),
-      String(now.getMonth() + 1).padStart(2, "0"),
-      String(now.getDate()).padStart(2, "0")
-    ].join("-");
+    const expectedDate = getCampusDate(new Date(), getInstitutionTimeZone());
 
     expect(getResult().loading).toBe(true);
     await flush();
@@ -54,6 +52,18 @@ describe("useToday", () => {
     expect(getResult().data?.events.length).toBe(1);
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]).toContain("/today");
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]).toContain(`date=${expectedDate}`);
+    unmount();
+  });
+
+  it("keys the request to the configured institution day", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-02-01T00:30:00.000Z"));
+    const { unmount } = renderHook(useToday);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]).toContain("date=2026-01-31");
     unmount();
   });
 });

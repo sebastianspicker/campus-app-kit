@@ -1,8 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useLocalSearchParams } from "expo-router";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Linking, Pressable, Share, StyleSheet, Text, View } from "react-native";
-import { PublicEventSchema, type PublicEvent } from "@campus/shared";
 import { useEvents } from "@/hooks/useEvents";
 import { useLocale } from "@/i18n/LocaleContext";
 import { MetaRow } from "@/ui/MetaRow";
@@ -10,33 +9,45 @@ import { ResourceDetailScreen } from "@/ui/ResourceDetailScreen";
 import { spacing, typography } from "@/ui/theme";
 import { useTheme } from "@/ui/ThemeContext";
 import { formatEventDate } from "@/utils/dateFormat";
-import { parseRouteItem } from "@/utils/routeItem";
+import { getInstitutionTimeZone } from "@/config/institution";
+import { reconcileSelectedDetailRecord, selectDetailRecord, selectedEventDetails } from "@/data/selectedDetailRecords";
 
 export default function EventDetailScreen(): JSX.Element {
-  const { id, item } = useLocalSearchParams<{ id: string; item?: string }>();
-  const routedEvent = parseRouteItem<PublicEvent>(item, PublicEventSchema);
+  const { id } = useLocalSearchParams<{ id: string }>();
   const state = useEvents();
-  const event = state.data?.events.find((entry) => entry.id === id) ?? (routedEvent?.id === id ? routedEvent : null);
+  const collection = state.data?.events ?? null;
+  const event = selectDetailRecord(
+    id,
+    collection,
+    state.source,
+    selectedEventDetails.get(id),
+    state.data?._degraded === true
+  );
   const theme = useTheme();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
+  const timeZone = getInstitutionTimeZone();
+
+  useEffect(() => {
+    reconcileSelectedDetailRecord(selectedEventDetails, id, collection, state.source, state.data?._degraded === true);
+  }, [collection, id, state.data?._degraded, state.source]);
 
   const share = useCallback(async () => {
     if (!event) return;
-    await Share.share({ message: `${event.title} - ${formatEventDate(event.date)}`, url: event.sourceUrl });
-  }, [event]);
+    await Share.share({ message: `${event.title} - ${formatEventDate(event.date, locale, timeZone)}`, url: event.sourceUrl });
+  }, [event, locale, timeZone]);
 
   return (
     <ResourceDetailScreen
       title={t("events")}
-      loading={event ? false : state.loading}
+      loading={state.loading}
       error={state.error}
       item={event}
       notFoundMessage={t("errorNotFound")}
       cardTitle={event?.title ?? String(id)}
-      cardSubtitle={event ? formatEventDate(event.date) : undefined}
+      cardSubtitle={event ? formatEventDate(event.date, locale, timeZone) : undefined}
       renderMeta={event ? () => (
         <>
-          <MetaRow label={t("date")} value={formatEventDate(event.date)} />
+          <MetaRow label={t("date")} value={formatEventDate(event.date, locale, timeZone)} />
           <MetaRow label={t("source")} value={event.sourceUrl} />
           <View style={styles.actions}>
             <Action icon="open-in-new" label={t("officialSource")} onPress={() => void Linking.openURL(event.sourceUrl)} role="link" />

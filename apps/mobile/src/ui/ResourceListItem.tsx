@@ -10,9 +10,10 @@ export type ResourceListItemProps<T> = {
   href: (item: T) => { pathname: string; params: Record<string, string> };
   renderCard: (item: T) => { title: string; subtitle?: string };
   accessibilityLabel: (item: T) => string;
+  onNavigate?: (item: T) => void;
 };
 
-function ResourceListItemInner<T>({ item, href, renderCard, accessibilityLabel }: ResourceListItemProps<T>): JSX.Element {
+function ResourceListItemInner<T>({ item, href, renderCard, accessibilityLabel, onNavigate }: ResourceListItemProps<T>): JSX.Element {
   const theme = useTheme();
   const content = renderCard(item);
   const navigating = useRef(false);
@@ -22,8 +23,9 @@ function ResourceListItemInner<T>({ item, href, renderCard, accessibilityLabel }
       return;
     }
     navigating.current = true;
+    onNavigate?.(item);
     setTimeout(() => { navigating.current = false; }, 500);
-  }, []);
+  }, [item, onNavigate]);
 
   return (
     <Link href={href(item)} onPress={handlePress} asChild>

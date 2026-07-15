@@ -1,26 +1,32 @@
 import { useLocalSearchParams } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { useRooms } from "@/hooks/useRooms";
 import { MetaRow } from "@/ui/MetaRow";
 import { ResourceDetailScreen } from "@/ui/ResourceDetailScreen";
-import { parseRouteItem } from "@/utils/routeItem";
-import { RoomSchema, type Room } from "@campus/shared";
 import { useLocale } from "@/i18n/LocaleContext";
+import { reconcileSelectedDetailRecord, selectDetailRecord, selectedRoomDetails } from "@/data/selectedDetailRecords";
 
 export default function RoomDetailScreen(): JSX.Element {
-  const { id, item } = useLocalSearchParams<{ id: string; item?: string }>();
-  const routedRoom = parseRouteItem<Room>(item, RoomSchema);
-  const hasRoutedItem = routedRoom?.id === id;
-  const { data, loading, error, refreshing, refresh } = useRooms();
-  const room = hasRoutedItem ? routedRoom : (data?.rooms.find((entry) => entry.id === id) ?? null);
-  const effectiveLoading = hasRoutedItem ? false : loading;
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const state = useRooms();
+  const collection = state.data?.rooms ?? null;
+  const room = selectDetailRecord(
+    id,
+    collection,
+    state.source,
+    selectedRoomDetails.get(id)
+  );
   const { t } = useLocale();
+
+  useEffect(() => {
+    reconcileSelectedDetailRecord(selectedRoomDetails, id, collection, state.source);
+  }, [collection, id, state.source]);
 
   return (
     <ResourceDetailScreen
       title={t("rooms")}
-      loading={effectiveLoading}
-      error={error}
+      loading={state.loading}
+      error={state.error}
       item={room ?? null}
       notFoundMessage={t("errorNotFound")}
       cardTitle={room ? room.name : `Room ID: ${id}`}
@@ -34,8 +40,8 @@ export default function RoomDetailScreen(): JSX.Element {
             )
           : undefined
       }
-      refreshing={refreshing}
-      onRefresh={refresh}
+      refreshing={state.refreshing}
+      onRefresh={state.refresh}
     />
   );
 }

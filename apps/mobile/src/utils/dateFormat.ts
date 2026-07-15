@@ -57,8 +57,8 @@ function getRelativeTimeUnit(diffMs: number): { unit: Intl.RelativeTimeFormatUni
  * @param locale - Optional locale override (e.g., "en", "de", "fr")
  * @returns Formatted date string (e.g., "24.02.2026, 14:30")
  */
-export function formatEventDate(date: string, locale?: string): string {
-  return new Date(date).toLocaleString(locale);
+export function formatEventDate(date: string, locale?: string, timeZone?: string): string {
+  return new Date(date).toLocaleString(locale, timeZone ? { timeZone } : undefined);
 }
 
 /**
@@ -69,10 +69,11 @@ export function formatEventDate(date: string, locale?: string): string {
  * @param locale - Optional locale override (e.g., "en", "de", "fr")
  * @returns Formatted time string (e.g., "14:30")
  */
-export function formatScheduleTime(date: string, locale?: string): string {
+export function formatScheduleTime(date: string, locale?: string, timeZone?: string): string {
   return new Date(date).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone,
   });
 }
 
@@ -124,7 +125,7 @@ export function formatRelativeTime(date: string, locale?: string): string {
   
   // Handle "now" case (within 60 seconds)
   if (Math.abs(diffMs) < 60000) {
-    return "now";
+    return getRelativeTimeFormatter(locale).format(0, "second");
   }
   
   const { unit, value } = getRelativeTimeUnit(diffMs);
@@ -148,7 +149,7 @@ export function formatShortRelativeTime(date: string, locale?: string): string {
   
   // Handle "now" case (within 60 seconds)
   if (Math.abs(diffMs) < 60000) {
-    return "now";
+    return getShortRelativeTimeFormatter(locale).format(0, "second");
   }
   
   const { unit, value } = getRelativeTimeUnit(diffMs);
@@ -184,9 +185,9 @@ export function isToday(date: string): boolean {
  * @param locale - Optional locale override (e.g., "en", "de", "fr")
  * @returns Formatted range string (e.g., "14:30 - 16:00")
  */
-export function formatTimeRange(start: string, end?: string, locale?: string): string {
-  const startTime = formatScheduleTime(start, locale);
+export function formatTimeRange(start: string, end?: string, locale?: string, timeZone?: string): string {
+  const startTime = formatScheduleTime(start, locale, timeZone);
   if (!end) return startTime;
-  const endTime = formatScheduleTime(end, locale);
+  const endTime = formatScheduleTime(end, locale, timeZone);
   return `${startTime} - ${endTime}`;
 }

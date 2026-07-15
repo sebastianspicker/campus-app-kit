@@ -19,6 +19,14 @@ export class HttpError extends Error {
   }
 }
 
+/** A timeout initiated by this client, distinct from a caller cancellation. */
+export class RequestTimeoutError extends Error {
+  constructor() {
+    super("Request timed out");
+    this.name = "RequestTimeoutError";
+  }
+}
+
 export type JsonResponse<T> = {
   data: T;
   headers: Headers;
@@ -58,17 +66,27 @@ export async function fetchJsonResponseWithTimeout<T>(
   assertClientHttpUrl(url);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
   const cleanup = linkAbortSignals(controller, init?.signal);
 
   try {
-    const response = await fetch(url, {
-      ...init,
-      signal: controller.signal
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...init,
+        signal: controller.signal
+      });
+    } catch (error) {
+      if (timedOut) throw new RequestTimeoutError();
+      throw error;
+    }
 
     if (!response.ok) {
-      const bffError = await parseBffError(response);
+      const bffError = await parseBffError(response, controller.signal);
       const message =
         bffError.code === "unknown_error"
           ? `Request failed (${response.status})`
@@ -87,12 +105,16 @@ export async function fetchJsonResponseWithTimeout<T>(
       return { data: {} as T, headers: response.headers };
     }
 
-    const text = await response.text();
+    const text = await abortableResponseRead(response.text(), controller.signal);
     if (!text) {
       return { data: {} as T, headers: response.headers };
     }
-
     return { data: JSON.parse(text) as T, headers: response.headers };
+  } catch (error: unknown) {
+    // Keep the timeout semantic through response-body reads as well as the
+    // initial header fetch. Caller cancellations remain AbortError.
+    if (timedOut) throw new RequestTimeoutError();
+    throw error;
   } finally {
     cleanup();
     clearTimeout(timeoutId);
@@ -109,16 +131,36 @@ function isErrorBody(body: unknown): body is { error: Record<string, unknown> } 
   );
 }
 
-export async function parseBffError(response: Response): Promise<BffError> {
+function abortableResponseRead<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(Object.assign(new Error("Aborted"), { name: "AbortError" }));
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(Object.assign(new Error("Aborted"), { name: "AbortError" }));
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(error);
+      }
+    );
+  });
+}
+
+export async function parseBffError(response: Response, signal?: AbortSignal): Promise<BffError> {
   try {
-    const body: unknown = await response.json();
+    const read = response.json();
+    const body: unknown = signal ? await abortableResponseRead(read, signal) : await read;
     if (isErrorBody(body)) {
       const code = typeof body.error.code === "string" ? body.error.code : "unknown_error";
       const message =
         typeof body.error.message === "string" ? body.error.message : "Unknown error";
       return { code, message };
     }
-  } catch {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "AbortError") throw error;
     // Non-JSON error pages still map to the generic client error below.
   }
 

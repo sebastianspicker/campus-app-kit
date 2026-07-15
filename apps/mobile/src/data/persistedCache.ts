@@ -1,4 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { z } from "zod";
+import { ApiErrorException } from "../api/errors";
+import { HttpError, RequestTimeoutError } from "../utils/fetchHelpers";
 
 type StorageLike = {
   getItem: (key: string) => Promise<string | null>;
@@ -16,6 +19,10 @@ export type CachedEntry<T> = {
   timestamp: number;
   isOffline?: boolean;
 };
+
+type CacheValidator<T> = (value: unknown) => value is T;
+
+const NON_RETRYABLE_ERROR_CODES = new Set(["institution_mismatch", "validation_error"]);
 
 // Public campus data is useful offline, but stale schedules/events can mislead
 // users. After this window, network errors should be surfaced instead.
@@ -54,18 +61,36 @@ async function getStorage(): Promise<StorageLike> {
   return fallbackStorage;
 }
 
-export async function getPersistedCache<T>(key: string): Promise<T | null> {
-  const entry = await getPersistedCacheEntry<T>(key);
+export async function getPersistedCache<T>(key: string, validator?: CacheValidator<T>): Promise<T | null> {
+  const entry = await getPersistedCacheEntry<T>(key, validator);
   return entry?.data ?? null;
 }
 
-export async function getPersistedCacheEntry<T>(key: string): Promise<CachedEntry<T> | null> {
+const CACHE_ENTRY_ENVELOPE_SCHEMA = z.object({
+  data: z.unknown(),
+  timestamp: z.number().finite().nonnegative(),
+  isOffline: z.boolean().optional(),
+}).refine((entry) => Object.hasOwn(entry, "data"), { message: "Cache entry data is required" })
+  .refine((entry) => entry.timestamp <= Date.now() + 5 * 60 * 1000, { message: "Cache entry timestamp is in the future" });
+
+function isCacheEntry<T>(value: unknown, validator?: CacheValidator<T>): value is CachedEntry<T> {
+  const envelope = CACHE_ENTRY_ENVELOPE_SCHEMA.safeParse(value);
+  if (!envelope.success) return false;
+  return validator ? validator(envelope.data.data) : true;
+}
+
+export async function getPersistedCacheEntry<T>(key: string, validator?: CacheValidator<T>): Promise<CachedEntry<T> | null> {
   const storage = await getStorage();
-  const raw = await storage.getItem(CACHE_STORAGE_NAMESPACE + key);
+  const storageKey = CACHE_STORAGE_NAMESPACE + key;
+  const raw = await storage.getItem(storageKey);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as CachedEntry<T>;
+    const parsed: unknown = JSON.parse(raw);
+    if (isCacheEntry<T>(parsed, validator)) return parsed;
+    await storage.removeItem(storageKey);
+    return null;
   } catch {
+    await storage.removeItem(storageKey).catch(() => undefined);
     return null;
   }
 }
@@ -145,15 +170,18 @@ export type OfflineFetchResult<T> = {
  */
 export async function fetchNetworkFirstWithFallback<T>(
   key: string,
-  loader: () => Promise<T>
+  loader: () => Promise<T>,
+  validator?: CacheValidator<T>
 ): Promise<OfflineFetchResult<T>> {
-  const cachedEntry = await getPersistedCacheEntry<T>(key);
-  const now = Date.now();
+  // Storage is an optional acceleration/offline layer. A read outage must not
+  // prevent a healthy network request from proceeding.
+  const cachedEntry = await getPersistedCacheEntry<T>(key, validator).catch(() => null);
 
   try {
     const freshData = await loader();
 
-    await setPersistedCache(key, freshData);
+    // A storage outage must not discard a successful network response.
+    await setPersistedCache(key, freshData).catch(() => undefined);
 
     return {
       data: freshData,
@@ -162,13 +190,13 @@ export async function fetchNetworkFirstWithFallback<T>(
       cacheAge: null
     };
   } catch (error: unknown) {
-    if (cachedEntry) {
-      const cacheAge = now - cachedEntry.timestamp;
+    if (cachedEntry && isTransientFailure(error)) {
+      const cacheAge = Math.max(0, Date.now() - cachedEntry.timestamp);
       if (cacheAge > OFFLINE_CACHE_MAX_AGE_MS) {
         throw error;
       }
 
-      await markCacheAsOffline<T>(key);
+      await markCacheAsOffline<T>(key).catch(() => undefined);
 
       return {
         data: cachedEntry.data,
@@ -180,6 +208,16 @@ export async function fetchNetworkFirstWithFallback<T>(
 
     throw error;
   }
+}
+
+function isRetryableResponseError(error: HttpError | ApiErrorException): boolean {
+  return !NON_RETRYABLE_ERROR_CODES.has(error.code) && (error.status === 429 || error.status >= 500);
+}
+
+function isTransientFailure(error: unknown): boolean {
+  if (error instanceof RequestTimeoutError || error instanceof TypeError) return true;
+  if (error instanceof HttpError || error instanceof ApiErrorException) return isRetryableResponseError(error);
+  return false;
 }
 
 export async function isOfflineData(key: string): Promise<boolean> {

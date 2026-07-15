@@ -1,21 +1,12 @@
 import { formatEventDate, formatRelativeTime, formatScheduleTime, formatTimeRange } from "@/utils/dateFormat";
-import { serializeRouteItem } from "@/utils/routeItem";
 import type { PublicEvent, ScheduleItem } from "@campus/shared";
 import type { UiError } from "@/api/uiError";
+import { getCampusDayRange } from "@/utils/campusTime";
 
 export type SortDirection = "asc" | "desc";
 
-export function getLocalDayRange(): { from: string; to: string } {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-
-  const end = new Date(start);
-  end.setHours(23, 59, 59, 999);
-
-  return {
-    from: start.toISOString(),
-    to: end.toISOString()
-  };
+export function getLocalDayRange(date: Date, timeZone: string): { from: string; to: string } {
+  return getCampusDayRange(date, timeZone);
 }
 
 export function isScheduleUnavailable(error: UiError | null): boolean {
@@ -45,35 +36,35 @@ export function sortScheduleItems(items: ScheduleItem[], direction: SortDirectio
   });
 }
 
-export function getEventCard(event: PublicEvent): { title: string; subtitle: string } {
+export function getEventCard(event: PublicEvent, locale: string, timeZone: string): { title: string; subtitle: string } {
   return {
     title: event.title,
-    subtitle: `${formatEventDate(event.date)} · ${formatRelativeTime(event.date)}`
+    subtitle: `${formatEventDate(event.date, locale, timeZone)} · ${formatRelativeTime(event.date, locale)}`
   };
 }
 
-export function getEventAccessibilityLabel(event: PublicEvent): string {
-  return `${event.title}. ${formatEventDate(event.date)}. ${formatRelativeTime(event.date)}.`;
+export function getEventAccessibilityLabel(event: PublicEvent, locale: string, timeZone: string): string {
+  return `${event.title}. ${formatEventDate(event.date, locale, timeZone)}. ${formatRelativeTime(event.date, locale)}.`;
 }
 
 export function getEventHref(event: PublicEvent): { pathname: "/events/[id]"; params: { id: string } } {
   return { pathname: "/events/[id]", params: { id: event.id } };
 }
 
-export function getScheduleCard(item: ScheduleItem): { title: string; subtitle: string } {
+export function getScheduleCard(item: ScheduleItem, locale: string, timeZone: string, toBeAnnounced: string): { title: string; subtitle: string } {
   return {
     title: item.title,
-    subtitle: `${formatTimeRange(item.startsAt, item.endsAt)} · ${item.location ?? "TBA"}`
+    subtitle: `${formatTimeRange(item.startsAt, item.endsAt, locale, timeZone)} · ${item.location ?? toBeAnnounced}`
   };
 }
 
-export function getScheduleAccessibilityLabel(item: ScheduleItem): string {
-  return `${item.title}. ${formatScheduleTime(item.startsAt)}. Location: ${item.location ?? "TBA"}.`;
+export function getScheduleAccessibilityLabel(item: ScheduleItem, locale: string, timeZone: string, location: string, toBeAnnounced: string): string {
+  return `${item.title}. ${formatScheduleTime(item.startsAt, locale, timeZone)}. ${location}: ${item.location ?? toBeAnnounced}.`;
 }
 
 export function getScheduleHref(item: ScheduleItem): {
   pathname: "/schedule/[id]";
-  params: { id: string; item: string };
+  params: { id: string };
 } {
-  return { pathname: "/schedule/[id]", params: { id: item.id, item: serializeRouteItem(item) } };
+  return { pathname: "/schedule/[id]", params: { id: item.id } };
 }

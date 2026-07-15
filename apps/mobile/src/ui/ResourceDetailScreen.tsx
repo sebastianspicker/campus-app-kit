@@ -7,6 +7,7 @@ import { Screen } from "./Screen";
 import { SkeletonDetail } from "./Skeleton";
 import { spacing, typography } from "./theme";
 import { useTheme } from "./ThemeContext";
+import { useLocale } from "../i18n/LocaleContext";
 
 export type ResourceDetailScreenProps<T> = {
   title: string;
@@ -25,14 +26,11 @@ export type ResourceDetailScreenProps<T> = {
 export function ResourceDetailScreen<T>(props: ResourceDetailScreenProps<T>): JSX.Element {
   const { loading, error, item, notFoundMessage, cardTitle, cardSubtitle, renderMeta, footnote, refreshing, onRefresh } = props;
   const theme = useTheme();
+  const { t } = useLocale();
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh} maxWidth={760} testID="detail-screen">
-      {loading ? <SkeletonDetail /> : error ? (
-        <ErrorState {...(typeof error === "string" ? { message: error } : { error })} onRetry={onRefresh} />
-      ) : !item ? (
-        <EmptyState message={notFoundMessage} hint="This information may have been removed or the link may be outdated." />
-      ) : (
+      {item ? (
         <View style={styles.layout}>
           <View style={[styles.heading, { borderBottomColor: theme.colors.border }]}>
             <Text selectable accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>{cardTitle}</Text>
@@ -41,7 +39,11 @@ export function ResourceDetailScreen<T>(props: ResourceDetailScreenProps<T>): JS
           {renderMeta ? <View style={[styles.meta, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>{renderMeta()}</View> : null}
           {footnote ? <Text selectable style={[styles.footnote, { color: theme.colors.muted }]}>{footnote}</Text> : null}
         </View>
-      )}
+      ) : loading ? <SkeletonDetail /> : error ? (
+        <ErrorState {...(typeof error === "string" ? { message: error } : { error })} onRetry={onRefresh} />
+      ) : !item ? (
+        <EmptyState message={notFoundMessage} hint={t("detailUnavailableHint")} />
+      ) : null}
     </Screen>
   );
 }
