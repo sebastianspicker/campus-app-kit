@@ -1,6 +1,8 @@
+/** Classifies legacy string and normalized errors into shared resource-error presentation types. */
 import { getErrorType, type ErrorType } from "./ErrorState";
 import type { UiError } from "../api/uiError";
 
+/** Detects a 404 separately so resource screens can offer accurate recovery copy. */
 export function detectResourceErrorType(error: string | UiError): ErrorType {
   if (typeof error !== "string") {
     return getErrorType(error);

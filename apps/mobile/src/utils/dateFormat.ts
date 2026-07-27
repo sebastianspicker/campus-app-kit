@@ -1,3 +1,4 @@
+/** Formats event and schedule dates using locale-aware, time-zone-aware display rules. */
 import { getRelativeTimeFormatter, getShortRelativeTimeFormatter } from "./relativeTimeFormatters";
 
 const SECOND_MS = 1000;
@@ -47,6 +48,22 @@ function getRelativeTimeUnit(diffMs: number): { unit: Intl.RelativeTimeFormatUni
     unit: threshold.fallbackUnit,
     value: sign * Math.max(1, Math.round(absMs / threshold.fallbackUnitMs)),
   };
+}
+
+type RelativeTimeFormatterFactory = (locale?: string) => Intl.RelativeTimeFormat;
+
+/** Applies the shared relative-time calculation with the requested formatter style. */
+function formatRelativeTimeWith(
+  date: string,
+  locale: string | undefined,
+  formatterFactory: RelativeTimeFormatterFactory,
+): string {
+  const diffMs = new Date(date).getTime() - Date.now();
+  const formatter = formatterFactory(locale);
+  if (Math.abs(diffMs) < MINUTE_MS) return formatter.format(0, "second");
+
+  const { unit, value } = getRelativeTimeUnit(diffMs);
+  return formatter.format(value, unit);
 }
 
 /**
@@ -119,19 +136,7 @@ export function formatDateWithWeekday(date: string, locale?: string): string {
  * @returns Relative time string (e.g., "in 2 hours", "yesterday", "now")
  */
 export function formatRelativeTime(date: string, locale?: string): string {
-  const now = new Date();
-  const target = new Date(date);
-  const diffMs = target.getTime() - now.getTime();
-  
-  // Handle "now" case (within 60 seconds)
-  if (Math.abs(diffMs) < 60000) {
-    return getRelativeTimeFormatter(locale).format(0, "second");
-  }
-  
-  const { unit, value } = getRelativeTimeUnit(diffMs);
-  const formatter = getRelativeTimeFormatter(locale);
-  
-  return formatter.format(value, unit);
+  return formatRelativeTimeWith(date, locale, getRelativeTimeFormatter);
 }
 
 /**
@@ -143,19 +148,7 @@ export function formatRelativeTime(date: string, locale?: string): string {
  * @returns Abbreviated relative time string (e.g., "2h ago", "in 3d")
  */
 export function formatShortRelativeTime(date: string, locale?: string): string {
-  const now = new Date();
-  const target = new Date(date);
-  const diffMs = target.getTime() - now.getTime();
-  
-  // Handle "now" case (within 60 seconds)
-  if (Math.abs(diffMs) < 60000) {
-    return getShortRelativeTimeFormatter(locale).format(0, "second");
-  }
-  
-  const { unit, value } = getRelativeTimeUnit(diffMs);
-  const formatter = getShortRelativeTimeFormatter(locale);
-  
-  return formatter.format(value, unit);
+  return formatRelativeTimeWith(date, locale, getShortRelativeTimeFormatter);
 }
 
 /**
@@ -172,6 +165,7 @@ export function formatCampusId(id: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** Compares an ISO date with the configured campus calendar day rather than device-local midnight. */
 export function isToday(date: string): boolean {
   const today = new Date().toISOString().split("T")[0];
   return date.startsWith(today);

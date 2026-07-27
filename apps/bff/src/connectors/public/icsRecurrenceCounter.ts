@@ -1,6 +1,9 @@
+/** Preflights the number of eligible recurring ICS events before expansion. */
+
 import { isRecurrenceEligible, parseIcsDate, type RecurrencePreflightOptions } from "./recurrence";
 import { forEachValidIcsEvent, type EventAccumulator } from "./icsEventStream";
 
+/** Counts recurrence candidates that can pass preflight without expanding them. */
 export function countRecurringEvents(ics: string, options: Omit<RecurrencePreflightOptions, "dtStart">): number {
   let count = 0;
   forEachValidIcsEvent(ics, (event) => {

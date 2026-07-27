@@ -1,3 +1,5 @@
+/** Verifies bounded text fetching, timeout, and response-size failures. */
+
 import { EventEmitter } from "node:events";
 import type { ClientRequest, IncomingMessage } from "node:http";
 import type { RequestOptions } from "node:https";

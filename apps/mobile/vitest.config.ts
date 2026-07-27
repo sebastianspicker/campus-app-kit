@@ -1,3 +1,4 @@
+/** Vitest configuration for the mobile unit-test environment. */
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({

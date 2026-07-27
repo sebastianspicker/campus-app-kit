@@ -1,3 +1,4 @@
+/** Verifies event and schedule display dates respect locale, campus time zone, and relative labels. */
 import { describe, expect, it } from "vitest";
 import {
   formatEventDate,

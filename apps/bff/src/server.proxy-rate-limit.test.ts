@@ -1,33 +1,30 @@
+/** Verifies proxy-aware client identities drive rate-limit isolation correctly. */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IncomingMessage, ServerResponse } from "node:http";
+import { createMockRequest, createMockResponse, restoreEnvironment } from "./__tests__/httpMocks";
 import { createTrustedProxyMatcher } from "./utils/trustedProxy";
 
 const matcher = createTrustedProxyMatcher(["10.24.0.0/16"]);
+type RequestListener = ReturnType<typeof import("./server").createRequestListener>;
 
-function request(forwardedFor: string, authorization?: string): IncomingMessage {
-  return {
-    headers: { "x-forwarded-for": forwardedFor, ...(authorization ? { authorization } : {}) },
-    method: "GET",
-    socket: { remoteAddress: "10.24.1.7" },
-    url: "/health"
-  } as unknown as IncomingMessage;
-}
-
-function response(): ServerResponse & { status: () => number } {
-  let statusCode = 200;
-  const value = {
-    headersSent: false,
-    writableEnded: false,
-    setHeader() { return value; },
-    writeHead(status: number) { statusCode = status; return value; },
-    end() { return value; },
-    status: () => statusCode
-  };
-  return value as unknown as ServerResponse & { status: () => number };
+function request(forwardedFor: string, authorization?: string) {
+  return createMockRequest("/health", "GET", { "x-forwarded-for": forwardedFor, ...(authorization ? { authorization } : {}) }, "10.24.1.7");
 }
 
 function chain(spoofedLeft: string, client: string): string {
   return `${spoofedLeft}, ${client}, 10.24.1.3`;
+}
+
+async function expectRotatingRequests(
+  listener: RequestListener,
+  authorization: string | undefined,
+  expectedStatus: number
+) {
+  for (let index = 0; index < 60; index += 1) {
+    const result = createMockResponse();
+    await listener(request(chain(`198.51.100.${index + 1}`, "203.0.113.10"), authorization), result.response);
+    expect(result.getStatus()).toBe(expectedStatus);
+  }
 }
 
 describe("configured proxy rate-limit composition", () => {
@@ -52,40 +49,29 @@ describe("configured proxy rate-limit composition", () => {
   afterEach(() => {
     clearRateLimitBuckets();
     vi.doUnmock("./config/env");
-    if (originalRequireAuth === undefined) delete process.env.BFF_REQUIRE_AUTH;
-    else process.env.BFF_REQUIRE_AUTH = originalRequireAuth;
-    if (originalAuthToken === undefined) delete process.env.BFF_AUTH_TOKEN;
-    else process.env.BFF_AUTH_TOKEN = originalAuthToken;
+    restoreEnvironment({ BFF_REQUIRE_AUTH: originalRequireAuth, BFF_AUTH_TOKEN: originalAuthToken });
   });
 
   it("keeps invalid-auth attempts in one resolved-client bucket despite rotating spoofed values", async () => {
     process.env.BFF_REQUIRE_AUTH = "true";
     process.env.BFF_AUTH_TOKEN = "expected";
     const listener = createRequestListener();
-    for (let index = 0; index < 60; index += 1) {
-      const result = response();
-      await listener(request(chain(`198.51.100.${index + 1}`, "203.0.113.10"), "Bearer wrong"), result);
-      expect(result.status()).toBe(401);
-    }
-    const blocked = response();
-    await listener(request(chain("198.51.100.250", "203.0.113.10"), "Bearer wrong"), blocked);
-    expect(blocked.status()).toBe(429);
+    await expectRotatingRequests(listener, "Bearer wrong", 401);
+    const blocked = createMockResponse();
+    await listener(request(chain("198.51.100.250", "203.0.113.10"), "Bearer wrong"), blocked.response);
+    expect(blocked.getStatus()).toBe(429);
   });
 
   it("keeps normal requests in one resolved-client bucket but separates distinct clients", async () => {
     delete process.env.BFF_REQUIRE_AUTH;
     const listener = createRequestListener();
-    for (let index = 0; index < 60; index += 1) {
-      const result = response();
-      await listener(request(chain(`198.51.100.${index + 1}`, "203.0.113.10")), result);
-      expect(result.status()).toBe(200);
-    }
-    const blocked = response();
-    await listener(request(chain("198.51.100.250", "203.0.113.10")), blocked);
-    expect(blocked.status()).toBe(429);
+    await expectRotatingRequests(listener, undefined, 200);
+    const blocked = createMockResponse();
+    await listener(request(chain("198.51.100.250", "203.0.113.10")), blocked.response);
+    expect(blocked.getStatus()).toBe(429);
 
-    const differentClient = response();
-    await listener(request(chain("198.51.100.250", "203.0.113.11")), differentClient);
-    expect(differentClient.status()).toBe(200);
+    const differentClient = createMockResponse();
+    await listener(request(chain("198.51.100.250", "203.0.113.11")), differentClient.response);
+    expect(differentClient.getStatus()).toBe(200);
   });
 });

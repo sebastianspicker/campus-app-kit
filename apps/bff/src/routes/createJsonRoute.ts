@@ -1,7 +1,8 @@
+/** Wraps data loaders in consistent JSON response, cache, logging, and error handling. */
+
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { z } from "zod";
-import { ZodError } from "zod";
-import { ErrorKind } from "@campus/shared";
+import { ZodError, type z } from "zod";
+import { ErrorKind } from "@concourse/shared";
 import type { InstitutionPack } from "../config/loader";
 import { sendJsonWithCache } from "../utils/httpCache";
 import { sendTypedError } from "../utils/errors";
@@ -13,6 +14,7 @@ type JsonRouteLoader = (institution: InstitutionPack, req: IncomingMessage) => P
 const NO_CONFIG_SOURCES_PREFIX = "NO_CONFIG_SOURCES:";
 const INVALID_QUERY_PARAM_PREFIX = "INVALID_QUERY_PARAM:";
 
+/** Applies optional data-derived headers before the route commits its JSON response. */
 function applyExtraHeaders<T>(res: ServerResponse, data: T, getExtraHeaders?: (data: T) => Record<string, string>): void {
   if (!getExtraHeaders) return;
   const extra = getExtraHeaders(data);
@@ -21,6 +23,7 @@ function applyExtraHeaders<T>(res: ServerResponse, data: T, getExtraHeaders?: (d
   }
 }
 
+/** Converts loader sentinel errors into their stable 404 or 400 public responses. */
 function sendExpectedRouteError(res: ServerResponse, requestId: string, error: Error): boolean {
   if (error.message.startsWith(NO_CONFIG_SOURCES_PREFIX)) {
     log("warn", "no_config_sources", { requestId, message: error.message });
@@ -39,6 +42,7 @@ function sendExpectedRouteError(res: ServerResponse, requestId: string, error: E
 
 const TIMEOUT_ERROR_NAMES = new Set(["AbortError", "TimeoutError", "RequestTimeoutError"]);
 
+/** Recognizes timeout-shaped failures and emits the shared retry-oriented timeout response. */
 function sendTimeoutRouteError(res: ServerResponse, requestId: string, error: Error): boolean {
   const normalizedMessage = error.message.toLowerCase();
   const isTimeout = TIMEOUT_ERROR_NAMES.has(error.name) || normalizedMessage.includes("timeout") || normalizedMessage.includes("timed out");
@@ -50,6 +54,7 @@ function sendTimeoutRouteError(res: ServerResponse, requestId: string, error: Er
 
 const VALIDATION_ERROR_CODE = "validation_error";
 
+/** Classifies validation, expected, timeout, and unknown failures without leaking internals. */
 function handleJsonRouteError(res: ServerResponse, requestId: string, err: unknown): void {
   if (err instanceof ZodError) {
     log("warn", VALIDATION_ERROR_CODE, { requestId, issues: err.issues });
@@ -69,6 +74,7 @@ function handleJsonRouteError(res: ServerResponse, requestId: string, err: unkno
   sendTypedError(res, ErrorKind.INTERNAL, "internal_error", "Something went wrong on our end. Please try again in a moment.");
 }
 
+/** Adapts a data loader into the BFF's request-ID, cache, and typed-error contract. */
 export function createJsonRoute<T>(
   loader: JsonRouteLoader,
   schema: z.ZodType<T>,

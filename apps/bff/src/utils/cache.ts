@@ -1,3 +1,5 @@
+/** Provides a bounded TTL cache with deduplicated in-flight loads. */
+
 import { log } from "./logger";
 
 type CacheEntry<T> = { value: T; expiresAt: number; lastAccessedAt: number };
@@ -27,6 +29,7 @@ let sweepInterval: ReturnType<typeof setInterval> | null = setInterval(() => {
 }, CLEANUP_INTERVAL_MS);
 if (sweepInterval && typeof sweepInterval.unref === "function") sweepInterval.unref();
 
+/** Evicts retained state before the configured memory cap can be exceeded. */
 function evictIfOverCap(): void {
   while (cache.size > MAX_CACHE_ENTRIES) {
     let oldestKey: string | null = null;
@@ -47,6 +50,10 @@ function evictIfOverCap(): void {
   }
 }
 
+/**
+ * Returns a cached value or shares one in-flight load; callers may reject
+ * successful values from caching without changing the returned result.
+ */
 export async function getCached<T>(key: string, loader: CacheLoader<T>, ttlMs: number, options?: { inFlightTimeoutMs?: number; force?: boolean; shouldCache?: (value: T) => boolean }): Promise<T> {
   const now = Date.now();
   if (!options?.force) {
@@ -82,6 +89,7 @@ export async function getCached<T>(key: string, loader: CacheLoader<T>, ttlMs: n
     return value;
   })();
 
+  /** Rejects the timeout race when the in-flight loader exceeds its deadline. */
   let timeoutReject: (reason: Error) => void = () => undefined;
   const timeout = new Promise<never>((_, reject) => {
     timeoutReject = reject;
@@ -109,6 +117,7 @@ export async function getCached<T>(key: string, loader: CacheLoader<T>, ttlMs: n
   return entry.promise as Promise<T>;
 }
 
+/** Clears one cached key or all values and in-flight loads when no key is supplied. */
 export function clearCache(key?: string): void {
   if (key) {
     cache.delete(key);
@@ -124,10 +133,12 @@ export function clearCache(key?: string): void {
   evictions = 0;
 }
 
+/** Returns cache counters for diagnostics without exposing cached values. */
 export function cacheStats(): CacheStats {
   return { size: cache.size, hits, misses, evictions };
 }
 
+/** Stops cache maintenance and releases all retained values during shutdown. */
 export function destroyCache(): void {
   if (sweepInterval !== null) {
     clearInterval(sweepInterval);

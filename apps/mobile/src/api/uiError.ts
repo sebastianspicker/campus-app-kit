@@ -1,3 +1,4 @@
+/** Maps transport and API failures into stable UI-facing error categories. */
 import { ApiErrorException } from "./errors";
 import { HttpError, RequestTimeoutError } from "../utils/fetchHelpers";
 import type { TranslationKey } from "../i18n/dictionaries";
@@ -35,14 +36,17 @@ const STATUS_ERROR_FACTORIES: Readonly<Record<number, ErrorFactory>> = {
   429: (retryAfterInSeconds) => ({ kind: "rateLimit", messageKey: "errorRateLimit", retryAfterInSeconds }),
 };
 
+/** Suppresses caller-requested cancellation rather than presenting it as a user-visible failure. */
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
 }
 
+/** Recognizes legacy transport timeout wording that is not represented by RequestTimeoutError. */
 function isTimeoutMessage(error: unknown): boolean {
   return error instanceof Error && /timeout|aborted/i.test(error.message);
 }
 
+/** Maps stable BFF error codes to translated, user-facing error presentation. */
 function fromCode(code: string, status: number, retryAfterInSeconds?: number): UiError {
   const factory = CODE_ERROR_FACTORIES[code] ?? STATUS_ERROR_FACTORIES[status];
   if (factory) return factory(retryAfterInSeconds);
@@ -50,6 +54,7 @@ function fromCode(code: string, status: number, retryAfterInSeconds?: number): U
   return { kind: "unknown", messageKey: "errorUnknown" };
 }
 
+/** Converts transport failures into stable, localized presentation categories without leaking internals. */
 export function toUiError(error: unknown): UiError | null {
   if (error instanceof RequestTimeoutError) return { kind: "timeout", messageKey: "errorTimeout" };
   if (isAbortError(error)) return null;

@@ -1,3 +1,4 @@
+/** Retains list selections so detail routes stay useful before their resource refresh completes. */
 import {
   PublicEventSchema,
   RoomSchema,
@@ -5,7 +6,7 @@ import {
   type PublicEvent,
   type Room,
   type ScheduleItem
-} from "@campus/shared";
+} from "@concourse/shared";
 import type { z } from "zod";
 
 type RecordWithId = { id: string };
@@ -19,6 +20,7 @@ export type SelectedRecordStore<T extends RecordWithId> = {
   clear: () => void;
 };
 
+/** Creates a per-route record map so a detail view survives collection refreshes. */
 function createSelectedRecordStore<T extends RecordWithId>(schema: z.ZodType<T>): SelectedRecordStore<T> {
   const records = new Map<string, T>();
   const missingIds = new Map<string, true>();
@@ -60,6 +62,7 @@ export const selectedEventDetails = createSelectedRecordStore<PublicEvent>(Publi
 export const selectedRoomDetails = createSelectedRecordStore<Room>(RoomSchema);
 export const selectedScheduleDetails = createSelectedRecordStore<ScheduleItem>(ScheduleItemSchema);
 
+/** Stores a list selection so a detail route can render immediately before a fresh response arrives. */
 export function selectDetailRecord<T extends RecordWithId>(
   id: string | undefined,
   collection: T[] | null,
@@ -76,6 +79,7 @@ export function selectDetailRecord<T extends RecordWithId>(
   return selected?.id === id ? selected : null;
 }
 
+/** Reconciles route state with the latest collection and clears records that no longer exist. */
 export function reconcileSelectedDetailRecord<T extends RecordWithId>(
   store: SelectedRecordStore<T>,
   id: string | undefined,
@@ -89,6 +93,7 @@ export function reconcileSelectedDetailRecord<T extends RecordWithId>(
   else if (!degraded) store.markMissing(id);
 }
 
+/** Clears selected detail records without disturbing unrelated stored state. */
 export function clearSelectedDetailRecords(): void {
   selectedEventDetails.clear();
   selectedRoomDetails.clear();

@@ -1,21 +1,36 @@
 # Deploy: BFF
 
+Build both BFF images from the repository root. The root `.dockerignore` keeps
+local dependencies, build/test output, internal tool state, environment files,
+and signing material out of the Docker context.
+
 ## Container build
 
-Build:
+The production image uses the repository's Node 22.13 baseline, runs as a
+non-root user under `dumb-init`, and reads its health-probe port from `BFF_PORT`.
+When bearer auth is enabled, the probe sends `BFF_AUTH_TOKEN`; it does not expose
+the token in the image definition.
+
+Build a local candidate with an explicit health version:
 
 ```bash
-docker build -f apps/bff/Dockerfile.prod -t campus-bff:local .
+docker build -f apps/bff/Dockerfile.prod \
+  --build-arg APP_VERSION=local \
+  -t campus-bff:local .
 ```
 
-Run:
+Run on the default port:
 
 ```bash
-docker run --rm -p 4000:4000 \\
-  -e INSTITUTION_ID=hfmt \\
-  -e BFF_PORT=4000 \\
+docker run --rm -p 4000:4000 \
+  -e INSTITUTION_ID=hfmt \
+  -e BFF_PORT=4000 \
   campus-bff:local
 ```
+
+To prove custom-port wiring, publish and request the same internal port, for
+example `-p 4100:4100 -e BFF_PORT=4100`. `GET /health` returns the embedded
+`APP_VERSION` and must answer before an image is published.
 
 ## Reverse proxies
 

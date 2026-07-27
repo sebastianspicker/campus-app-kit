@@ -1,3 +1,4 @@
+/** Verifies strict port parsing at both valid boundaries and malformed-input cases. */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 

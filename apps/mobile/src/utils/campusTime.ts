@@ -1,44 +1,17 @@
-type CampusDateParts = {
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
-  second: number;
-};
+/** Calculates campus-local dates and day boundaries across time-zone and DST transitions. */
+import {
+  getZonedDateTimeParts,
+  type ZonedDateTimeParts
+} from "@concourse/shared";
 
-const formatterCache = new Map<string, Intl.DateTimeFormat>();
+type CampusDateParts = ZonedDateTimeParts;
 
-function getFormatter(timeZone: string): Intl.DateTimeFormat {
-  const cached = formatterCache.get(timeZone);
-  if (cached) return cached;
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23",
-  });
-  formatterCache.set(timeZone, formatter);
-  return formatter;
-}
-
+/** Extracts numeric local date parts in the configured campus time zone. */
 function dateParts(date: Date, timeZone: string): CampusDateParts {
-  const values = getFormatter(timeZone).formatToParts(date);
-  const value = (type: Intl.DateTimeFormatPartTypes) => Number(values.find((part) => part.type === type)?.value);
-  return {
-    year: value("year"),
-    month: value("month"),
-    day: value("day"),
-    hour: value("hour"),
-    minute: value("minute"),
-    second: value("second"),
-  };
+  return getZonedDateTimeParts(date, timeZone);
 }
 
+/** Serializes campus date parts into the sortable ISO calendar-day key. */
 function dateKey(parts: CampusDateParts): string {
   return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
 }
@@ -46,10 +19,12 @@ function dateKey(parts: CampusDateParts): string {
 const HOUR_MS = 60 * 60 * 1000;
 const CAMPUS_BOUNDARY_SEARCH_RADIUS_MS = 48 * HOUR_MS;
 
+/** Tests a UTC instant against the desired campus calendar day during DST boundary searches. */
 function isTargetCampusDate(timestamp: number, targetKey: string, timeZone: string): boolean {
   return dateKey(dateParts(new Date(timestamp), timeZone)) === targetKey;
 }
 
+/** Binary-searches the first instant belonging to a campus-local calendar day. */
 function refineCampusDateBoundary(lower: number, upper: number, targetKey: string, timeZone: string): Date {
   while (upper - lower > 1) {
     const midpoint = lower + Math.floor((upper - lower) / 2);
@@ -59,6 +34,7 @@ function refineCampusDateBoundary(lower: number, upper: number, targetKey: strin
   return new Date(upper);
 }
 
+/** Finds a DST-safe UTC midnight by probing the local date before refining its boundary. */
 function startOfCampusDate(parts: CampusDateParts, timeZone: string): Date {
   const targetKey = dateKey(parts);
   const nominalUtc = Date.UTC(parts.year, parts.month - 1, parts.day);
@@ -72,6 +48,7 @@ function startOfCampusDate(parts: CampusDateParts, timeZone: string): Date {
   throw new Error(`Unable to resolve campus date ${targetKey} in ${timeZone}`);
 }
 
+/** Advances a calendar date in UTC without adding a fixed day length across DST changes. */
 function nextDateParts(parts: CampusDateParts): CampusDateParts {
   const next = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + 1));
   return {

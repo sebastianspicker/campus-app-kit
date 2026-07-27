@@ -1,3 +1,5 @@
+/** Verifies client-key selection across direct and proxied requests. */
+
 import type { IncomingMessage } from "node:http";
 import { describe, expect, it } from "vitest";
 import { getClientKey } from "../clientKey";

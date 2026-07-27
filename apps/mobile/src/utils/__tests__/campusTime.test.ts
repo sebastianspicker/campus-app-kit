@@ -1,3 +1,4 @@
+/** Verifies campus-day bounds remain correct across time zones and DST transitions. */
 import { describe, expect, it } from "vitest";
 import { getCampusDate, getCampusDayRange, millisecondsUntilNextCampusDay } from "../campusTime";
 

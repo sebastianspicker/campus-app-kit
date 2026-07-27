@@ -1,3 +1,5 @@
+/** Verifies request-ID validation, fallback generation, and response propagation. */
+
 import { describe, expect, it, vi } from "vitest";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { getRequestId, setRequestIdHeader } from "../requestId";

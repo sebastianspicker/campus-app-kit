@@ -1,3 +1,4 @@
+/** Verifies event, room, and schedule cards produce typed navigable detail routes. */
 import { describe, expect, it } from "vitest";
 
 import { getEventHref as getTodayEventHref, getScheduleHref } from "../todayScreenHelpers";

@@ -1,3 +1,5 @@
+/** Implements a small circuit breaker for unreliable upstream operations. */
+
 type CircuitState = "closed" | "open" | "half_open";
 
 interface CircuitBreakerState {
@@ -13,9 +15,11 @@ export interface CircuitBreakerConfig {
   readonly cooldownMs: number;
 }
 
+/** Signals that an upstream call was skipped while its circuit breaker is open. */
 export class CircuitOpenError extends Error {
+  /** Captures the breaker name so logs identify the unavailable upstream source. */
   constructor(circuitName: string) {
-    super(`Circuit breaker "${circuitName}" is open — request rejected`);
+    super(`Circuit breaker "${circuitName}" is open: request rejected`);
     this.name = "CircuitOpenError";
   }
 }
@@ -25,22 +29,26 @@ export interface CircuitBreaker {
   state(): CircuitState;
 }
 
+/** Opens the breaker and starts its cooldown after the failure threshold is reached. */
 function transitionToOpen(state: CircuitBreakerState): void {
   state.currentState = "open";
   state.openedAt = Date.now();
   state.stateVersion += 1;
 }
 
+/** Closes the breaker and resets failure counters after a successful probe. */
 function transitionToClosed(state: CircuitBreakerState): void {
   state.currentState = "closed";
   state.consecutiveFailures = 0;
   state.stateVersion += 1;
 }
 
+/** Permits one half-open probe only after cooldown and while no probe is active. */
 function shouldAttemptProbe(state: CircuitBreakerState, config: CircuitBreakerConfig): boolean {
   return state.currentState === "open" && Date.now() - state.openedAt >= config.cooldownMs;
 }
 
+/** Starts a normal call or exclusive half-open probe and records its state version. */
 function beginCall(state: CircuitBreakerState, config: CircuitBreakerConfig): { isProbe: boolean; callVersion: number } {
   let isProbe = false;
   if (state.currentState === "open") {
@@ -56,6 +64,7 @@ function beginCall(state: CircuitBreakerState, config: CircuitBreakerConfig): { 
   return { isProbe, callVersion: state.stateVersion };
 }
 
+/** Resets a successful current call and closes the breaker when it was a probe. */
 function handleSuccess(state: CircuitBreakerState, isProbe: boolean, callVersion: number): void {
   if (state.stateVersion !== callVersion) return;
   if (isProbe) {
@@ -65,6 +74,7 @@ function handleSuccess(state: CircuitBreakerState, isProbe: boolean, callVersion
   }
 }
 
+/** Opens the breaker only for the current call after its failure threshold is reached. */
 function handleFailure(
   state: CircuitBreakerState,
   config: CircuitBreakerConfig,
@@ -76,6 +86,7 @@ function handleFailure(
   if (isProbe || state.consecutiveFailures >= config.failureThreshold) transitionToOpen(state);
 }
 
+/** Runs one protected operation and commits its outcome only if its state version remains current. */
 async function executeCircuitCall<T>(
   state: CircuitBreakerState,
   config: CircuitBreakerConfig,
@@ -92,6 +103,7 @@ async function executeCircuitCall<T>(
   }
 }
 
+/** Creates a breaker that fast-fails after repeated failures until cooldown permits a probe. */
 export function createCircuitBreaker(config: CircuitBreakerConfig): CircuitBreaker {
   const circuitState: CircuitBreakerState = {
     currentState: "closed",

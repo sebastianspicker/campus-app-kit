@@ -1,29 +1,10 @@
+# Main source-alpha gate: install, static checks, tests, builds, and browser/service E2E.
 name: ci
 
 on:
   push:
     branches: [main, dev]
-    paths-ignore:
-      - 'AGENTS.md'
-      - 'archive/**'
-      - 'docs/archive/**'
-      - 'node_modules/**'
-      - 'vendor/**'
-      - 'third_party/**'
-      - 'third-party/**'
-      - '3rdparty/**'
-      - 'external/**'
   pull_request:
-    paths-ignore:
-      - 'AGENTS.md'
-      - 'archive/**'
-      - 'docs/archive/**'
-      - 'node_modules/**'
-      - 'vendor/**'
-      - 'third_party/**'
-      - 'third-party/**'
-      - '3rdparty/**'
-      - 'external/**'
 
 permissions:
   contents: read

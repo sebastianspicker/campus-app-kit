@@ -1,8 +1,13 @@
+/** Verifies request deadlines, cancellation, malformed bodies, and BFF error fallback parsing. */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchJsonWithTimeout, RequestTimeoutError } from "../fetchHelpers";
 import { toUiError } from "../../api/uiError";
 
 type FetchArgs = Parameters<typeof fetch>;
+
+function startAbortableRequest(external: AbortController) {
+  return fetchJsonWithTimeout("https://example.com", { signal: external.signal }, 50);
+}
 
 describe("fetchJsonWithTimeout", () => {
   beforeEach(() => {
@@ -39,11 +44,7 @@ describe("fetchJsonWithTimeout", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const external = new AbortController();
-    const promise = fetchJsonWithTimeout(
-      "https://example.com",
-      { signal: external.signal },
-      50
-    );
+    const promise = startAbortableRequest(external);
     const assertion = expect(promise).rejects.toBeInstanceOf(RequestTimeoutError);
 
     await vi.advanceTimersByTimeAsync(60);
@@ -58,7 +59,7 @@ describe("fetchJsonWithTimeout", () => {
     })) as unknown as typeof fetch);
     vi.stubGlobal("fetch", fetchMock);
     const external = new AbortController();
-    const promise = fetchJsonWithTimeout("https://example.com", { signal: external.signal }, 50);
+    const promise = startAbortableRequest(external);
     external.abort();
 
     await expect(promise).rejects.toMatchObject({ name: "AbortError" });

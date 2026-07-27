@@ -1,11 +1,16 @@
+/** Fetches bounded upstream text with timeout and abort-aware error handling. */
+
 import { lookup as dnsLookup } from "node:dns/promises";
 import { request as httpRequest, type ClientRequest, type IncomingMessage } from "node:http";
 import { request as httpsRequest, type RequestOptions } from "node:https";
 import { BlockList, isIP } from "node:net";
+import { raceWithAbort } from "@concourse/shared";
 
 import { assertSuccessfulResponse, MAX_RESPONSE_BYTES } from "./fetchResponse";
 
+/** Identifies an upstream request that exceeded its caller-configured deadline. */
 export class TimeoutError extends Error {
+  /** Records the target URL and timeout so callers can distinguish deadline failures. */
   constructor(url: string, timeoutMs: number) {
     super(`Request to ${url} timed out after ${timeoutMs}ms`);
     this.name = "TimeoutError";
@@ -18,6 +23,7 @@ type LookupResult = { address: string; family: number };
 type Lookup = (hostname: string, options: { all: true; verbatim: true }) => Promise<LookupResult[]>;
 type Request = (url: URL, options: RequestOptions, callback: (response: IncomingMessage) => void) => ClientRequest;
 type ResolvedPublicUrl = { parsed: URL; hostname: string; addresses: LookupResult[] };
+type ParsedPublicUrl = Omit<ResolvedPublicUrl, "addresses">;
 
 export interface FetchTextDependencies {
   lookup?: Lookup;
@@ -29,6 +35,7 @@ export interface FetchTextOptions {
   signal?: AbortSignal;
 }
 
+/** Lists loopback, private, and link-local IPv4 ranges forbidden to upstream fetches. */
 function createBlockedAddressList(): BlockList {
   const addresses = new BlockList();
   addresses.addSubnet("0.0.0.0", 8, "ipv4");
@@ -53,6 +60,7 @@ function createBlockedAddressList(): BlockList {
   return addresses;
 }
 
+/** Lists IPv6 ranges that are public-address candidates after blocked ranges are excluded. */
 function createPublicIpv6AddressList(): BlockList {
   const addresses = new BlockList();
   addresses.addSubnet("2000::", 3, "ipv6");
@@ -62,27 +70,14 @@ function createPublicIpv6AddressList(): BlockList {
 const blockedAddresses = createBlockedAddressList();
 const publicIpv6Addresses = createPublicIpv6AddressList();
 
-function normalizeHostname(hostname: string): string {
-  return hostname.toLowerCase().replaceAll("[", "").replaceAll("]", "");
-}
-
-function isDisallowedAddress(hostname: string): boolean {
-  const host = normalizeHostname(hostname);
-  const family = isIP(host);
-  if (host === "localhost") return true;
-  if (family === 4) return blockedAddresses.check(host, "ipv4");
-  if (family === 6) {
-    return !publicIpv6Addresses.check(host, "ipv6") || blockedAddresses.check(host, "ipv6");
-  }
-  return false;
-}
-
+/** Accepts DNS answers only when their address is not in a blocked network range. */
 function isValidPublicResult(result: LookupResult): boolean {
   const family = isIP(normalizeHostname(result.address));
   return family !== 0 && family === result.family && !isDisallowedAddress(result.address);
 }
 
-async function resolvePublicUrl(url: string, lookup: Lookup, signal: AbortSignal): Promise<ResolvedPublicUrl> {
+/** Accepts credential-free HTTP(S) URLs whose literal host is not local or private. */
+function parsePublicUrl(url: string): ParsedPublicUrl {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -93,7 +88,11 @@ async function resolvePublicUrl(url: string, lookup: Lookup, signal: AbortSignal
   if (parsed.username || parsed.password) throw new Error("Fetch URL must not include credentials");
   const hostname = normalizeHostname(parsed.hostname);
   if (isDisallowedAddress(hostname)) throw new Error("Fetch URL must target a public host");
+  return { parsed, hostname };
+}
 
+/** Resolves every DNS answer and rejects empty, malformed, mixed-private, or family-mismatched results. */
+async function resolvePublicAddresses(hostname: string, lookup: Lookup, signal: AbortSignal): Promise<LookupResult[]> {
   let addresses: LookupResult[];
   try {
     addresses = await abortable(lookup(hostname, { all: true, verbatim: true }), signal);
@@ -104,11 +103,19 @@ async function resolvePublicUrl(url: string, lookup: Lookup, signal: AbortSignal
   if (addresses.length === 0 || !addresses.every(isValidPublicResult)) {
     throw new Error("Fetch URL must target a public host");
   }
+  return addresses;
+}
+
+/** Combines URL validation with public DNS resolution for the later pinned request. */
+async function resolvePublicUrl(url: string, lookup: Lookup, signal: AbortSignal): Promise<ResolvedPublicUrl> {
+  const { parsed, hostname } = parsePublicUrl(url);
+  const addresses = await resolvePublicAddresses(hostname, lookup, signal);
   return { parsed, hostname, addresses };
 }
 
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
+/** Validates a bounded redirect location and refuses insecure or malformed targets. */
 function redirectTarget(response: IncomingMessage, currentUrl: URL, redirects: number): string | null {
   if (!REDIRECT_STATUSES.has(response.statusCode ?? 0)) return null;
   try {
@@ -122,11 +129,13 @@ function redirectTarget(response: IncomingMessage, currentUrl: URL, redirects: n
   }
 }
 
+/** Buffers a response stream up to the byte cap and tears it down on abort or overflow. */
 function readResponse(response: IncomingMessage, request: ClientRequest, signal: AbortSignal): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     let total = 0;
     const chunks: Buffer[] = [];
     let settled = false;
+    /** Settles body consumption once and detaches the shared abort listener. */
     const finish = (error?: Error) => {
       if (settled) return;
       settled = true;
@@ -134,6 +143,7 @@ function readResponse(response: IncomingMessage, request: ClientRequest, signal:
       if (error) reject(error);
       else resolve(Buffer.concat(chunks, total).toString("utf8"));
     };
+    /** Tears down both request streams when the caller cancels the fetch. */
     const onAbort = () => {
       const error = abortError();
       request.destroy(error);
@@ -162,6 +172,7 @@ function readResponse(response: IncomingMessage, request: ClientRequest, signal:
   });
 }
 
+/** Opens one non-pooled request pinned to a previously validated public address. */
 function requestText(
   parsed: URL,
   hostname: string,
@@ -173,6 +184,7 @@ function requestText(
     let clientRequest: ClientRequest | undefined;
     let response: IncomingMessage | undefined;
     let settled = false;
+    /** Settles connection setup exactly once after a response, error, or abort. */
     const finish = (error?: Error, value?: IncomingMessage) => {
       if (settled) return;
       settled = true;
@@ -180,6 +192,7 @@ function requestText(
       if (error) reject(error);
       else resolve({ request: clientRequest!, response: value! });
     };
+    /** Destroys partially opened connection resources on caller cancellation. */
     const onAbort = () => {
       const error = abortError();
       clientRequest?.destroy(error);
@@ -216,6 +229,7 @@ function requestText(
   });
 }
 
+/** Tries validated DNS results in order so one unreachable address does not fail the source. */
 async function requestFirstReachableAddress(
   parsed: URL,
   hostname: string,
@@ -236,6 +250,7 @@ async function requestFirstReachableAddress(
   throw lastError instanceof Error ? lastError : new Error("HTTP request failed for every resolved address");
 }
 
+/** Pins an HTTP request hostname to a DNS result already validated as public. */
 function pinnedLookup(expectedHostname: string, address: LookupResult): RequestOptions["lookup"] {
   return (hostname, _options, callback) => {
     if (normalizeHostname(hostname) !== expectedHostname) {
@@ -247,26 +262,25 @@ function pinnedLookup(expectedHostname: string, address: LookupResult): RequestO
   };
 }
 
+/** Creates the abort outcome used to stop pending work safely. */
 function abortError(): DOMException {
   return new DOMException("The operation was aborted", "AbortError");
 }
 
+/** Stops further upstream work immediately when the shared abort signal is set. */
 function throwIfAborted(signal: AbortSignal): void {
   if (signal.aborted) throw abortError();
 }
 
+/** Creates the abort outcome used to stop pending work safely. */
 function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
-  if (signal.aborted) return Promise.reject(abortError());
-  return new Promise<T>((resolve, reject) => {
-    const onAbort = () => reject(abortError());
-    signal.addEventListener("abort", onAbort, { once: true });
-    promise.then(
-      (value) => { signal.removeEventListener("abort", onAbort); resolve(value); },
-      (error: unknown) => { signal.removeEventListener("abort", onAbort); reject(error); }
-    );
-  });
+  return raceWithAbort(promise, signal, abortError);
 }
 
+/**
+ * Creates the bounded upstream-text fetch seam. It rejects unsafe targets,
+ * timeouts, oversized bodies, and non-success responses before returning text.
+ */
 export function createFetchTextWithTimeout(dependencies: FetchTextDependencies = {}) {
   const lookup: Lookup = dependencies.lookup ?? dnsLookup as Lookup;
   const http = dependencies.httpRequest ?? httpRequest as Request;
@@ -303,6 +317,21 @@ export function createFetchTextWithTimeout(dependencies: FetchTextDependencies =
       clearTimeout(timer);
     }
   };
+}
+
+/** Lowercases and removes enclosing IPv6 brackets before hostname policy and DNS checks. */
+function normalizeHostname(hostname: string): string {
+  return hostname.toLowerCase().replaceAll("[", "").replaceAll("]", "");
+}
+
+/** Blocks literal private, loopback, link-local, and other non-public target addresses. */
+function isDisallowedAddress(hostname: string): boolean {
+  const host = normalizeHostname(hostname);
+  const family = isIP(host);
+  if (host === "localhost") return true;
+  if (family === 4) return blockedAddresses.check(host, "ipv4");
+  if (family === 6) return !publicIpv6Addresses.check(host, "ipv6") || blockedAddresses.check(host, "ipv6");
+  return false;
 }
 
 export const fetchTextWithTimeout = createFetchTextWithTimeout();

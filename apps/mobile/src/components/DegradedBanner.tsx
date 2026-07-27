@@ -1,4 +1,4 @@
-import React from "react";
+/** Displays a compact warning when an upstream source returned incomplete data. */
 import { StatusBanner } from "../ui/StatusBanner";
 
 type Props = {

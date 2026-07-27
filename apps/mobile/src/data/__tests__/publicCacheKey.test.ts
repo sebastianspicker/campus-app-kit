@@ -1,3 +1,4 @@
+/** Verifies cache keys isolate API origins, institutions, endpoints, and canonical filters. */
 import { beforeEach, describe, expect, it } from "vitest";
 import { getPublicCacheKey, PUBLIC_CACHE_SCHEMA_VERSION } from "../publicCacheKey";
 import { _resetBffBaseUrlMemoForTests } from "../../utils/bffConfig";

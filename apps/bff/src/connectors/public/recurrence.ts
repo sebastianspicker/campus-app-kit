@@ -1,5 +1,8 @@
+/** Parses and expands ICS recurrence rules within explicit time and work budgets. */
+
 import { createHash } from "node:crypto";
 import { RRule, RRuleSet, rrulestr } from "rrule";
+import { utcDateFromParts } from "@concourse/shared";
 import {
   getDateTimePartsInTimeZone,
   parseDateTimeInTimeZone
@@ -37,6 +40,7 @@ export type RecurrencePreflightOptions = Pick<RecurrenceExpansionOptions, "dtSta
 
 const RRULE_PREFIX = "RRULE:";
 const EXPLICIT_BY_RULE_PART = /(?:^|;)BY[A-Z]+=/i;
+const ICS_DATE_TIME_PATTERN = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?(Z|[+-]\d{4}|[+-]\d{2}:\d{2})?$/;
 const FLOATING_DATE_TIME_PATTERN = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?$/;
 const UTC_UNTIL_PATTERN = /(?:^|;)UNTIL=[^;]+Z(?:;|$)/i;
 const MAX_RRULE_WORK_PER_EVENT = 10_000;
@@ -60,18 +64,21 @@ type CalendarParts = {
   second: number;
 };
 
+/** Rejects a timestamp string that the JavaScript date parser cannot represent. */
 function validIsoDate(dateValue: string, originalValue: string): string {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) throw new Error(`Invalid ICS date: ${originalValue}`);
   return date.toISOString();
 }
 
+/** Serializes every calendar and clock field for recurrence local-time comparisons. */
 function calendarPartsKey(parts: CalendarParts): string {
   return [parts.year, parts.month, parts.day, parts.hour, parts.minute, parts.second].join(":");
 }
 
+/** Rejects impossible month, day, hour, minute, or second values before conversion. */
 function validateDateParts(parts: CalendarParts): void {
-  const candidate = utcDateFromParts(parts.year, parts.month, parts.day, parts.hour, parts.minute, parts.second);
+  const candidate = utcDateFromParts(parts);
   const normalized: CalendarParts = {
     year: candidate.getUTCFullYear(),
     month: candidate.getUTCMonth() + 1,
@@ -86,71 +93,90 @@ function validateDateParts(parts: CalendarParts): void {
   }
 }
 
-function parseAllDayIcsDate(value: string): string | undefined {
-  if (!/^\d{8}$/.test(value)) return undefined;
-  validateDateParts({
-    year: Number(value.slice(0, 4)),
-    month: Number(value.slice(4, 6)),
-    day: Number(value.slice(6, 8)),
-    hour: 0,
-    minute: 0,
-    second: 0
-  });
-  return validIsoDate(`${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T00:00:00.000Z`, value);
-}
-
-function normalizeOffset(suffix: string): string {
-  return suffix.includes(":") ? suffix : `${suffix.slice(0, 3)}:${suffix.slice(3)}`;
-}
-
-export function parseIcsDate(value: string, timeZone?: string): string {
-  const allDayDate = parseAllDayIcsDate(value);
-  if (allDayDate) return allDayDate;
-
-  const match = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?(Z|[+-]\d{4}|[+-]\d{2}:\d{2})?$/);
-  if (!match) throw new Error(`Invalid ICS date: ${value}`);
-
-  const [, year, month, day, hour, minute, second = "00", suffix] = match;
-  validateDateParts({
+/** Converts numeric ICS date fields into a calendar value for validation and conversion. */
+function calendarPartsFromIcsValues(
+  year: string,
+  month: string,
+  day: string,
+  hour = "00",
+  minute = "00",
+  second = "00"
+): CalendarParts {
+  return {
     year: Number(year),
     month: Number(month),
     day: Number(day),
     hour: Number(hour),
     minute: Number(minute),
     second: Number(second)
-  });
+  };
+}
+
+/** Parses an all-day ICS value only when it contains a valid calendar date. */
+function parseAllDayIcsDate(value: string): string | undefined {
+  if (!/^\d{8}$/.test(value)) return undefined;
+  const [year, month, day] = [value.slice(0, 4), value.slice(4, 6), value.slice(6, 8)];
+  validateDateParts(calendarPartsFromIcsValues(year, month, day));
+  return validIsoDate(`${year}-${month}-${day}T00:00:00.000Z`, value);
+}
+
+/** Normalizes RFC offset text into the form accepted by the date parser. */
+function normalizeOffset(suffix: string): string {
+  return suffix.includes(":") ? suffix : `${suffix.slice(0, 3)}:${suffix.slice(3)}`;
+}
+
+/** Resolves a validated ICS clock value according to its suffix or declared zone. */
+function resolveIcsDateTime(
+  dateTime: string,
+  parts: CalendarParts,
+  suffix: string | undefined,
+  timeZone: string | undefined,
+  originalValue: string,
+): string {
+  if (suffix === "Z") return validIsoDate(`${dateTime}.000Z`, originalValue);
+  if (suffix) return validIsoDate(`${dateTime}${normalizeOffset(suffix)}`, originalValue);
+  if (timeZone) return parseDateTimeInTimeZone(parts, timeZone);
+  return validIsoDate(`${dateTime}.000Z`, originalValue);
+}
+
+/** Converts an ICS date or timestamp to an ISO instant, validating calendar values first. */
+export function parseIcsDate(value: string, timeZone?: string): string {
+  const allDayDate = parseAllDayIcsDate(value);
+  if (allDayDate) return allDayDate;
+
+  const match = value.match(ICS_DATE_TIME_PATTERN);
+  if (!match) throw new Error(`Invalid ICS date: ${value}`);
+
+  const year = match[1];
+  const month = match[2];
+  const day = match[3];
+  const hour = match[4];
+  const minute = match[5];
+  const second = match[6] ?? "00";
+  const suffix = match[7];
+  const parts = calendarPartsFromIcsValues(year, month, day, hour, minute, second);
+  validateDateParts(parts);
   const dateTime = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
-  if (suffix === "Z") return validIsoDate(`${dateTime}.000Z`, value);
-  if (suffix) return validIsoDate(`${dateTime}${normalizeOffset(suffix)}`, value);
-  if (timeZone) {
-    return parseDateTimeInTimeZone({
-      year: Number(year), month: Number(month), day: Number(day), hour: Number(hour), minute: Number(minute), second: Number(second)
-    }, timeZone);
-  }
-  return validIsoDate(`${dateTime}.000Z`, value);
+  return resolveIcsDateTime(dateTime, parts, suffix, timeZone, value);
 }
 
-function utcDateFromParts(year: number, month: number, day: number, hour: number, minute: number, second: number): Date {
-  const date = new Date(0);
-  date.setUTCFullYear(year, month - 1, day);
-  date.setUTCHours(hour, minute, second, 0);
-  return date;
-}
-
+/** Parses a floating ICS timestamp without applying a time-zone offset. */
 function floatingDateFromIcsValue(value: string): Date {
   const match = value.match(FLOATING_DATE_TIME_PATTERN);
   if (!match) throw new Error(`Invalid floating ICS date: ${value}`);
   const [, year, month, day, hour, minute, second = "00"] = match;
-  return utcDateFromParts(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second));
+  return utcDateFromParts(calendarPartsFromIcsValues(year, month, day, hour, minute, second));
 }
 
+/** Expresses an instant as a floating local clock value in the recurrence zone. */
 function instantToFloatingDate(instant: Date, timeZone: string): Date {
   const parts = getDateTimePartsInTimeZone(instant, timeZone);
-  const floating = utcDateFromParts(parts.year, parts.month, parts.day, parts.hour, parts.minute, parts.second);
+  const floating = utcDateFromParts(parts);
   floating.setUTCMilliseconds(instant.getUTCMilliseconds());
   return floating;
 }
 
+/** Interprets a floating recurrence clock value in its declared time zone. */
 function floatingDateToInstant(floating: Date, timeZone: string): Date {
   return new Date(parseDateTimeInTimeZone({
     year: floating.getUTCFullYear(), month: floating.getUTCMonth() + 1, day: floating.getUTCDate(),
@@ -158,16 +184,19 @@ function floatingDateToInstant(floating: Date, timeZone: string): Date {
   }, timeZone));
 }
 
+/** Selects the DTSTART zone that preserves the series local wall-clock time. */
 function recurrenceTimeZone(dtStart: IcsDateProperty): string | undefined {
   const timeZone = dtStart.params.TZID;
   return timeZone && FLOATING_DATE_TIME_PATTERN.test(dtStart.value) ? timeZone : undefined;
 }
 
+/** Saturates a work-product estimate just above the per-event recurrence budget. */
 function cappedWork(first: number, second: number): number {
   if (first === 0 || second === 0) return 0;
   return first > MAX_RRULE_WORK_PER_EVENT / second ? MAX_RRULE_WORK_PER_EVENT + 1 : first * second;
 }
 
+/** Estimates combinatorial BY-rule fan-out before recurrence expansion begins. */
 function explicitByValueMultiplier(rruleValue: string): number {
   return rruleValue.replace(/^RRULE:/i, "").split(";").reduce((multiplier, part) => {
     if (!part.match(/^BY[A-Z]+=/i)) return multiplier;
@@ -176,15 +205,18 @@ function explicitByValueMultiplier(rruleValue: string): number {
   }, 1);
 }
 
+/** Returns the fixed interval duration used for supported recurrence frequencies. */
 function frequencyMilliseconds(frequency: number): number {
   return FREQUENCY_MILLISECONDS[frequency] ?? 1000;
 }
 
+/** Estimates elapsed recurrence steps to bound work skipped before the window. */
 function recurrenceStepsBetween(start: Date, end: Date, rrule: RRule): number {
   if (end <= start) return 0;
   return Math.ceil((end.getTime() - start.getTime()) / frequencyMilliseconds(rrule.options.freq) / Math.max(1, rrule.options.interval));
 }
 
+/** Accepts only finite declared COUNT values that fit the expansion policy. */
 function isSupportedCount(declaredCount: number | null): boolean {
   return (declaredCount ?? 0) <= MAX_RRULE_WORK_PER_EVENT;
 }
@@ -200,6 +232,7 @@ type RecurrenceWorkInput = {
   budget: RecurrenceWorkBudget;
 };
 
+/** Estimates future generated instances while accounting for rule fan-out and COUNT. */
 function futureRecurrenceWork(input: RecurrenceWorkInput, multiplier: number, declaredCount: number | null): number {
   if (EXPLICIT_BY_RULE_PART.test(input.rruleValue)) {
     return cappedWork(recurrenceStepsBetween(input.fromDate, input.horizonDate, input.rrule), multiplier);
@@ -207,15 +240,18 @@ function futureRecurrenceWork(input: RecurrenceWorkInput, multiplier: number, de
   return Math.min(input.maxInstances, declaredCount ?? input.maxInstances);
 }
 
+/** Limits past-instance scanning so historical series cannot consume unbounded work. */
 function recurrencePastLimit(includePast: boolean, declaredCount: number | null, priorWork: number): number {
   if (!includePast) return 0;
   return Math.min(declaredCount ?? priorWork + 1, MAX_RRULE_WORK_PER_EVENT);
 }
 
+/** Checks and reserves shared recurrence work before a costly expansion step. */
 function canSpendRecurrenceWork(work: number, budget: RecurrenceWorkBudget): boolean {
   return work <= Math.min(MAX_RRULE_WORK_PER_EVENT, budget.remaining);
 }
 
+/** Derives the bounded number of pre-window candidates worth inspecting. */
 function pastCandidateLimit(input: RecurrenceWorkInput): number {
   const { rrule, rruleValue, startDate, fromDate, includePast, budget } = input;
   const declaredCount = rrule.options.count;
@@ -234,6 +270,7 @@ type ExdateParseInput = {
   recurrenceZone?: string;
 };
 
+/** Parses EXDATE values into excluded instants using their declared property zones. */
 function parseExdates(input: ExdateParseInput): Date[] {
   return input.properties.flatMap((property) => property.value.split(",").flatMap((part) => {
     try {
@@ -251,6 +288,7 @@ type RuleParseInput = {
   timeZone?: string;
 };
 
+/** Rejects rule sets and adjusts UTC UNTIL values for floating-zone evaluation. */
 function parseRule(input: RuleParseInput): RRule {
   const ruleString = input.ruleValue.startsWith(RRULE_PREFIX) ? input.ruleValue : `${RRULE_PREFIX}${input.ruleValue}`;
   const parsed = rrulestr(ruleString, { dtstart: input.startDate, tzid: null });
@@ -264,10 +302,12 @@ function parseRule(input: RuleParseInput): RRule {
   });
 }
 
+/** Returns the base event unchanged when recurrence expansion cannot proceed safely. */
 function fallback(baseEvent: ParsedIcsEvent, exdates: Date[], recurrenceStart: Date): ParsedIcsEvent[] {
   return exdates.some((exdate) => exdate.getTime() === recurrenceStart.getTime()) ? [] : [baseEvent];
 }
 
+/** Applies exception dates to the parsed rule before enumerating occurrences. */
 function occurrenceSource(rule: RRule, exdates: Date[]): RRule {
   if (exdates.length === 0) return rule;
   const set = new RRuleSet();
@@ -286,6 +326,7 @@ type OccurrenceWindow = {
   pastLimit: number;
 };
 
+/** Enumerates occurrences only inside the precomputed bounded recurrence window. */
 function expandOccurrences(window: OccurrenceWindow): Date[] {
   const { source, startDate, referenceDate, horizonDate, maxInstances, includePast, pastLimit } = window;
   const upcoming = startDate <= horizonDate && referenceDate <= horizonDate
@@ -297,12 +338,14 @@ function expandOccurrences(window: OccurrenceWindow): Date[] {
   return upcoming.concat(past.slice(-(maxInstances - upcoming.length)));
 }
 
+/** Derives a stable identifier for one expanded occurrence from its start instant. */
 function instanceId(baseId: string, startsAt: string): string {
   // This is intentionally local to recurrence expansion: the base id remains
   // stable while every expanded occurrence gets an independently routable key.
   return createHash("sha256").update(`${baseId}|${startsAt}`).digest("hex").slice(0, 16);
 }
 
+/** Maps recurrence instants to event copies while preserving duration and local time. */
 function mapOccurrences(baseEvent: ParsedIcsEvent, occurrences: Date[], timeZone?: string): ParsedIcsEvent[] {
   const duration = baseEvent.endsAt ? Date.parse(baseEvent.endsAt) - Date.parse(baseEvent.startsAt) : 0;
   return occurrences.sort((a, b) => a.getTime() - b.getTime()).map((occurrence) => {
@@ -327,6 +370,7 @@ type RecurrenceWindowContext = {
   horizonDate: Date;
 };
 
+/** Precomputes the horizon and work limits shared by recurrence preflight and expansion. */
 function recurrenceWindowContext(options: RecurrencePreflightOptions): RecurrenceWindowContext {
   const timeZone = recurrenceTimeZone(options.dtStart);
   const startDate = timeZone
@@ -341,6 +385,7 @@ function recurrenceWindowContext(options: RecurrencePreflightOptions): Recurrenc
   };
 }
 
+/** Checks whether a recurrence can be safely expanded within the supplied limits. */
 export function isRecurrenceEligible(ruleValue: string, options: RecurrencePreflightOptions): boolean {
   if (options.maxInstances === 0) return true;
   try {
@@ -362,6 +407,7 @@ export function isRecurrenceEligible(ruleValue: string, options: RecurrencePrefl
 }
 
 /** Expands a bounded RRULE with RFC 5545 timezone and EXDATE semantics. */
+/** Expands a recurrence without exceeding horizon, instance, or shared work budgets. */
 export function expandRecurringEvent(baseEvent: ParsedIcsEvent, ruleValue: string, options: RecurrenceExpansionOptions): ParsedIcsEvent[] {
   if (options.maxInstances === 0) return [];
   let startDate = new Date(baseEvent.startsAt);

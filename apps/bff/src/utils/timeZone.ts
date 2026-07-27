@@ -1,65 +1,30 @@
-export type DateTimeParts = {
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
-  second: number;
-};
+/** Converts dates and wall-clock values across validated IANA time zones. */
+import {
+  getZonedDateTimeParts,
+  type ZonedDateTimeParts,
+  utcDateFromParts,
+} from "@concourse/shared";
 
-const formatterCache = new Map<string, Intl.DateTimeFormat>();
+export type DateTimeParts = ZonedDateTimeParts;
 
-function getFormatter(timeZone: string): Intl.DateTimeFormat {
-  const cached = formatterCache.get(timeZone);
-  if (cached) {
-    return cached;
-  }
-
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23"
-  });
-  formatterCache.set(timeZone, formatter);
-  return formatter;
-}
-
-function toPartsRecord(parts: Intl.DateTimeFormatPart[]): Record<string, string> {
-  return parts.reduce<Record<string, string>>((acc, part) => {
-    if (part.type !== "literal") {
-      acc[part.type] = part.value;
-    }
-    return acc;
-  }, {});
-}
-
+/** Extracts calendar and clock fields for an instant in the requested IANA zone. */
 export function getDateTimePartsInTimeZone(date: Date, timeZone: string): DateTimeParts {
-  const parts = toPartsRecord(getFormatter(timeZone).formatToParts(date));
-  return {
-    year: Number(parts.year),
-    month: Number(parts.month),
-    day: Number(parts.day),
-    hour: Number(parts.hour),
-    minute: Number(parts.minute),
-    second: Number(parts.second)
-  };
+  return getZonedDateTimeParts(date, timeZone);
 }
 
+/** Left-pads date and time fields to their required fixed width. */
 function pad(value: number, size = 2): string {
   return String(value).padStart(size, "0");
 }
 
+/** Computes the zone offset by comparing formatted local fields with the same UTC instant. */
 function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
   const parts = getDateTimePartsInTimeZone(date, timeZone);
-  const asUtc = utcMillisecondsFromParts(parts);
+  const asUtc = utcDateFromParts(parts).getTime();
   return asUtc - date.getTime();
 }
 
+/** Produces the local YYYY-MM-DD key used to group events by institution date. */
 export function getDateKeyInTimeZone(input: Date | string, timeZone: string): string {
   const date = typeof input === "string" ? new Date(input) : input;
   if (Number.isNaN(date.getTime())) {
@@ -70,6 +35,7 @@ export function getDateKeyInTimeZone(input: Date | string, timeZone: string): st
   return `${pad(parts.year, 4)}-${pad(parts.month)}-${pad(parts.day)}`;
 }
 
+/** Parses an ICS-style wall-clock timestamp in its declared IANA zone. */
 export function parseDateTimeInTimeZone(
   parts: DateTimeParts,
   timeZone: string
@@ -106,6 +72,7 @@ type LocalTimeCandidate = {
   wallTime: number;
 };
 
+/** Finds UTC instants that map to a requested local wall time, including DST ambiguity. */
 function getLocalTimeCandidates(targetWallTime: number, timeZone: string): LocalTimeCandidate[] {
   const offsets = new Set<number>();
   for (const delta of [-OFFSET_PROBE_WINDOW_MS, 0, OFFSET_PROBE_WINDOW_MS]) {
@@ -116,11 +83,12 @@ function getLocalTimeCandidates(targetWallTime: number, timeZone: string): Local
     const instant = targetWallTime - offset;
     return {
       instant,
-      wallTime: utcMillisecondsFromParts(getDateTimePartsInTimeZone(new Date(instant), timeZone))
+      wallTime: utcDateFromParts(getDateTimePartsInTimeZone(new Date(instant), timeZone)).getTime()
     };
   });
 }
 
+/** Serializes local date-time fields for exact candidate comparison. */
 function comparableParts(parts: DateTimeParts): string {
   return [
     parts.year,
@@ -132,16 +100,10 @@ function comparableParts(parts: DateTimeParts): string {
   ].join(":");
 }
 
-function utcMillisecondsFromParts(parts: DateTimeParts): number {
-  const date = new Date(0);
-  date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
-  date.setUTCHours(parts.hour, parts.minute, parts.second, 0);
-  return date.getTime();
-}
-
+/** Rejects wall-clock fields that normalize to a different calendar instant. */
 function validatedUtcMillisecondsFromParts(parts: DateTimeParts): number {
   const values = [parts.year, parts.month, parts.day, parts.hour, parts.minute, parts.second];
-  const date = new Date(utcMillisecondsFromParts(parts));
+  const date = utcDateFromParts(parts);
   const normalized: DateTimeParts = {
     year: date.getUTCFullYear(),
     month: date.getUTCMonth() + 1,

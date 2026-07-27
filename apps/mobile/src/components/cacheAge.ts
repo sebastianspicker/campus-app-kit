@@ -1,3 +1,4 @@
+/** Formats cached-data age for localized offline-status messaging. */
 export function formatCacheAge(ms: number, locale = "en"): string {
   const minutes = Math.floor(ms / 60000);
   const hours = Math.floor(minutes / 60);

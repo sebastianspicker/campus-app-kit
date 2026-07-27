@@ -1,3 +1,4 @@
+/** Verifies Today distinguishes unavailable schedule data from cached or fresh resource states. */
 import React from "react";
 import TestRenderer from "react-test-renderer";
 import { describe, expect, it, vi } from "vitest";
@@ -23,7 +24,35 @@ vi.mock("@/i18n/LocaleContext", () => ({ useLocale: () => ({ locale: "en", t: (k
 vi.mock("@/config/institution", () => ({ getInstitutionTimeZone: () => "Europe/Berlin" }));
 vi.mock("@/ui/Screen", () => ({ Screen: ({ children }: { children: React.ReactNode }) => <main>{children}</main> }));
 vi.mock("@/ui/StatusBanner", () => ({ StatusBanner: () => <div data-testid="cached-banner" /> }));
-vi.mock("@/ui/ThemeContext", () => ({ useTheme: () => ({ colors: { text: "#000" } }) }));
+vi.mock("@/ui/ThemeContext", () => ({
+  useTheme: () => ({
+    colors: {
+      text: "#000",
+      muted: "#666",
+      border: "#ccc",
+      surface: "#fff",
+      signal: "#E8A800",
+      signalText: "#3A2A00",
+      inverseSurface: "#0B1424",
+      inverseText: "#fff",
+      success: "#176B45",
+      successSurface: "#EDF8F1",
+      warning: "#765100",
+      warningSurface: "#FFF5D7",
+      error: "#B42318",
+      errorSurface: "#FFF1F0",
+    },
+  }),
+}));
+vi.mock("@/components/ChromeStatusContext", () => ({
+  useSetChromeStatus: () => vi.fn(),
+}));
+vi.mock("expo-router", () => ({
+  useFocusEffect: (effect: () => void | (() => void)) => {
+    const cleanup = effect();
+    return typeof cleanup === "function" ? cleanup : undefined;
+  },
+}));
 vi.mock("@/screens/todayEventsSection", () => ({ TodayEventsSection: () => <div /> }));
 vi.mock("@/screens/todayScheduleSection", () => ({ ScheduleSection: () => <div /> }));
 

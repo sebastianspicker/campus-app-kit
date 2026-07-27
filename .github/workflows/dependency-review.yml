@@ -1,17 +1,8 @@
+# Blocks pull requests that introduce known vulnerabilities into the frozen lockfile.
 name: dependency-review
 
 on:
   pull_request:
-    paths-ignore:
-      - 'AGENTS.md'
-      - 'archive/**'
-      - 'docs/archive/**'
-      - 'node_modules/**'
-      - 'vendor/**'
-      - 'third_party/**'
-      - 'third-party/**'
-      - '3rdparty/**'
-      - 'external/**'
 
 permissions:
   actions: read

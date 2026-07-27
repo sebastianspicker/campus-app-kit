@@ -1,7 +1,7 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
-import type { InstitutionPack } from "./config/loader";
-import http from "node:http";
-import { loadInstitutionPack } from "./config/loader";
+/** Composes the BFF HTTP listener, middleware, routes, and startup lifecycle. */
+
+import http, { type IncomingMessage, type ServerResponse } from "node:http";
+import { loadInstitutionPack, type InstitutionPack } from "./config/loader";
 import { guardAuth, isInvalidAuthAttempt, validateAuthConfiguration } from "./middleware/authGuard";
 import { guardMethods } from "./middleware/methodGuard";
 import { handleEvents } from "./routes/events";
@@ -41,10 +41,12 @@ type InstitutionLoadFailure = {
   publicMessage: string;
 };
 
+/** Normalizes thrown primitives so downstream logging can rely on Error fields. */
 function normalizeError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
 }
 
+/** Maps an unknown institution to 404 and other configuration failures to a sanitized 500. */
 function getInstitutionLoadFailure(message: string): InstitutionLoadFailure {
   return message.includes("Unknown institutionId")
     ? {
@@ -59,6 +61,7 @@ function getInstitutionLoadFailure(message: string): InstitutionLoadFailure {
       };
 }
 
+/** Distinguishes successful data-route logs from completed non-success responses. */
 function getDataRouteLogEvent(statusCode: number): "data_route_ok" | "data_route_complete" {
   return statusCode >= 200 && statusCode < 400 ? "data_route_ok" : "data_route_complete";
 }
@@ -70,6 +73,7 @@ const DATA_ROUTES: Record<string, DataRouteHandler> = {
   "/today": handleToday
 };
 
+/** Resolves only the four public data paths to handlers, leaving health and 404 routing separate. */
 function getDataRouteHandler(
   pathname: string
 ): DataRouteHandler | undefined {
@@ -87,6 +91,7 @@ function getDataRouteHandler(
   }
 }
 
+/** Parses a relative request URL or commits a request-ID-bearing 400 response. */
 function parseRequestUrl(req: IncomingMessage, res: ServerResponse, requestId: string): URL | undefined {
   if (!req.url) {
     setRequestIdHeader(res, requestId);
@@ -103,11 +108,13 @@ function parseRequestUrl(req: IncomingMessage, res: ServerResponse, requestId: s
   }
 }
 
+/** Applies only CORS headers permitted by the deployment origin allowlist. */
 function applyCorsHeaders(req: IncomingMessage, res: ServerResponse): void {
   const cors = getCorsHeaders(req.headers.origin, BFF_ENV.corsOrigins);
   Object.entries(cors).forEach(([key, value]) => res.setHeader(key, value));
 }
 
+/** Loads the selected institution or converts configuration failures into public errors. */
 function loadInstitutionForRequest(res: ServerResponse, requestId: string): InstitutionPack | undefined {
   try {
     return loadInstitutionPack(BFF_ENV.institutionId);
@@ -125,6 +132,7 @@ function loadInstitutionForRequest(res: ServerResponse, requestId: string): Inst
   }
 }
 
+/** Adds institution identity, invokes the selected data route, and records its duration. */
 async function handleDataRoute(context: DataRouteContext): Promise<void> {
   const { dataHandler, req, res, requestId, path, startedAt } = context;
   const institution = loadInstitutionForRequest(res, requestId);
@@ -138,6 +146,7 @@ async function handleDataRoute(context: DataRouteContext): Promise<void> {
   log("info", getDataRouteLogEvent(res.statusCode), { requestId, path, durationMs, statusCode: res.statusCode });
 }
 
+/** Completes a CORS preflight without entering authentication or data-loading paths. */
 function handleOptionsRequest(res: ServerResponse, requestId: string): void {
   setRequestIdHeader(res, requestId);
   res.setHeader("Allow", "GET, OPTIONS");
@@ -145,6 +154,7 @@ function handleOptionsRequest(res: ServerResponse, requestId: string): void {
   res.end();
 }
 
+/** Sends a retryable 429 response with request identity and structured rate-limit logging. */
 function handleRateLimitExceeded(res: ServerResponse, requestId: string, path: string, retryAfter: number): void {
   setRequestIdHeader(res, requestId);
   res.setHeader("retry-after", String(retryAfter));
@@ -156,18 +166,21 @@ function handleRateLimitExceeded(res: ServerResponse, requestId: string, path: s
   });
 }
 
+/** Commits the stable 404 payload and records time spent before route resolution failed. */
 function handleNotFound(res: ServerResponse, requestId: string, startedAt: number): void {
   setRequestIdHeader(res, requestId);
   sendError(res, 404, "not_found", "Route not found");
   log("info", "not_found", { requestId, durationMs: Date.now() - startedAt });
 }
 
+/** Runs the local health handler and records latency under the ingress request ID. */
 async function handleHealthRoute(req: IncomingMessage, res: ServerResponse, requestId: string, startedAt: number): Promise<void> {
   setRequestIdHeader(res, requestId);
   await handleHealth(req, res);
   log("info", "health_ok", { requestId, durationMs: Date.now() - startedAt });
 }
 
+/** Logs an uncaught listener failure and ends the request with a sanitized 500 response. */
 function handleListenerError(res: ServerResponse, requestId: string, handlerErr: unknown): void {
   log("error", "handler_error", {
     requestId,
@@ -180,6 +193,7 @@ function handleListenerError(res: ServerResponse, requestId: string, handlerErr:
 
 const ALLOWED_METHODS = ["GET", "OPTIONS"];
 
+/** Limits rejected authentication attempts separately from ordinary route traffic. */
 const guardAuthAttemptRate = (req: IncomingMessage, res: ServerResponse, requestId: string, path: string, clientKey: string): boolean => {
   if (!isInvalidAuthAttempt(req)) return true;
 
@@ -189,6 +203,7 @@ const guardAuthAttemptRate = (req: IncomingMessage, res: ServerResponse, request
   return false;
 };
 
+/** Applies method and authentication guards before a route can perform work. */
 const guardRequestAccess = (req: IncomingMessage, res: ServerResponse, requestId: string, path: string): boolean => {
   const clientKey = getClientKey(req, {
     trustProxy: BFF_ENV.trustProxy,
@@ -214,6 +229,7 @@ const guardRequestAccess = (req: IncomingMessage, res: ServerResponse, requestId
   return true;
 };
 
+/** Dispatches a validated request while preserving request IDs and response ordering. */
 const dispatchRequest = async (req: IncomingMessage, res: ServerResponse, requestId: string, startedAt: number): Promise<void> => {
   const url = parseRequestUrl(req, res, requestId);
   if (!url) return;
@@ -242,6 +258,7 @@ const dispatchRequest = async (req: IncomingMessage, res: ServerResponse, reques
   handleNotFound(res, requestId, startedAt);
 };
 
+/** Creates the complete BFF listener after validating startup-only configuration. */
 export function createRequestListener(): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   return async (req, res): Promise<void> => {
     const startedAt = Date.now();
@@ -256,6 +273,7 @@ export function createRequestListener(): (req: IncomingMessage, res: ServerRespo
   };
 }
 
+/** Starts the configured HTTP listener and logs the resolved runtime settings. */
 export async function startServer(): Promise<void> {
   log("info", "server_starting", {
     port: BFF_ENV.port,
@@ -279,6 +297,7 @@ export async function startServer(): Promise<void> {
   });
 }
 
+/** Detects direct source or compiled execution without starting during imports and tests. */
 function isEntrypoint(): boolean {
   const entry = process.argv[1];
   return entry ? ["server.ts", "server.js"].includes(basename(entry)) : false;

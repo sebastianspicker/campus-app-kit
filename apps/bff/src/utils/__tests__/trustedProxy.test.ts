@@ -1,3 +1,5 @@
+/** Verifies trusted-proxy CIDR validation and matching. */
+
 import { describe, expect, it } from "vitest";
 import { createTrustedProxyMatcher, validateTrustedProxyRanges } from "../trustedProxy";
 

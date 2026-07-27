@@ -1,3 +1,4 @@
+/** Verifies persisted envelopes validate, expire, and retain offline fallback metadata. */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const asyncStorageMock = vi.hoisted(() => {
@@ -31,11 +32,16 @@ import {
 } from "../persistedCache";
 import { ApiErrorException } from "../../api/errors";
 
+const failingNetworkLoad = async (): Promise<never> => {
+  throw new TypeError("network error");
+};
+
 describe("persistedCache", () => {
   afterEach(async () => {
     vi.useRealTimers();
     asyncStorageMock.failSet = false;
     await clearPersistedCache();
+    asyncStorageMock.values.clear();
   });
 
   it("stores and retrieves data", async () => {
@@ -47,6 +53,37 @@ describe("persistedCache", () => {
   it("returns null for missing keys", async () => {
     const result = await getPersistedCache<string>("nonexistent");
     expect(result).toBeNull();
+  });
+
+  it("migrates a valid legacy cache entry after the new namespace is absent", async () => {
+    const legacyKey = "campus-app-kit:migration-key";
+    const currentKey = "concourse:migration-key";
+    asyncStorageMock.values.set(legacyKey, JSON.stringify({ data: "legacy", timestamp: Date.now() }));
+
+    expect(await getPersistedCache<string>("migration-key")).toBe("legacy");
+    expect(asyncStorageMock.values.get(currentKey)).toContain('"legacy"');
+    expect(asyncStorageMock.values.has(legacyKey)).toBe(false);
+  });
+
+  it("keeps the current namespace value when both cache namespaces exist", async () => {
+    await setPersistedCache("new-wins", "current");
+    asyncStorageMock.values.set(
+      "campus-app-kit:new-wins",
+      JSON.stringify({ data: "legacy", timestamp: Date.now() }),
+    );
+
+    expect(await getPersistedCache<string>("new-wins")).toBe("current");
+    expect(asyncStorageMock.values.has("campus-app-kit:new-wins")).toBe(true);
+  });
+
+  it("preserves a legacy cache entry when migration cannot write the new key", async () => {
+    const legacyKey = "campus-app-kit:write-failure";
+    asyncStorageMock.values.set(legacyKey, JSON.stringify({ data: "legacy", timestamp: Date.now() }));
+    asyncStorageMock.failSet = true;
+
+    expect(await getPersistedCache<string>("write-failure")).toBe("legacy");
+    expect(asyncStorageMock.values.has(legacyKey)).toBe(true);
+    expect(asyncStorageMock.values.has("concourse:write-failure")).toBe(false);
   });
 
   it("clears a specific key", async () => {
@@ -111,9 +148,7 @@ describe("fetchNetworkFirstWithFallback", () => {
     // Second: loader fails
     const result = await fetchNetworkFirstWithFallback<{ items: string[] }>(
       "fallback-key",
-      async () => {
-        throw new TypeError("network error");
-      }
+      failingNetworkLoad,
     );
     expect(result.data).toEqual({ items: ["cached"] });
     expect(result.fromCache).toBe(true);
@@ -125,9 +160,7 @@ describe("fetchNetworkFirstWithFallback", () => {
     await setPersistedCache("read-only-cache", { items: ["cached"] });
     asyncStorageMock.failSet = true;
 
-    const result = await fetchNetworkFirstWithFallback("read-only-cache", async () => {
-      throw new TypeError("network error");
-    });
+    const result = await fetchNetworkFirstWithFallback("read-only-cache", failingNetworkLoad);
 
     expect(result.data).toEqual({ items: ["cached"] });
     expect(result.fromCache).toBe(true);
@@ -172,6 +205,7 @@ describe("fetchNetworkFirstWithFallback", () => {
 
   it("rejects and clears a structurally valid but schema-incompatible cache entry", async () => {
     await setPersistedCache("invalid-schema-key", { value: "wrong" });
+    /** Rejects a cache entry whose value does not meet the test's numeric schema contract. */
     const schemaValidator = (value: unknown): value is { value: number } =>
       typeof value === "object" && value !== null && typeof (value as { value?: unknown }).value === "number";
 

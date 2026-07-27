@@ -1,5 +1,6 @@
+/** Verifies list selections survive refreshes until matching detail data is reconciled. */
 import { beforeEach, describe, expect, it } from "vitest";
-import type { PublicEvent, Room, ScheduleItem } from "@campus/shared";
+import type { PublicEvent, Room, ScheduleItem } from "@concourse/shared";
 import {
   clearSelectedDetailRecords,
   reconcileSelectedDetailRecord,

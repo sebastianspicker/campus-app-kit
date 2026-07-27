@@ -1,3 +1,5 @@
+/** Parses bounded ICS property parameters without trusting malformed metadata. */
+
 const MAX_ICS_PARAMETERS_PER_PROPERTY = 64;
 
 type ParsedIcsParams = {
@@ -11,6 +13,7 @@ type ParameterSegment = {
   value?: string;
 };
 
+/** Parses a bounded parameter list and reports overflow instead of accepting unbounded metadata. */
 export function parseIcsParams(rawParams: string): ParsedIcsParams {
   const params: Record<string, string> = {};
   let offset = 0;

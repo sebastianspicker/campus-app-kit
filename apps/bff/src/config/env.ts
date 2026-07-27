@@ -1,6 +1,11 @@
-import { createTrustedProxyMatcher, validateTrustedProxyRanges } from "../utils/trustedProxy";
+/** Validates and exposes the BFF's runtime environment contract. */
+
+import {
+  createTrustedProxyMatcher,
+  validateTrustedProxyRanges,
+  type TrustedProxyMatcher
+} from "../utils/trustedProxy";
 import type { TrustProxyMode } from "../utils/clientKey";
-import type { TrustedProxyMatcher } from "../utils/trustedProxy";
 
 export type { TrustProxyMode } from "../utils/clientKey";
 
@@ -15,6 +20,7 @@ export type BffEnv = {
   rruleExpansionHorizonDays: number;
 };
 
+/** Trims a required environment value and rejects missing or whitespace-only input. */
 function requireNonEmpty(value: string | undefined, name: string): string {
   const trimmed = value?.trim();
   if (!trimmed) {
@@ -25,6 +31,7 @@ function requireNonEmpty(value: string | undefined, name: string): string {
 
 const INTEGER_PATTERN = /^-?\d+$/;
 
+/** Accepts only a complete safe integer inside the caller-provided inclusive bounds. */
 function parseIntInRange(raw: string, name: string, min: number, max: number): number {
   const trimmed = raw.trim();
   if (!INTEGER_PATTERN.test(trimmed)) {
@@ -42,6 +49,7 @@ const TRUST_PROXY_VALUES: Record<string, TrustProxyMode> = {
   never: "never"
 };
 
+/** Normalizes the explicit proxy mode, defaulting to the fail-closed `never` policy. */
 function parseTrustProxy(value: string | undefined): TrustProxyMode {
   if (!value) return "never";
   const normalized = value.trim().toLowerCase();
@@ -52,6 +60,7 @@ function parseTrustProxy(value: string | undefined): TrustProxyMode {
 
 const DEFAULT_PORT = 4000;
 
+/** Uses port 4000 by default and translates invalid values into a setting-specific error. */
 function parsePort(raw: string | undefined): number {
   if (!raw) return DEFAULT_PORT;
   try {
@@ -63,6 +72,7 @@ function parsePort(raw: string | undefined): number {
 
 const CSV_SEPARATOR = ",";
 
+/** Splits comma-separated settings while discarding whitespace and empty entries. */
 function parseCsv(raw: string | undefined): string[] {
   if (!raw) return [];
   return raw
@@ -71,12 +81,14 @@ function parseCsv(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
+/** Parses and validates trusted proxy ranges before any request can rely on them. */
 function parseTrustedProxies(raw: string | undefined): string[] {
   const trustedProxies = parseCsv(raw);
   validateTrustedProxyRanges(trustedProxies);
   return trustedProxies;
 }
 
+/** Enables range-based trust implicitly only when ranges exist and no mode overrides them. */
 function resolveTrustProxyMode(rawMode: string | undefined, trustedProxies: string[]): TrustProxyMode {
   const mode = parseTrustProxy(rawMode);
   return rawMode === undefined && trustedProxies.length > 0 ? "trusted" : mode;

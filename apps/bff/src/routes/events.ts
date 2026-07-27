@@ -1,9 +1,11 @@
-import type { EventsResponse } from "@campus/shared";
-import { EventsResponseSchema } from "@campus/shared";
+/** Serves filtered public event data from configured public sources. */
+
+import { EventsResponseSchema } from "@concourse/shared";
 import { fetchPublicEvents } from "../connectors/public/hfmtWebEvents";
 import { parseQueryParams, parseEventsFilter } from "../utils/queryParams";
 import { applySearch, applyDateRange, applyPagination } from "../utils/filterHelpers";
 import { createJsonRoute } from "./createJsonRoute";
+import { publicDataHeaders } from "./publicDataHeaders";
 
 export const handleEvents = createJsonRoute(
   async (institution, req) => {
@@ -32,9 +34,6 @@ export const handleEvents = createJsonRoute(
   EventsResponseSchema,
   {
     maxAgeSeconds: 300,
-    getExtraHeaders: (data: EventsResponse) => ({
-      ...(data._degraded ? { "x-data-degraded": "true" } : {}),
-      ...(process.env.PUBLIC_EVENTS_MODE === "mock" ? { "x-data-mode": "mock" } : {})
-    })
+    getExtraHeaders: publicDataHeaders
   }
 );

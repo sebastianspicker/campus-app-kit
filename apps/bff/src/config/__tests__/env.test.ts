@@ -1,3 +1,5 @@
+/** Verifies environment parsing defaults and configuration failures. */
+
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 describe("BFF_ENV", () => {

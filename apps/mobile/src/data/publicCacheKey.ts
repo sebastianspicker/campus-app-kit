@@ -1,8 +1,10 @@
+/** Builds institution- and endpoint-specific keys that prevent public-cache cross-contamination. */
 import { getBffBaseUrl } from "../utils/env";
 import { getConfiguredInstitutionId } from "../config/institution";
 
 export const PUBLIC_CACHE_SCHEMA_VERSION = 1;
 
+/** Canonicalizes query parameters so equivalent filter objects share a persisted key. */
 function getSortedQueryString(queryParams?: Record<string, string>): string {
   if (!queryParams || Object.keys(queryParams).length === 0) {
     return "";
@@ -15,6 +17,7 @@ function getSortedQueryString(queryParams?: Record<string, string>): string {
   return sortedParams.toString();
 }
 
+/** Namespaces cached public data by API origin, institution, schema version, endpoint, and filters. */
 export function getPublicCacheKey(suffix: string, queryParams?: Record<string, string>): string {
   try {
     // Include the BFF base URL so preview/prod/dev endpoints do not share

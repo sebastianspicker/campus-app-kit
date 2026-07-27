@@ -1,10 +1,11 @@
-import { createReadStream, statSync } from "node:fs";
+/** Serves an Expo server export from loopback without adding a production web-server dependency. */
+import { createReadStream, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { extname, join, normalize, resolve } from "node:path";
 import { parsePort } from "./serve-expo-export-port.mjs";
 
-const exportRoot = resolve(process.argv[2] ?? join(tmpdir(), "campus-app-kit-playwright-web"));
+const exportRoot = resolve(process.argv[2] ?? join(tmpdir(), "concourse-playwright-web"));
 const port = parsePort(process.env.PORT);
 const serverRoot = join(exportRoot, "server");
 const clientRoot = join(exportRoot, "client");
@@ -22,11 +23,13 @@ const contentTypes = {
 
 const clientPathPrefixes = ["/_expo/static/", "/assets/"];
 
+/** Resolves a request beneath one root and rejects path traversal outside it. */
 function safeJoin(root, requestedPath) {
   const resolved = resolve(root, `.${normalize(requestedPath)}`);
   return resolved === root || resolved.startsWith(`${root}/`) ? resolved : null;
 }
 
+/** Returns the candidate only when it exists as a regular file. */
 function existingFile(candidate) {
   try {
     return statSync(candidate).isFile() ? candidate : null;
@@ -35,6 +38,40 @@ function existingFile(candidate) {
   }
 }
 
+/** Loads Expo's generated route manifest while treating absent or invalid metadata as no routes. */
+function loadHtmlRoutes() {
+  try {
+    const manifest = JSON.parse(readFileSync(join(serverRoot, "_expo", "routes.json"), "utf8"));
+    if (!Array.isArray(manifest.htmlRoutes)) return [];
+    return manifest.htmlRoutes.flatMap((route) => {
+      if (typeof route?.namedRegex !== "string" || typeof route?.page !== "string") return [];
+      try {
+        return [{ pattern: new RegExp(route.namedRegex), page: route.page }];
+      } catch {
+        return [];
+      }
+    });
+  } catch {
+    return [];
+  }
+}
+
+const htmlRoutes = loadHtmlRoutes();
+
+/** Matches a pathname against Expo's route manifest and resolves its generated HTML file. */
+function resolveManifestRoute(pathname) {
+  const route = htmlRoutes.find(({ pattern }) => pattern.test(pathname));
+  if (!route) return null;
+
+  const pageCandidates = [route.page, route.page.replace(/\/index$/, "")];
+  return pageCandidates
+    .map((page) => safeJoin(serverRoot, `${page}.html`))
+    .filter(Boolean)
+    .map(existingFile)
+    .find(Boolean) ?? null;
+}
+
+/** Resolves static assets and route HTML across Expo's client/server output layout. */
 function resolveFile(pathname) {
   if (clientPathPrefixes.some((prefix) => pathname.startsWith(prefix))) {
     const clientFile = safeJoin(clientRoot, pathname);
@@ -47,14 +84,16 @@ function resolveFile(pathname) {
   const candidates = extname(direct)
     ? [direct, join(direct, "index.html")]
     : [direct, `${direct}.html`, join(direct, "index.html")];
-  return candidates.map(existingFile).find(Boolean) ?? null;
+  return candidates.map(existingFile).find(Boolean) ?? resolveManifestRoute(pathname);
 }
 
+/** Sends a small plain-text error response without exposing filesystem details. */
 function sendText(response, status, message) {
   response.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
   response.end(message);
 }
 
+/** Decodes the request path and converts malformed URL encoding into a bad request. */
 function parsePathname(requestUrl) {
   try {
     return decodeURIComponent(new URL(requestUrl ?? "/", `http://127.0.0.1:${port}`).pathname);
@@ -63,6 +102,7 @@ function parsePathname(requestUrl) {
   }
 }
 
+/** Streams one resolved file and handles HEAD without reading its body. */
 function sendFile(request, response, file) {
   const headers = {
     "content-type": contentTypes[extname(file)] ?? "application/octet-stream",

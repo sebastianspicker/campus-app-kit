@@ -1,3 +1,5 @@
+/** Verifies timezone-aware date conversion and validation. */
+
 import { describe, expect, it } from "vitest";
 import { getDateKeyInTimeZone, parseDateTimeInTimeZone } from "../timeZone";
 

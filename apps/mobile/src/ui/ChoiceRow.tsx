@@ -1,7 +1,7 @@
+/** Renders an accessible single-choice settings row with selected-state affordance. */
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import React from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
-import { spacing, typography } from "./theme";
+import { spacing, typography, withOpacity } from "./theme";
 import { useTheme } from "./ThemeContext";
 
 export type ChoiceRowProps = {
@@ -11,6 +11,7 @@ export type ChoiceRowProps = {
   testID?: string;
 };
 
+/** Implements a radio-style preference row with checked state for assistive technology. */
 export function ChoiceRow({ label, selected, onPress, testID }: ChoiceRowProps): JSX.Element {
   const theme = useTheme();
   return (
@@ -25,11 +26,15 @@ export function ChoiceRow({ label, selected, onPress, testID }: ChoiceRowProps):
         styles.row,
         {
           borderBottomColor: theme.colors.border,
-          backgroundColor: pressed ? theme.colors.infoSurface : theme.colors.surface,
+          backgroundColor: pressed || selected
+            ? withOpacity(theme.colors.accent, pressed ? 0.14 : 0.07)
+            : theme.colors.surface,
+          minHeight: 60,
+          borderBottomWidth: theme.ui.borderWidth,
         },
       ]}
     >
-      <Text style={[styles.label, { color: theme.colors.text }]}>{label}</Text>
+      <Text style={[styles.label, selected && styles.selectedLabel, { color: theme.colors.text }]}>{label}</Text>
       <MaterialIcons
         name={selected ? "radio-button-checked" : "radio-button-unchecked"}
         size={24}
@@ -41,14 +46,13 @@ export function ChoiceRow({ label, selected, onPress, testID }: ChoiceRowProps):
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: 48,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   label: { ...typography.body, flex: 1 },
+  selectedLabel: { fontWeight: "600" },
 });

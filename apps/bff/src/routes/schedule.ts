@@ -1,9 +1,11 @@
-import type { ScheduleResponse } from "@campus/shared";
-import { ScheduleResponseSchema } from "@campus/shared";
+/** Serves filtered public schedule data from configured public sources. */
+
+import { ScheduleResponseSchema } from "@concourse/shared";
 import { fetchPublicSchedule } from "../connectors/public/publicSchedule";
 import { parseQueryParams, parseScheduleFilter } from "../utils/queryParams";
 import { applySearch, applyDateRange, applyPagination } from "../utils/filterHelpers";
 import { createJsonRoute } from "./createJsonRoute";
+import { publicDataHeaders } from "./publicDataHeaders";
 
 export const handleSchedule = createJsonRoute(
   async (institution, req) => {
@@ -35,9 +37,6 @@ export const handleSchedule = createJsonRoute(
   ScheduleResponseSchema,
   {
     maxAgeSeconds: 300,
-    getExtraHeaders: (data: ScheduleResponse) => ({
-      ...(data._degraded ? { "x-data-degraded": "true" } : {}),
-      ...(process.env.PUBLIC_EVENTS_MODE === "mock" ? { "x-data-mode": "mock" } : {})
-    })
+    getExtraHeaders: publicDataHeaders
   }
 );

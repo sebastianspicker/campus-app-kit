@@ -1,9 +1,11 @@
+/** Verifies cache provenance, timestamps, and degraded-state metadata returned by public requests. */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { getCachedJson } from "../publicApiRequest";
 import { clearPersistedCache, setPersistedCache } from "../persistedCache";
 import { getPublicCacheKey } from "../publicCacheKey";
 import { _resetBffBaseUrlMemoForTests } from "../../utils/bffConfig";
+import { jsonResponse } from "../../test/httpResponse";
 
 describe("resource metadata", () => {
   beforeEach(() => {
@@ -17,9 +19,18 @@ describe("resource metadata", () => {
   });
 
   it("labels fresh network data", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ value: 1 }), headers: { get: () => "example" } }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ value: 1 }, 200, () => "example")));
     const result = await getCachedJson("/test", z.object({ value: z.number() }), "test", { offlineMode: true });
     expect(result).toMatchObject({ data: { value: 1 }, source: "network", cacheAge: null });
+  });
+
+  it("does not append a trailing question mark for an empty query", async () => {
+    const fetch = vi.fn().mockResolvedValue(jsonResponse({ value: 1 }, 200, () => "example"));
+    vi.stubGlobal("fetch", fetch);
+
+    await getCachedJson("/test", z.object({ value: z.number() }), "test", { offlineMode: true, queryParams: {} });
+
+    expect(fetch).toHaveBeenCalledWith("http://localhost:4000/test", expect.any(Object));
   });
 
   it("labels the rendered persisted fallback with its own age", async () => {

@@ -1,3 +1,4 @@
+/** Verifies cached-data ages are formatted into localized, user-understandable intervals. */
 import { describe, expect, it } from "vitest";
 import { formatCacheAge } from "../cacheAge";
 

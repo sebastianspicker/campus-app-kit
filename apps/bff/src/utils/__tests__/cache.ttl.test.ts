@@ -1,7 +1,9 @@
+/** Verifies cache expiry, refresh, and in-flight loading behavior. */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getCached, clearCache, cacheStats, destroyCache } from "../cache";
 
-describe("cache — TTL and eviction", () => {
+describe("cache: TTL and eviction", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     clearCache();
@@ -16,7 +18,7 @@ describe("cache — TTL and eviction", () => {
     const value = await getCached("key1", () => Promise.resolve("val1"), 5000);
     expect(value).toBe("val1");
 
-    // Read again — should be cached
+    // Read again; the value should be cached.
     const loader = vi.fn().mockResolvedValue("val1-fresh");
     const cached = await getCached("key1", loader, 5000);
     expect(cached).toBe("val1");
@@ -38,7 +40,6 @@ describe("cache — TTL and eviction", () => {
     // Fill up the cache: getCached adds entries up to MAX_CACHE_ENTRIES (1000)
     // We insert 1001 entries to trigger eviction
     for (let i = 0; i < 1001; i++) {
-      // eslint-disable-next-line no-await-in-loop
       await getCached(`fill-${i}`, () => Promise.resolve(`v${i}`), 300_000);
     }
 

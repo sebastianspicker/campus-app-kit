@@ -1,3 +1,5 @@
+/** Scans and unfolds ICS lines while enforcing a logical-line size limit. */
+
 const CR = "\r";
 const LF = "\n";
 const SPACE = " ";
@@ -9,6 +11,7 @@ export type ScannedIcsLine = {
   oversized: boolean;
 };
 
+/** Yields unfolded logical ICS lines while rejecting lines beyond the byte budget. */
 export function* scanUnfoldedLines(input: string): Generator<ScannedIcsLine> {
   let offset = 0;
   let logicalLine = "";
