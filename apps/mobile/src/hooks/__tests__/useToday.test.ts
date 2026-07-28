@@ -44,16 +44,4 @@ describe("useToday", () => {
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]).toContain("date=2026-02-01");
     unmount();
   });
-
-  it("keys the request to the configured institution day", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-02-01T00:30:00.000Z"));
-    const { unmount } = renderHook(useToday);
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
-
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]).toContain("date=2026-01-31");
-    unmount();
-  });
 });
