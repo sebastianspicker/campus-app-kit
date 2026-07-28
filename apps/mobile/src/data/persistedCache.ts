@@ -88,7 +88,6 @@ function parseCacheEntry<T>(raw: string, validator?: CacheValidator<T>): CachedE
     const parsed: unknown = JSON.parse(raw);
     return isCacheEntry<T>(parsed, validator) ? parsed : null;
   } catch {
-    await storage.removeItem(storageKey).catch(() => undefined);
     return null;
   }
 }
