@@ -1,5 +1,5 @@
 /** Composes the Quiet Chronograph Today view from public-data resources. */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useSetChromeStatus } from "@/components/ChromeStatusContext";
@@ -28,6 +28,7 @@ import { Screen } from "@/ui/Screen";
 import { spacing } from "@/ui/theme";
 import { useTheme } from "@/ui/ThemeContext";
 import { useHydratedWindowWidth } from "@/ui/useHydratedWindowWidth";
+import { isStaticDemo } from "@/config/staticDemo";
 
 const WIDE_BREAKPOINT = 900;
 
@@ -38,6 +39,8 @@ export default function TodayScreen(): JSX.Element {
   const width = useHydratedWindowWidth();
   const isWide = width >= WIDE_BREAKPOINT;
   const timeZone = getInstitutionTimeZone();
+  const staticDemo = isStaticDemo();
+  const [demoHydrated, setDemoHydrated] = useState(!staticDemo);
   const todayState = useToday();
   const scheduleState = useSchedule(getLocalDayRange(new Date(), timeZone));
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -54,6 +57,10 @@ export default function TodayScreen(): JSX.Element {
     locale,
   });
   const chromeStatus = getTodayChromeStatus(sourceStatus, locale, theme.colors, !isWide);
+
+  useEffect(() => {
+    if (staticDemo) setDemoHydrated(true);
+  }, [staticDemo]);
 
   // Stack keeps sibling tabs mounted; clear the header chip whenever Today blurs.
   useFocusEffect(
@@ -77,8 +84,8 @@ export default function TodayScreen(): JSX.Element {
       testID="today-screen"
     >
       <SignalStage
-        date={formatTodayDate(locale, timeZone)}
-        localTime={formatCampusTime(locale, timeZone)}
+        date={demoHydrated ? formatTodayDate(locale, timeZone) : t("loading")}
+        localTime={demoHydrated ? formatCampusTime(locale, timeZone) : "--:--"}
         nextItem={schedule.items[0]}
         sourceStatus={sourceStatus}
         locale={locale}

@@ -10,6 +10,7 @@ const environmentKeys = [
   "INSTITUTION_ID",
   "MOBILE_ANDROID_PACKAGE",
   "MOBILE_BUNDLE_IDENTIFIER",
+  "CONCOURSE_STATIC_DEMO",
 ] as const;
 
 const originalEnvironment = new Map(
@@ -141,6 +142,17 @@ describe("mobile release configuration", () => {
           backgroundColor: "#FFFFFF",
         },
       },
+    });
+  });
+
+  it("uses static output and the repository base path only for the Pages demo", () => {
+    resetBuildEnvironment();
+    process.env.CONCOURSE_STATIC_DEMO = "1";
+
+    expect(resolveConfig()).toMatchObject({
+      web: { output: "static" },
+      experiments: { baseUrl: "/concourse" },
+      extra: { staticDemo: true },
     });
   });
 });

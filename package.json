@@ -26,6 +26,7 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "build:demo": "pnpm --filter @concourse/shared build && pnpm --filter @concourse/institutions build && CONCOURSE_STATIC_DEMO=1 INSTITUTION_ID=example pnpm --filter @concourse/mobile exec expo export --platform web --output-dir ../../dist-pages --clear && node scripts/prepare-pages-output.mjs",
     "dev": "turbo run dev --parallel",
     "lint": "eslint playwright.config.ts vitest.config.ts apps/bff/vitest.config.ts apps/mobile/app.config.ts apps/mobile/vitest.config.ts && turbo run lint",
     "typecheck": "tsc -p tsconfig.tools.json && turbo run typecheck",

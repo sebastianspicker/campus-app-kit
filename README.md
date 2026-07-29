@@ -4,6 +4,10 @@ Concourse Campus Kit is a TypeScript workspace for presenting public university
 information. It contains an Expo application, a Node.js backend-for-frontend
 (BFF), shared Zod schemas, and public institution configuration.
 
+[Open the static Concourse demo](https://sebastianspicker.github.io/concourse/).
+It uses fictional fixture data; actions marked “Simulated” do not call campus
+services, open external sources, share content, or delete browser data.
+
 The current version is `1.2.0-alpha.1`. This checkout is a source candidate. It
 does not include a hosted service, signed mobile application, EAS project,
 store listing, private connector implementation, or user authentication flow.
