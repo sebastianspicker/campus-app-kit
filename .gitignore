@@ -1,6 +1,22 @@
 # Keeps generated, private, and internal work products out of the public source tree.
 ### Dependencies
 node_modules/
+
+# Local agent, analysis, and task state
+/.agents/
+/.claude/
+/.codex/
+/.cursor/
+/.mcp.json
+/.repowise/
+/.serena/
+/.codegraph/
+/AUDIT_LEDGER.md
+/logs/
+/*.log
+/wip/
+/WIP/
+/work-in-progress/
 .pnpm-store/
 
 ### Build artifacts
