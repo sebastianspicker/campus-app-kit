@@ -6,11 +6,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sebastianspicker/campus-app-kit.git"
+    "url": "https://github.com/sebastianspicker/concourse.git"
   },
-  "homepage": "https://github.com/sebastianspicker/campus-app-kit#readme",
+  "homepage": "https://github.com/sebastianspicker/concourse#readme",
   "bugs": {
-    "url": "https://github.com/sebastianspicker/campus-app-kit/issues"
+    "url": "https://github.com/sebastianspicker/concourse/issues"
   },
   "keywords": [
     "accessibility",
@@ -26,12 +26,17 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "build:demo": "pnpm --filter @concourse/shared build && pnpm --filter @concourse/institutions build && CONCOURSE_STATIC_DEMO=1 INSTITUTION_ID=example pnpm --filter @concourse/mobile exec expo export --platform web --output-dir ../../dist-pages --clear && node scripts/prepare-pages-output.mjs",
     "dev": "turbo run dev --parallel",
     "lint": "eslint playwright.config.ts vitest.config.ts apps/bff/vitest.config.ts apps/mobile/app.config.ts apps/mobile/vitest.config.ts && turbo run lint",
     "typecheck": "tsc -p tsconfig.tools.json && turbo run typecheck",
     "test": "turbo run test && node --test scripts/serve-expo-export-port.test.mjs scripts/verify-release-metadata.test.mjs",
+    "test:demo:unit": "pnpm --filter @concourse/mobile exec vitest run src/data/__tests__/publicApiRequest.test.ts",
+    "test:demo:web": "playwright test --config playwright.pages.config.ts",
     "test:e2e": "pnpm --filter @concourse/shared build && pnpm --filter @concourse/institutions build && pnpm --filter @concourse/bff build && node scripts/e2e-bff.mjs",
     "test:web": "playwright test",
+    "verify:demo": "pnpm test:demo:unit && pnpm build:demo && pnpm verify:demo:artifact && pnpm test:demo:web",
+    "verify:demo:artifact": "node scripts/verify-pages-output.mjs",
     "release:check": "node scripts/verify-release-metadata.mjs",
     "verify": "./scripts/verify-production-ready.sh",
     "setup:dev": "./scripts/setup-dev.sh"

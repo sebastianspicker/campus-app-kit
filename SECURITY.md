@@ -10,7 +10,7 @@ supported release lines.
 ## Reporting a Vulnerability
 
 Use the repository's private
-[Security Advisory form](https://github.com/sebastianspicker/campus-app-kit/security/advisories/new).
+[Security Advisory form](https://github.com/sebastianspicker/concourse/security/advisories/new).
 Do not open a public issue for a vulnerability and do not attach exploit details,
 credentials, private URLs, or personal data to a public discussion.
 

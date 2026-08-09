@@ -102,6 +102,7 @@ function withCampusDefaults(config: ConfigContext["config"]): ExpoConfig {
   const explicitBundleIdentifier = nonEmptyEnvironmentValue("MOBILE_BUNDLE_IDENTIFIER");
   const explicitAndroidPackage = nonEmptyEnvironmentValue("MOBILE_ANDROID_PACKAGE");
   const buildProfile = process.env.EAS_BUILD_PROFILE;
+  const staticDemo = process.env.CONCOURSE_STATIC_DEMO === "1";
   const institutionId = resolveInstitutionId(buildProfile);
   const bffBaseUrl = resolveBffBaseUrl(buildProfile);
   validateProductionIdentifiers(
@@ -123,8 +124,12 @@ function withCampusDefaults(config: ConfigContext["config"]): ExpoConfig {
     plugins: withDefault(config.plugins, ["expo-router"]),
     web: {
       ...config.web,
-      output: "server",
+      output: staticDemo ? "static" : "server",
       favicon: withDefault(config.web?.favicon, CONCOURSE_FAVICON),
+    },
+    experiments: {
+      ...config.experiments,
+      ...(staticDemo ? { baseUrl: "/concourse" } : {}),
     },
     ios: {
       ...config.ios,
@@ -141,7 +146,8 @@ function withCampusDefaults(config: ConfigContext["config"]): ExpoConfig {
     extra: {
       ...config.extra,
       bffBaseUrl,
-      institutionId
+      institutionId,
+      staticDemo,
     }
   };
 }
