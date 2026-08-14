@@ -1,5 +1,5 @@
 /** Composes the Quiet Chronograph Today view from public-data resources. */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useSetChromeStatus } from "@/components/ChromeStatusContext";
@@ -28,8 +28,25 @@ import { Screen } from "@/ui/Screen";
 import { spacing } from "@/ui/theme";
 import { useTheme } from "@/ui/ThemeContext";
 import { useHydratedWindowWidth } from "@/ui/useHydratedWindowWidth";
+import { isStaticDemo } from "@/config/staticDemo";
 
 const WIDE_BREAKPOINT = 900;
+
+/** Prevents static clock markup from becoming stale before the demo hydrates. */
+function useDemoSafeCampusClock(locale: string, timeZone: string, loadingLabel: string) {
+  const staticDemo = isStaticDemo();
+  const [demoHydrated, setDemoHydrated] = useState(!staticDemo);
+
+  useEffect(() => {
+    if (staticDemo) setDemoHydrated(true);
+  }, [staticDemo]);
+
+  if (!demoHydrated) return { date: loadingLabel, localTime: "--:--" };
+  return {
+    date: formatTodayDate(locale, timeZone),
+    localTime: formatCampusTime(locale, timeZone),
+  };
+}
 
 /** Composes Today while preserving refresh, sorting, and error behavior. */
 export default function TodayScreen(): JSX.Element {
@@ -38,6 +55,7 @@ export default function TodayScreen(): JSX.Element {
   const width = useHydratedWindowWidth();
   const isWide = width >= WIDE_BREAKPOINT;
   const timeZone = getInstitutionTimeZone();
+  const clock = useDemoSafeCampusClock(locale, timeZone, t("loading"));
   const todayState = useToday();
   const scheduleState = useSchedule(getLocalDayRange(new Date(), timeZone));
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -77,8 +95,8 @@ export default function TodayScreen(): JSX.Element {
       testID="today-screen"
     >
       <SignalStage
-        date={formatTodayDate(locale, timeZone)}
-        localTime={formatCampusTime(locale, timeZone)}
+        date={clock.date}
+        localTime={clock.localTime}
         nextItem={schedule.items[0]}
         sourceStatus={sourceStatus}
         locale={locale}

@@ -20,6 +20,39 @@ export type ApiJsonResult<T> = {
   institutionId: string | null;
 };
 
+/** Converts HTTP-shaped transport failures to the API exception used by retry and UI layers. */
+function toApiErrorException(error: unknown): ApiErrorException | undefined {
+  if (
+    typeof error !== "object" ||
+    error === null ||
+    !("status" in error) ||
+    typeof (error as Record<string, unknown>).status !== "number"
+  ) {
+    return undefined;
+  }
+
+  const details = error as Record<string, unknown>;
+  return new ApiErrorException({
+    status: details.status as number,
+    code: typeof details.code === "string" ? details.code : "unknown_error",
+    message: error instanceof Error ? error.message : "Request failed"
+  });
+}
+
+/** Checks that a response belongs to the configured institution before exposing its data. */
+function getResponseInstitutionId(response: { headers: Headers }): string | null {
+  const institutionId = response.headers.get("x-institution-id");
+  if (institutionId !== null && institutionId !== getConfiguredInstitutionId()) {
+    throw new ApiErrorException({
+      status: 409,
+      code: "institution_mismatch",
+      message: "App and data service institution IDs do not match"
+    });
+  }
+
+  return institutionId;
+}
+
 /** Wraps the parsed payload with response metadata needed by callers. */
 export async function getJsonResult<T>(
   path: string,
@@ -27,39 +60,14 @@ export async function getJsonResult<T>(
   options?: { signal?: AbortSignal }
 ): Promise<ApiJsonResult<T>> {
   const url = `${getBffBaseUrl()}${path}`;
-  const response = await withRetry(async () => {
-    try {
-      return await fetchJsonResponseWithTimeout<unknown>(url, { signal: options?.signal });
-    } catch (err: unknown) {
-      if (
-        typeof err === "object" &&
-        err !== null &&
-        "status" in err &&
-        typeof (err as Record<string, unknown>).status === "number"
-      ) {
-        const status = (err as Record<string, unknown>).status as number;
-        const code = typeof (err as Record<string, unknown>).code === "string"
-          ? (err as Record<string, unknown>).code as string
-          : "unknown_error";
-        throw new ApiErrorException({
-          status,
-          code,
-          message: err instanceof Error ? err.message : "Request failed"
-        });
-      }
-      throw err;
-    }
-  }, { signal: options?.signal });
-
-  const institutionId = response.headers.get("x-institution-id");
-  const expectedInstitutionId = getConfiguredInstitutionId();
-  if (institutionId !== null && institutionId !== expectedInstitutionId) {
-    throw new ApiErrorException({
-      status: 409,
-      code: "institution_mismatch",
-      message: "App and data service institution IDs do not match"
-    });
-  }
+  const response = await withRetry(
+    () => fetchJsonResponseWithTimeout<unknown>(url, { signal: options?.signal })
+      .catch((error: unknown) => {
+        throw toApiErrorException(error) ?? error;
+      }),
+    { signal: options?.signal }
+  );
+  const institutionId = getResponseInstitutionId(response);
 
   return {
     data: parse ? parse(response.data) : (response.data as T),

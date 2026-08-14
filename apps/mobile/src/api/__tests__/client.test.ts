@@ -1,6 +1,6 @@
 /** Verifies the API client normalizes response payloads and HTTP failures. */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getJson } from "../client";
+import { getJson, getJsonResult } from "../client";
 import { clearCache } from "../../data/cache";
 import { jsonResponse } from "../../test/httpResponse";
 import { _resetBffBaseUrlMemoForTests } from "../../utils/bffConfig";
@@ -43,6 +43,16 @@ describe("getJson", () => {
       "http://localhost:4000/events",
       expect.objectContaining({ signal: expect.anything() })
     );
+  });
+
+  it("preserves the matching institution response metadata", async () => {
+    const getHeader = (name: string) => name === "x-institution-id" ? "example" : null;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ items: [] }, 200, getHeader)));
+
+    await expect(getJsonResult<{ items: unknown[] }>("/events")).resolves.toEqual({
+      data: { items: [] },
+      institutionId: "example"
+    });
   });
 
   it("throws ApiErrorException on non-ok response", async () => {
