@@ -59,7 +59,29 @@ describe("mobile release configuration", () => {
 
     process.env.EXPO_PUBLIC_BFF_BASE_URL = "file:///tmp/campus";
     expect(resolveConfig).toThrow(
-      "EXPO_PUBLIC_BFF_BASE_URL must be a valid HTTP(S) URL for preview builds",
+      "EXPO_PUBLIC_BFF_BASE_URL must be a credential-free HTTPS origin for preview builds",
+    );
+  });
+
+  it.each([
+    "http://campus.example.test",
+    "https://user:pass@campus.example.test",
+    "https://localhost",
+    "https://localhost.",
+    "https://2130706433",
+    "https://10.0.0.1",
+    "https://100.64.0.1",
+    "https://169.254.1.1",
+    "https://[fc00::1]",
+  ])("rejects release BFF origins that are unsafe: %s", (baseUrl) => {
+    setProductionEnvironment({
+      EXPO_PUBLIC_BFF_BASE_URL: baseUrl,
+      MOBILE_BUNDLE_IDENTIFIER: "edu.example.campus",
+      MOBILE_ANDROID_PACKAGE: "edu.example.campus",
+    });
+
+    expect(resolveConfig).toThrow(
+      "EXPO_PUBLIC_BFF_BASE_URL must be a credential-free HTTPS origin for production builds",
     );
   });
 

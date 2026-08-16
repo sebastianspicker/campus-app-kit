@@ -44,7 +44,10 @@ yarn-error.log*
 .repowise/
 .eslintcache
 .parcel-cache/
-.codacy/
+/.codacy/*
+!/.codacy/codacy.config.json
+!/.codacy/codacy.yaml
+!/.codacy/codacy.yml
 .impeccable/
 .serena/
 .expo/

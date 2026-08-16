@@ -82,7 +82,7 @@ export async function fetchJsonResponseWithTimeout<T>(
   const request = createTimedRequest(init?.signal, timeoutMs);
 
   try {
-    const response = await fetch(url, { ...init, signal: request.signal });
+    const response = await fetch(url, { ...init, signal: request.signal, redirect: "error" });
     return await parseJsonResponse<T>(response, request.signal);
   } catch (error: unknown) {
     // Keep the timeout semantic through response-body reads as well as the

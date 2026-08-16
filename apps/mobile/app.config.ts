@@ -1,5 +1,6 @@
 /** Expo application configuration with build-profile validation. */
 import type { ExpoConfig, ConfigContext } from "expo/config";
+import { normalizeBffBaseUrl } from "./src/utils/bffConfig";
 
 const TEMPLATE_ANDROID_PACKAGE = "com.concoursecampuskit.mobile";
 const TEMPLATE_IOS_BUNDLE_IDENTIFIER = "com.concoursecampuskit.mobile";
@@ -30,22 +31,17 @@ function requiredEnvironmentValue(name: string, buildProfile: string): string {
 
 /** Produces the single release-build diagnostic for an invalid BFF origin. */
 function invalidBffBaseUrl(buildProfile: string): never {
-  throw new Error(`EXPO_PUBLIC_BFF_BASE_URL must be a valid HTTP(S) URL for ${buildProfile} builds`);
+  throw new Error(`EXPO_PUBLIC_BFF_BASE_URL must be a credential-free HTTPS origin for ${buildProfile} builds`);
 }
 
 /** Validates and normalizes the release BFF origin before embedding it in Expo config. */
 function requiredBffBaseUrl(buildProfile: string): string {
   const value = requiredEnvironmentValue("EXPO_PUBLIC_BFF_BASE_URL", buildProfile);
-  let url: URL;
   try {
-    url = new URL(value);
+    return normalizeBffBaseUrl(value, false);
   } catch {
     invalidBffBaseUrl(buildProfile);
   }
-  if (url.protocol !== "http:" && url.protocol !== "https:") {
-    invalidBffBaseUrl(buildProfile);
-  }
-  return value.replace(/\/+$/, "");
 }
 
 /** Narrows EAS profiles that must reject development fallbacks. */

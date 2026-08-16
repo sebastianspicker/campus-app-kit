@@ -19,6 +19,7 @@ const expoExtra = Constants.expoConfig?.extra as Record<string, unknown> | undef
 describe("resource metadata", () => {
   beforeEach(() => {
     process.env.EXPO_PUBLIC_BFF_BASE_URL = "http://localhost:4000";
+    vi.stubGlobal("__DEV__", true);
     _resetBffBaseUrlMemoForTests();
     delete expoExtra?.staticDemo;
   });

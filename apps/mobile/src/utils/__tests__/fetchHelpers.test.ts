@@ -104,6 +104,18 @@ describe("fetchJsonWithTimeout", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("rejects redirects instead of following a cross-origin response", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("{}"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchJsonWithTimeout("https://example.com", { redirect: "follow" });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://example.com",
+      expect.objectContaining({ redirect: "error" }),
+    );
+  });
+
   it("preserves response headers and Retry-After on malformed error bodies", async () => {
     const headers = new Headers({ "retry-after": "15" });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
