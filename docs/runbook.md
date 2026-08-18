@@ -5,7 +5,7 @@
 Install from the repository root:
 
 ```bash
-corepack pnpm@9.0.0 install --frozen-lockfile
+corepack pnpm@9.15.0 install --frozen-lockfile
 ```
 
 Create local configuration:
@@ -119,7 +119,7 @@ reachable.
 
 ### The BFF does not start
 
-- Confirm Node is at least 22.13 and the install used pnpm 9.0.0.
+- Confirm Node is at least 22.13 and the install used pnpm 9.15.0.
 - Confirm `INSTITUTION_ID` is `example`, `hfmt`, `mockuni`, or a newly registered pack.
 - Check numeric ranges for `BFF_PORT`, `BFF_DEFAULT_CACHE_TTL`, and
   `RRULE_EXPANSION_HORIZON_DAYS`.

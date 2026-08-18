@@ -45,7 +45,7 @@ store listing, private connector implementation, or user authentication flow.
 
 - Node.js 22.13 or newer. CI uses 22.13.0 and [`.nvmrc`](.nvmrc) records that version.
 - Corepack
-- pnpm 9.0.0, selected through Corepack
+- pnpm 9.15.0, selected through Corepack
 - Playwright Chromium for browser tests
 - Expo Go or an institution-owned development client for device testing
 - Docker only for the container workflows
@@ -55,7 +55,7 @@ store listing, private connector implementation, or user authentication flow.
 From the repository root:
 
 ```bash
-corepack pnpm@9.0.0 install --frozen-lockfile
+corepack pnpm@9.15.0 install --frozen-lockfile
 cp apps/bff/.env.example apps/bff/.env
 cp apps/mobile/.env.example apps/mobile/.env
 ```
@@ -65,7 +65,7 @@ files without overwriting existing files, builds the workspace, and runs the
 type checker:
 
 ```bash
-corepack pnpm@9.0.0 setup:dev
+corepack pnpm@9.15.0 setup:dev
 ```
 
 ## Configuration
@@ -110,10 +110,10 @@ Run the BFF and Expo Go in separate terminals:
 
 ```bash
 # Terminal 1
-INSTITUTION_ID=hfmt corepack pnpm@9.0.0 --filter @concourse/bff dev
+INSTITUTION_ID=hfmt corepack pnpm@9.15.0 --filter @concourse/bff dev
 
 # Terminal 2
-INSTITUTION_ID=hfmt corepack pnpm@9.0.0 --filter @concourse/mobile start
+INSTITUTION_ID=hfmt corepack pnpm@9.15.0 --filter @concourse/mobile start
 ```
 
 For an installed development client, replace `start` with `dev`.

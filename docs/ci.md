@@ -109,7 +109,7 @@ Repository settings to keep aligned with this public template:
 - Add new checks to `./scripts/verify-production-ready.sh` if they must run on every PR.
 - If a job needs secrets, run it only on trusted branch pushes such as `main` or `dev`, or via `workflow_dispatch`.
 - Keep workflows deterministic:
-  - Pin tool versions (e.g., `corepack prepare pnpm@9.0.0 --activate`).
+  - Pin tool versions (e.g., `corepack prepare pnpm@9.15.0 --activate`).
   - Use `--frozen-lockfile`/equivalent.
 - Prefer quick PR checks; schedule heavier checks (nightly/weekly) if needed.
 
