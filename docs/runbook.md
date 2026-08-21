@@ -92,8 +92,6 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
-pnpm test:web
-pnpm test:e2e
 ```
 
 Run the complete local gate with:
@@ -152,13 +150,6 @@ require `publicRooms`. Today requires at least an event source or a room list.
 Keep socket-address behavior with `BFF_TRUST_PROXY=never`, or add the exact
 proxy IP addresses and CIDR ranges to `BFF_TRUSTED_PROXIES`. Do not enable
 `always` on an exposed BFF.
-
-### Browser tests fail to launch
-
-```bash
-pnpm exec playwright install chromium
-pnpm test:web
-```
 
 ### Lockfile validation fails
 
