@@ -10,15 +10,15 @@ Use the repository's private [Security Advisory form](https://github.com/sebasti
 
 ## Scope and data boundary
 
-This public repository handles public campus sources only: public HTTP(S) event pages, public ICS feeds, public pack metadata, and sanitized static-demo data. It contains no private connector implementations or stubs.
+This public repository handles public campus sources only: public HTTP(S) event pages, public iCalendar (ICS) feeds, public pack metadata, and sanitized static-demo data. It contains no private connector implementations or stubs.
 
-Do not commit API keys, tokens, passwords, certificates, private endpoints, protected-system identifiers, captured user data, or signing material. Keep secrets in private deployment storage. Protected integrations, SSO, accounts, personalized schedules, and operational systems are outside this repository.
+Do not commit API keys, tokens, passwords, certificates, private endpoints, protected-system identifiers, captured user data, or signing material. Keep secrets in private deployment storage. Protected integrations, single sign-on (SSO), accounts, personalized schedules, and operational systems are outside this repository.
 
 ## API deployment notes
 
 The optional bearer guard is disabled by default. A private deployment that enables it must set both BFF_REQUIRE_AUTH=1 and a long random BFF_AUTH_TOKEN. Invalid non-empty BFF_REQUIRE_AUTH values fail closed.
 
-BFF_TRUST_PROXY defaults to never, so rate limiting uses the direct peer and ignores forwarding headers. Prefer BFF_TRUSTED_PROXIES with exact IP/CIDR values when a reviewed proxy must forward identity. always is unsafe except behind an isolated edge that replaces forwarding headers.
+BFF_TRUST_PROXY defaults to never, so rate limiting uses the direct peer and ignores forwarding headers. Prefer BFF_TRUSTED_PROXIES with exact Internet Protocol (IP) addresses or Classless Inter-Domain Routing (CIDR) ranges when a reviewed proxy must forward identity. always is unsafe except behind an isolated edge that replaces forwarding headers.
 
 ## Coordinated disclosure
 

@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Verify (lint, typecheck, test, build)
+  ci:
+    name: ci
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:

@@ -26,7 +26,8 @@ const ICS_FOLD_PATTERN = /[\r\n][ \t]/;
 /** Retains a valid UTF-16 prefix that also satisfies the shared wire-schema length limit. */
 const truncateScheduleText = (value: string, maximumLength: number): string => {
   const truncated = value.slice(0, maximumLength);
-  return /[\uD800-\uDBFF]$/.test(truncated) ? truncated.slice(0, -1) : truncated;
+  const finalCodeUnit = truncated.charCodeAt(truncated.length - 1);
+  return finalCodeUnit >= 0xD800 && finalCodeUnit <= 0xDBFF ? truncated.slice(0, -1) : truncated;
 };
 
 /** Decodes and bounds untrusted ICS text before it can be copied into recurrence instances. */

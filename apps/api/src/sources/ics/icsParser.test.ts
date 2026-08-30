@@ -51,4 +51,13 @@ describe("parseIcs", () => {
     expect(parsed.every((event) => event.title.length === SCHEDULE_TITLE_MAX_LENGTH)).toBe(true);
     expect(parsed.every((event) => event.id.length <= SCHEDULE_ID_MAX_LENGTH)).toBe(true);
   });
+
+  it("does not retain a dangling UTF-16 surrogate when truncating schedule text", () => {
+    const title = `${"S".repeat(SCHEDULE_TITLE_MAX_LENGTH - 1)}😀`;
+
+    const [event] = parseIcs(calendar(`UID:utf-16-boundary\nSUMMARY:${title}\nDTSTART:20260101T100000Z`));
+
+    expect(event.title).toBe("S".repeat(SCHEDULE_TITLE_MAX_LENGTH - 1));
+    expect(event.title).not.toContain("\uFFFD");
+  });
 });
