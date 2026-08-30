@@ -16,9 +16,9 @@ Do not commit API keys, tokens, passwords, certificates, private endpoints, prot
 
 ## API deployment notes
 
-The optional bearer guard is disabled by default. A private deployment that enables it must set both BFF_REQUIRE_AUTH=1 and a long random BFF_AUTH_TOKEN. Invalid non-empty BFF_REQUIRE_AUTH values fail closed.
+The optional bearer guard starts disabled. To enable it for a private deployment, set BFF_REQUIRE_AUTH=1 and provide a long random BFF_AUTH_TOKEN. Any other non-empty BFF_REQUIRE_AUTH value causes startup to fail.
 
-BFF_TRUST_PROXY defaults to never. In this mode, rate limiting uses the direct peer and ignores forwarding headers.
+BFF_TRUST_PROXY uses never unless the deployment configures reviewed proxy trust. In the never mode, rate limiting uses the direct peer and ignores forwarding headers.
 
 When a reviewed proxy must forward identity, configure BFF_TRUSTED_PROXIES. Use exact Internet Protocol (IP) addresses or Classless Inter-Domain Routing (CIDR) ranges.
 
